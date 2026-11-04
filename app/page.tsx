@@ -603,6 +603,7 @@ export default function Home() {
         controls.bathAutoWalk = false;
         controls.pose = 'pray';
         bathState.phase = 'pray';
+        controls.mode = 'bath';
         bathPrevRef.current = 'pray';
         setBathPhase('pray');
       }
@@ -747,6 +748,7 @@ export default function Home() {
         controls.bathAutoWalk = false;
         controls.pose = 'pray';
         bathState.phase = 'pray';
+        controls.mode = 'bath';
         bathPrevRef.current = 'pray';
         setBathPhase('pray');
       } else {
@@ -797,6 +799,7 @@ export default function Home() {
     bathState.phase = 'idle';
     bathPrevRef.current = 'idle';
     setBathPhase('idle');
+    if (controls.mode === 'bath') controls.mode = 'follow';
   };
   const goToZone = (zoneId: string) => {
     if (sweepState.phase !== 'idle') cancelSweep();
@@ -1906,7 +1909,7 @@ export default function Home() {
             <p className="mt-2 text-sm text-stone-600">Đã tắm Phật xong ba gáo nước thơm. Đây là mô phỏng để học và khởi tâm lành, không thay cho lễ tắm Phật tại chùa, và không mang ý nghĩa cầu tài lộc hay trừ nghiệp.</p>
             <div className="mt-4 flex gap-2">
               <button type="button" onClick={() => { setBathBlessingOpen(false); setVesakOpen(true); }} className="flex-1 rounded-full bg-amber-800 py-3 font-medium text-white">Tìm hiểu Phật đản</button>
-              <button type="button" onClick={() => { setBathBlessingOpen(false); bathState.phase = 'idle'; bathPrevRef.current = 'idle'; setBathPhase('idle'); }} className="rounded-full bg-stone-200 px-5 py-3">Đóng</button>
+              <button type="button" onClick={() => { setBathBlessingOpen(false); bathState.phase = 'idle'; if (controls.mode === 'bath') controls.mode = 'follow'; bathPrevRef.current = 'idle'; setBathPhase('idle'); }} className="rounded-full bg-stone-200 px-5 py-3">Đóng</button>
             </div>
           </div>
         </div>
@@ -1925,7 +1928,7 @@ export default function Home() {
               <span className="text-sm font-medium text-amber-900">Chế độ lễ hội — cờ ngũ sắc, biển “Kính mừng Đại lễ Phật đản”, thêm hoa sen</span>
               <input type="checkbox" checked={festivalOn} onChange={(e) => { const v = e.target.checked; setFestivalOn(v); try { localStorage.setItem('chua-lumbini-festival', v ? '1' : '0'); } catch { /* ignore */ } }} className="h-5 w-5 accent-amber-800" />
             </label>
-            <button type="button" onClick={() => setVesakOpen(false)} className="mt-4 w-full rounded-full bg-amber-800 py-3 font-medium text-white">Đã hiểu</button>
+            <button type="button" onClick={() => { setVesakOpen(false); if (bathState.phase === 'done') { bathState.phase = 'idle'; bathPrevRef.current = 'idle'; setBathPhase('idle'); if (controls.mode === 'bath') controls.mode = 'follow'; } }} className="mt-4 w-full rounded-full bg-amber-800 py-3 font-medium text-white">Đã hiểu</button>
           </div>
         </div>
       )}

@@ -4,7 +4,7 @@
  * Kept outside React state on purpose: it changes every frame.
  */
 
-export type CameraMode = 'menu' | 'intro' | 'follow' | 'burner' | 'chant' | 'sweep';
+export type CameraMode = 'menu' | 'intro' | 'follow' | 'burner' | 'chant' | 'sweep' | 'bath';
 export type PlayerGender = 'female' | 'male';
 
 /** Watering ritual (MÚC NƯỚC & TƯỚI CÂY, Vườn Lộc Uyển) shared state. */

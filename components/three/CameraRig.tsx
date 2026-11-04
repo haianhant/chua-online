@@ -12,6 +12,7 @@ import { controls, LAYOUT, isInHall } from './controls';
  * - follow: behind + above the player, yaw/pitch from drag, wheel zoom
  * - burner: close, quiet view of the burner during the ritual
  * - chant: quiet view from the player towards the hall
+ * - bath: slow east-side arc around the infant statue during the bath ritual, so the player (south of the basin) never blocks the statue
  */
 export default function CameraRig() {
   const { camera } = useThree();
@@ -19,6 +20,7 @@ export default function CameraRig() {
   const lookSmooth = useRef(new THREE.Vector3(0, 2, -9));
   const started = useRef(false);
   const prevMode = useRef(controls.mode);
+  const bathT0 = useRef(0);
 
   useFrame(({ clock, scene }, delta) => {
     const dt = Math.min(delta, 0.05);
@@ -80,6 +82,25 @@ export default function CameraRig() {
       // Quiet angle: a little behind/side of the player, looking to the hall
       target.set(p.x + 1.8, 2.2, p.z + 2.4);
       look.set(0, 2.5, -9);
+    } else if (controls.mode === 'bath') {
+      // Bath view (user request 2026-11-04): a slow east-side arc
+      // around the infant statue, so the statue stays in frame and
+      // the player (standing south of the basin, facing north) never
+      // blocks it. The follow camera sits due south of the player
+      // and looks straight through the player at the statue — this
+      // arc stays 34..74 degrees east of south, outside the pavilion
+      // platform, and sways gently instead of spinning, so the
+      // pour stays readable. Radius 3.6m, height 2.1m, looking at
+      // the statue mid-height (~1.5m).
+      if (prevMode.current !== 'bath') bathT0.current = t;
+      const tau = Math.max(0, t - bathT0.current);
+      const th = 0.95 + 0.35 * Math.sin(0.25 * tau);
+      target.set(
+        LAYOUT.lumbiniBasin.x + Math.sin(th) * 3.6,
+        2.1,
+        LAYOUT.lumbiniBasin.z + Math.cos(th) * 3.6,
+      );
+      look.set(LAYOUT.lumbiniBasin.x, 1.5, LAYOUT.lumbiniBasin.z);
     } else {
       const h = Math.cos(controls.pitch) * effDistance;
       target.set(

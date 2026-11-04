@@ -188,8 +188,6 @@ export default function Home() {
   // Usable seats (38 chanting & meditation seats across 7 temple zones): sit via auto-walk, then pose.
   const [seatedSeat, setSeatedSeat] = useState<Seat | null>(null);
   const [sitPending, setSitPending] = useState<Seat | null>(null);
-  const [seatsModalOpen, setSeatsModalOpen] = useState(false);
-  const [seatsFilter, setSeatsFilter] = useState<'all' | 'hall' | 'westChant' | 'stupaChant' | 'outdoor'>('all');
   // Merit Leaderboard & Temple Rank System (lib/merit.ts)
   const [meritState, setMeritState] = useState<MeritState>(() => loadMeritState());
   const [meritOpen, setMeritOpen] = useState(false);
@@ -558,7 +556,6 @@ export default function Home() {
     !lanternModalOpen &&
     !stupaModalOpen &&
     !meritOpen &&
-    !seatsModalOpen &&
     ritual === 'none' &&
     !(chantPlaying && chantMode === 'calm') &&
     !dedicationOpen &&
@@ -1408,13 +1405,6 @@ export default function Home() {
             </button>
             <button
               type="button"
-              onClick={() => setSeatsModalOpen(true)}
-              className="rounded-full border border-amber-300/80 bg-amber-100/90 px-3.5 py-2 text-sm font-medium text-amber-950 shadow backdrop-blur hover:bg-amber-200"
-            >
-              🧘 Chỗ ngồi Niệm Kinh ({SEATS.length})
-            </button>
-            <button
-              type="button"
               onClick={startBoatToHSK}
               className="rounded-full border border-amber-300/70 bg-amber-800 px-3.5 py-2 text-sm font-medium text-white shadow backdrop-blur hover:bg-amber-900"
             >
@@ -1466,14 +1456,6 @@ export default function Home() {
               className="flex h-10 items-center justify-center rounded-full border border-amber-300 bg-amber-800 px-2.5 text-xs font-medium text-white shadow backdrop-blur"
             >
               🏆 {meritState.points}
-            </button>
-            <button
-              type="button"
-              onClick={() => setSeatsModalOpen(true)}
-              aria-label="Chọn chỗ ngồi niệm kinh"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/50 bg-white/70 text-base shadow backdrop-blur"
-            >
-              🧘
             </button>
             <button
               type="button"
@@ -1531,13 +1513,6 @@ export default function Home() {
                 className="rounded-xl bg-amber-800 px-4 py-3 text-left text-sm font-medium text-white shadow-sm"
               >
                 🏆 Bảng Vàng Công Đức ({currentRank.badge} {currentRank.title} · {meritState.points} điểm)
-              </button>
-              <button
-                type="button"
-                onClick={() => { setMobileMenuOpen(false); setSeatsModalOpen(true); }}
-                className="rounded-xl bg-amber-100 px-4 py-3 text-left text-sm font-medium text-amber-950 shadow-sm"
-              >
-                🧘 Chọn chỗ ngồi Tọa Thiền & Niệm Kinh ({SEATS.length} vị trí)
               </button>
               <button
                 type="button"
@@ -1657,7 +1632,6 @@ export default function Home() {
       {entered && ritual === 'none' && !chantOpen && (
         <div className="absolute bottom-24 left-3 z-20 hidden gap-2 sm:bottom-20 md:flex">
           <button type="button" onClick={openMap} className="rounded-full bg-white/80 px-4 py-2.5 text-sm shadow backdrop-blur">🗺 Sơ đồ chùa</button>
-          <button type="button" onClick={() => setSeatsModalOpen(true)} className="rounded-full bg-amber-800/90 px-4 py-2.5 text-sm font-medium text-white shadow backdrop-blur hover:bg-amber-900">🧘 Chọn chỗ ngồi niệm kinh ({SEATS.length})</button>
         </div>
       )}
 
@@ -3316,16 +3290,6 @@ export default function Home() {
               <div className="mt-4 flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setMeritOpen(false);
-                    setSeatsModalOpen(true);
-                  }}
-                  className="flex-1 rounded-full bg-amber-800 py-3 text-xs font-semibold text-white shadow hover:bg-amber-900 sm:text-sm"
-                >
-                  🧘 Tìm chỗ ngồi Tọa Thiền & Niệm Kinh (+30 Công Đức)
-                </button>
-                <button
-                  type="button"
                   onClick={() => setMeritOpen(false)}
                   className="rounded-full bg-stone-200 px-5 py-3 text-xs font-medium text-stone-700 sm:text-sm"
                 >
@@ -3337,174 +3301,18 @@ export default function Home() {
         );
       })()}
 
-      {/* =====================================================================
-          6. CHỌN CHỖ NGỒI TỌA THIỀN & NIỆM KINH (38 VỊ TRÍ TOÀN CHÙA)
-         ===================================================================== */}
-      {seatsModalOpen && (() => {
-        const seatOccupiedBy = (s: Seat): string | null => {
-          for (const rp of Array.from(multiplayer.players.values())) {
-            if (
-              (rp.target.state === 'sitting' || rp.target.state === 'praying') &&
-              Math.hypot(rp.target.x - s.x, rp.target.z - s.z) < 0.8
-            ) {
-              return rp.name || 'Phật tử';
-            }
-          }
-          return null;
-        };
-        const filteredSeats = SEATS.filter((s) => {
-          if (seatsFilter === 'all') return true;
-          if (seatsFilter === 'hall') return s.area === 'hall';
-          if (seatsFilter === 'westChant') return s.area === 'westChant';
-          if (seatsFilter === 'stupaChant') return s.area === 'stupaChant';
-          return s.area === 'banyan' || s.area === 'corridor' || s.area === 'lake' || s.area === 'tea';
-        });
-
-        return (
-          <div className="absolute inset-0 z-40 flex items-end justify-center bg-black/40 p-3 sm:items-center sm:p-4">
-            <div className="max-h-[90dvh] w-full max-w-xl overflow-y-auto rounded-3xl border border-amber-900/25 bg-[#fdf8ec] p-5 shadow-2xl">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
-                    🧘 Không gian Tọa Thiền & Tụng Kinh mở rộng
-                  </p>
-                  <h2 className="font-serif text-2xl font-bold text-amber-900">
-                    {SEATS.length} Chỗ Ngồi Niệm Kinh Trong Chùa Hải An
-                  </h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSeatsModalOpen(false)}
-                  className="rounded-full bg-stone-200 px-3 py-1 text-sm font-medium"
-                >
-                  ✕
-                </button>
-              </div>
-              <p className="mt-1 text-xs leading-relaxed text-stone-600">
-                Chọn bất kỳ bồ đoàn hoặc ghế đá nào bên dưới để nhân vật tự bước đến ngồi xếp bằng kiết già và mở bảng Niệm Phật / Tụng Kinh cùng đại chúng:
-              </p>
-
-              {/* Zone filter pills */}
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {([
-                  ['all', `Tất cả (${SEATS.length})`],
-                  ['hall', '🏯 Chính Điện (16)'],
-                  ['westChant', '🧘 Niệm Phật Đường Tây (8)'],
-                  ['stupaChant', '📿 Đài Niệm Kinh Bảo Tháp (6)'],
-                  ['outdoor', '🌳 Gốc Đa · Hồ Sen · Hành Lang (8)'],
-                ] as const).map(([fKey, fLabel]) => (
-                  <button
-                    key={fKey}
-                    type="button"
-                    onClick={() => setSeatsFilter(fKey)}
-                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                      seatsFilter === fKey
-                        ? 'bg-amber-800 text-white shadow'
-                        : 'bg-amber-100 text-amber-900 hover:bg-amber-200'
-                    }`}
-                  >
-                    {fLabel}
-                  </button>
-                ))}
-              </div>
-
-              {/* Seat list */}
-              <div className="mt-3 grid max-h-[48dvh] grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
-                {filteredSeats.map((s) => {
-                  const occName = seatOccupiedBy(s);
-                  const isMine = seatedSeat?.id === s.id;
-                  return (
-                    <div
-                      key={s.id}
-                      className={`flex flex-col justify-between rounded-2xl border p-3 text-xs transition ${
-                        isMine
-                          ? 'border-amber-700 bg-amber-100/90 ring-2 ring-amber-700/30'
-                          : occName
-                            ? 'border-stone-200 bg-stone-100/70 opacity-75'
-                            : 'border-amber-800/20 bg-white hover:border-amber-700'
-                      }`}
-                    >
-                      <div>
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="font-semibold text-amber-950">
-                            {s.area === 'hall' || s.area === 'westChant' || s.area === 'stupaChant' ? '🪷 ' : '🪑 '}
-                            {s.label}
-                          </span>
-                          <span
-                            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                              isMine
-                                ? 'bg-amber-800 text-white'
-                                : occName
-                                  ? 'bg-stone-300 text-stone-700'
-                                  : 'bg-emerald-100 text-emerald-900'
-                            }`}
-                          >
-                            {isMine ? 'Đang ngồi' : occName ? `Có ${occName}` : 'Còn trống'}
-                          </span>
-                        </div>
-                        <p className="mt-1 text-[11px] text-stone-500">
-                          {s.area === 'hall'
-                            ? 'Đại Hùng Bảo Điện · Có bàn kinh & mõ gỗ'
-                            : s.area === 'westChant'
-                              ? 'Niệm Phật Đường Tây 2 tầng · Tụng kinh A Di Đà'
-                              : s.area === 'stupaChant'
-                                ? 'Đài Niệm Kinh hướng Bảo Tháp 7 tầng'
-                                : 'Không gian sân chùa thoáng đãng'}
-                        </p>
-                      </div>
-                      <div className="mt-2.5 flex gap-1.5">
-                        <button
-                          type="button"
-                          disabled={Boolean(occName && !isMine)}
-                          onClick={() => {
-                            setSeatsModalOpen(false);
-                            if (!isMine) sitAtSeat(s);
-                          }}
-                          className="flex-1 rounded-full bg-amber-800 py-2 text-xs font-medium text-white shadow hover:bg-amber-900 disabled:bg-stone-300 disabled:text-stone-500"
-                        >
-                          {isMine ? 'Đang ngồi tại đây' : 'Đến ngồi niệm kinh'}
-                        </button>
-                        {isMine && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSeatsModalOpen(false);
-                              setChantOpen(true);
-                            }}
-                            className="rounded-full bg-emerald-800 px-3 py-2 text-xs font-medium text-white"
-                          >
-                            📿 Mở Kinh
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="mt-4 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSeatsModalOpen(false);
-                    setChantOpen(true);
-                  }}
-                  className="flex-1 rounded-full bg-amber-100 py-3 text-xs font-semibold text-amber-950 hover:bg-amber-200 sm:text-sm"
-                >
-                  📿 Mở ngay bảng Niệm Phật & Tụng Kinh
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSeatsModalOpen(false)}
-                  className="rounded-full bg-stone-200 px-5 py-3 text-xs font-medium text-stone-700 sm:text-sm"
-                >
-                  Đóng
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+      {/* BẢNG CHỌN GHẾ NGỒI — ĐÃ GỠ NGÀY 2026-11-05.
+          Lý do: tính năng không hoạt động — bấm nút tới ghế chỉ gọi sitAtSeat
+          đi bộ tự động tới ghế, nhưng trên đường có quá nhiều vật cản (cột,
+          tường, lư hương, hồ sen, bàn ghế) và chưa có tính toán đường đi tránh
+          vật cản tới từng ghế, nên nhân vật thường kẹt giữa đường không tới
+          được ghế. Đã gỡ: toàn bộ bảng chọn ghế (40 vị trí, có lọc theo khu),
+          4 nút mở bảng và nút tìm ghế trong hộp thoại Bảng Vàng. GIỮ LẠI:
+          dữ liệu SEATS (controls.ts), ngồi thủ công khi tự đi tới gần ghế
+          (nút ngữ cảnh), nút "Mở Kinh Niệm Phật" khi đang ngồi, và bảng Niệm
+          Phật mở bằng phím E ở khu niệm Phật. Muốn khôi phục: cần tính đường
+          đi tránh vật cản tới từng ghế (waypoint riêng cho từng ghế hoặc
+          pathfinding) rồi mới gắn lại bảng chọn ghế. */}
 
       {/* Map — 2D, follows the real floor plan, "Bạn đang ở đây" marker.
           Desktop: side panel. Mobile: bottom sheet. */}

@@ -73,3 +73,10 @@
 - Build tĩnh (bắt buộc có biến môi trường, không là MẤT multiplayer):
   `NEXT_PUBLIC_MULTIPLAYER_WS_URL=wss://chua-online-temple.hunganhz179.workers.dev/ws npm run build`
 - Test nhanh: `node test-v2-unit.js` (116 kiểm tra) + `npx tsc --noEmit` + build.
+
+## Gỡ tính năng chọn chỗ ngồi niệm kinh (2026-11-05)
+
+- **Đã gỡ:** bảng chọn chỗ ngồi tọa thiền & niệm kinh (40 vị trí, lọc theo khu), 4 nút mở bảng (thanh trên, nút 🧘 mobile, menu mobile, nút nhanh desktop) và nút "Tìm chỗ ngồi Tọa Thiền & Niệm Kinh" trong hộp thoại Bảng Vàng (`app/page.tsx`).
+- **Lý do (tính năng không hoạt động):** bấm "Đến ngồi niệm kinh" chỉ cho nhân vật đi bộ tự động tới ghế, nhưng trên đường có quá nhiều vật cản (cột, tường, lư hương, hồ sen, bàn ghế) và chưa có tính toán đường đi tránh vật cản tới từng chỗ ngồi, nên nhân vật thường kẹt giữa đường không tới được ghế.
+- **Giữ lại:** dữ liệu `SEATS` (`controls.ts`), ngồi thủ công khi tự đi tới gần ghế, nút "Mở Kinh Niệm Phật" khi đang ngồi, bảng Niệm Phật mở bằng phím E ở khu niệm Phật.
+- **Muốn khôi phục:** cần tính đường đi tránh vật cản tới từng ghế (waypoint riêng cho từng ghế hoặc pathfinding) rồi mới gắn lại bảng chọn ghế.

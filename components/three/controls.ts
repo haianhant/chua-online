@@ -258,6 +258,12 @@ export type Seat = {
   label: string;
 };
 
+/* LƯU Ý (2026-11-05): bảng chọn ghế ngồi (40 vị trí) đã bị gỡ khỏi app/page.tsx
+   vì tính năng không hoạt động — đi bộ tự động tới ghế thường kẹt do quá nhiều
+   vật cản trên đường và chưa có tính toán đường đi tới từng ghế. Dữ liệu SEATS
+   dưới đây vẫn được GIỮ để người chơi tự đi tới gần ghế và ngồi thủ công, và để
+   vẽ các bồ đoàn/ghế trong cảnh 3D. Chỉ khôi phục bảng chọn ghế sau khi đã có
+   đường đi tránh vật cản tới từng ghế. */
 export const SEATS: Seat[] = [
   // 1. Đại Hùng Bảo Điện (Chính Điện) — 16 đệm tọa cụ tụng kinh (4 hàng x 4 đệm), hướng Bắc
   { id: 'hall-l5', x: -5.6, z: -10.2, facing: Math.PI, kind: 'mat', area: 'hall', label: 'Chính điện · Đệm trái hàng 1' },

@@ -1,31 +1,44 @@
-# TRẠNG THÁI BẢN SNAPSHOT NÀY (2026-11-04, bản v2.1 — cải thiện UI/UX khuôn viên, Tắm Phật & Đồ lam đi chùa)
+# TRẠNG THÁI BẢN SNAPSHOT NÀY (2026-11-04, bản v2.2 — 2 nhân vật Nam/Nữ Phật tử, Chú tiểu kinh hành, Lư hương đồng & cải tiến toàn diện Animation/UX)
 
-## Các hạng mục cập nhật UI/UX trong bản này
+## Các hạng mục cập nhật trong bản v2.2
 
-1. **Mở rộng khuôn viên & tách thoáng các cụm kiến trúc (`Temple.tsx`, `BellTower.tsx`, `Grounds.tsx`, `Lumbini.tsx`, `controls.ts`)**:
-   - Nới rộng sân gạch đối xứng hai bên lên **`88m × 49m`** (`x: -44..44`, `z: -36..13`, bounds `x: -46..46, z: -44..32`) kết hợp tiền sảnh trước Cổng Tam Quan (`18m × 7m`, `z: 13..20`) và hệ thống **tường bao khuôn viên chùa truyền thống** bao trọn toàn bộ công trình.
-   - **Tách giãn khoảng cách giữa Chính điện và tất cả các kiến trúc phụ** (khoảng thở từ `9.4m` đến `12m`, không còn cụm dính sát nhau):
-     - **Tâm Liên Hồ (Hồ sen)**: dời ra `(-16.0, 3.0)` (cách đường chính gần `12m`).
-     - **Gác chuông**: dời ra `(-22.0, -9.0)` (tách thoáng `9.4m` khỏi mái hiên Chính điện).
-     - **Vườn Lâm Tỳ Ni – Lễ đài Tắm Phật**: dời ra `(-28.0, -24.0)` (tách thoáng `11.4m` khỏi Chính điện và `7.5m` khỏi Gác chuông).
-     - **Cây đa Bách Linh**: dời ra `(22.0, 8.0)` (tách thoáng khỏi hành lang Đông và Chính điện).
-     - **Cổng & Vườn Lộc Uyển**: cổng dời ra `x = 20.0`, thảm cỏ và luống rau ở `x = 23.4..31.0` (`(27.5, -20.0)`).
-     - **Nhà trà – Hiên đọc**: dời ra `(36.5, -18.5)` (`x = 33.0..40.0`, tách biệt hẳn với khu luống rau).
-   - **Bổ sung hệ thống biển hiệu gỗ truyền thống** (hai trụ gỗ lim trên chân tảng đá, bảng gỗ chữ vàng chạm khắc 2 mặt, mái ngói mũi hài che mưa nắng):
-     - Biển hiệu **“Cây đa Bách Linh”** tại lối vào sân đa `(18.2, 11.2)`.
-     - Biển hiệu **“Tâm Liên Hồ”** tại bờ đông nam hồ sen `(-13.2, 7.8)`.
-     - Biển hiệu **“Vườn Lộc Uyển”** tại lối vào cổng vườn `(18.4, -7.6)` kèm bức hoành **“Vườn Lộc Uyển”** trên xà cổng `(20.0, -10.0)`.
+1. **Chọn giới tính & 2 hình mẫu nhân vật Phật tử đi chùa (`Player.tsx`, `controls.ts`, `app/page.tsx`)**:
+   - Bổ sung chọn nhân vật **Nữ Phật tử** hoặc **Nam Phật tử** ngay tại màn hình chào mừng trước khi bước vào chùa (bên dưới ô nhập tên) và trong hộp thoại **Cài đặt** (lưu `localStorage`).
+   - **Nữ Phật tử (`female`)**: Áo lam cổ tàu vạt chéo cài 5 nút vải trắng ngà, huy hiệu hoa sen hồng thêu ngực trái, tà áo xẻ nhẹ, quần lam ống suông, giày vải, chuỗi hạt gỗ trầm, tóc búi gọn cài trâm gỗ.
+   - **Nam Phật tử (`male`)**: Dáng vai rộng, Bộ đồ lam cư sĩ nam màu lam xám trầm (`#4d6276`), cổ tàu, nẹp thẳng chính giữa ngực cài 5 nút vải trắng ngà, 2 túi áo cư sĩ đắp nổi phía dưới vạt trước, quần lam sẫm, giày vải, chuỗi hạt gỗ trầm, mái tóc nam cắt ngắn gọn gàng.
 
-2. **Xử lý triệt để các mảng đất và chi tiết chồng chéo (Z-fighting & Geometry overlap)**:
-   - Tách cao độ nền sân gạch (`y = 0.02`), nền sân Lâm Tỳ Ni (`y = 0.03` kèm bó vỉa đá `y = 0.045`), thảm cỏ vườn sau (`y = 0.03` thu gọn `x: 17.4..23.8, z: -25.0..-11.8` kèm bó vỉa đá, không còn tràn dưới nền Nhà trà hay trùng cao độ với đường đá `y = 0.04`).
-   - Chuẩn hóa đường đá trung tâm dừng trước Lư hương (không đâm xuyên dưới lư hương và bậc thềm Chính điện), bỏ các phiến đá tròn thừa đè lên đá viền Hồ sen, chỉnh bậc đá bờ hồ và cột rễ phụ cây đa không lấn lối đi.
+2. **Vào Chính điện tự động đi chậm & Thông báo giải thích ý nghĩa (`Player.tsx`, `app/page.tsx`)**:
+   - Khi bước qua cửa vào trong Chính điện (`isInHall`), nhân vật tự động giảm tốc độ còn `~52%` với nhịp bước khoan thai, nhẹ nhàng.
+   - Hiển thị thông báo khi bước vào Chính điện kèm thanh trạng thái **“🙏 Trong Chính điện: Đang đi chậm rãi, nhẹ bước — Vì sao?”** mở hộp thoại giải thích văn hóa đi chùa truyền thống Việt Nam (*“Đi nhẹ bước êm, nói khẽ mỉm cười”* để giữ sự thanh tịnh nơi thờ Tam Bảo và không làm động tâm người đang lễ bái, tọa thiền).
 
-3. **Tôn tượng Thái tử Tất Đạt Đa đản sinh tại Lễ đài Tắm Phật (`Lumbini.tsx`, `app/page.tsx`)**:
-   - Bổ sung tôn tượng **Thái tử Tất Đạt Đa sơ sinh (Đức Phật Thích Ca Mâu Ni lúc đản sinh)** bằng đồng thếp vàng trang nghiêm đứng trên đài sen giữa bồn nước hoa sen tại Vườn Lâm Tỳ Ni, đúng truyền thống Phật giáo Bắc tông Việt Nam: mình trần đeo kiềng vàng, quấn xiêm y xếp nếp chạm hoa văn, **tay trái chỉ lên trời (chỉ thiên), tay phải chỉ xuống đất (chỉ địa)**, diện mạo từ hòa, nhục髻 (ushnisha) và vòng hào quang phía sau.
-   - Tinh chỉnh quỹ đạo gáo nước và dòng nước thơm rưới nhẹ nhàng từ phía trên tôn tượng Thái tử chảy về bồn sen.
+3. **Khớp chân 2 đoạn (Đùi + Cẳng chân) — Sửa triệt để lỗi ngồi ghế bay lơ lửng & Cải thiện Quỳ lễ, Ngồi thiền, Vái Phật (`Player.tsx`)**:
+   - Thiết kế lại chân nhân vật gồm 2 khớp nối tại đầu gối (`legL/R` tại hông + `shinL/R` tại gối), **bỏ hoàn toàn việc ép `body.scale.y`** (vốn làm bẹp đầu và thân nhân vật trước đây).
+   - **Ngồi ghế đá / ghế gỗ hành lang / ghế bàn trà ngoài trời**: Hông hạ đúng cao độ mặt ghế (`poseDrop = -0.40m` cho ghế đá/gỗ, `-0.30m` cho ghế Nhà trà), đùi đặt ngang trên mặt ghế, cẳng chân gập vuông góc buông xuống để bàn chân chạm đất tự nhiên — không còn lơ lửng trên không.
+   - **Ngồi tĩnh tâm trong Chính điện**: Ngồi xếp bằng (kiết già / bán già) sát trên đệm tọa cụ (`poseDrop = -0.68m`), hai tay chắp búp sen trước ngực.
+   - **Quỳ lễ & Vái Phật trong Chính điện**: Đầu gối chạm đệm tọa cụ, cẳng chân duỗi gập ra sau áp mặt chiếu (`poseDrop = -0.42m`), hai tay chắp búp sen nâng nhẹ lên trán kết hợp nhịp **cúi mình vái lễ Tam Bảo** êm dịu theo chu kỳ.
 
-4. **Trang phục nhân vật — Bộ đồ lam đi chùa (`Player.tsx`, `RemotePlayers.tsx`)**:
-   - Thiết kế lại nhân vật chính và khách cùng phòng trong trang phục **Bộ đồ lam Phật tử đi chùa**: áo lam cổ tàu truyền thống, nẹp áo vạt chéo cài 5 nút vải trắng ngà, huy hiệu hoa sen thêu ngực trái và họa tiết sen sau lưng, quần lam ống suông, giày vải đế trắng ngà, vòng chuỗi hạt gỗ trầm nơi cổ tay, đầu trần tóc búi gọn cài trâm gỗ (bỏ nón lá trong khuôn viên chùa).
+4. **Animation Quét lá đa, Cầm gáo tưới cây & Thả cá phóng sinh (`Player.tsx`, `Grounds.tsx`, `Pond.tsx`, `app/page.tsx`)**:
+   - **Quét lá đa (`Grounds.tsx`, `Player.tsx`)**: Thay chuyển động chọc chổi trước-sau cũ bằng **động tác hai tay nắm cán chổi tre đưa ngang từ phải sang trái (`latArc`)** kết hợp xoay nhẹ eo và vai như quét sân thật.
+   - **Cầm gáo đi tưới cây (`Player.tsx`, `Grounds.tsx`, `app/page.tsx`)**: Khi ấn *Múc nước*, chiếc gáo gỗ đầy nước tại luống cạn sẽ gắn trực tiếp vào bàn tay phải để người Phật tử **cầm gáo nước đi bộ** tới luống rau; khi ấn *Tưới rau*, nhân vật nghiêng gáo đưa qua lại tưới dòng nước mát kèm thanh tiến trình trực quan.
+   - **Thả cá phóng sinh & Vẽ lại cá chép Koi (`Pond.tsx`, `Player.tsx`, `app/page.tsx`)**:
+     - Khi ấn thả `1`, `2` hoặc `3` chú cá, nhân vật đứng bên bờ hồ hơi khuỵu gối, hai tay nâng **bát sành đựng cá phóng sinh** nghiêng nhẹ xuống mặt hồ; **đúng số lượng cá chép (`1`, `2` hoặc `3` con)** phóng theo đường vòng cung nước từ bát xuống hồ tạo vòng sóng lan tỏa rồi nhập vào đàn cá bơi trong hồ.
+     - Vẽ lại mô hình **cá chép Koi** đa đốt thân uốn lượn mềm mại, đầu bo tròn có đôi râu cá chép, mắt viền vàng, vây lưng, đôi vây ngực quạt nước và đuôi kép xòe quạt.
+
+5. **Thiết kế lại Lư hương đồng trước Chính điện & Lùi vị trí hợp lý (`IncenseBurner.tsx`, `controls.ts`, `World.tsx`)**:
+   - Dời vị trí lư hương lùi nhẹ về phía thềm Chính điện (`z = -2.65`, trước đây `z = -2.2`) để lối đi ngang sân trước thoáng đãng mà vẫn giữ đúng vị trí truyền thống trước cửa Tam Bảo.
+   - Dựng lại mô hình **Đỉnh đồng / Lư hương 3 chân hổ phù** trên bệ đá xanh chạm sen 3 cấp, bầu lư đồng hun tròn chạm nổi lưỡng long chầu mặt nguyệt, đôi tai lư vân mây uốn cong, lớp tro hương mịn và chân nhang đỏ.
+
+6. **Thêm 2 Chú Tiểu đi kinh hành quanh chùa & Trò chuyện tương tác (`NoviceMonks.tsx`, `World.tsx`, `app/page.tsx`)**:
+   - Bổ sung **Chú tiểu Tâm An** (đi kinh hành khu vực sân Tây, Tâm Liên Hồ, Gác Chuông, Vườn Lâm Tỳ Ni) và **Chú tiểu Tâm Minh** (đi kinh hành khu vực sân Đông, Cây đa Bách Linh, Vườn Lộc Uyển, Nhà Trà).
+   - Khi người chơi đến gần (`< 3.0m`) hoặc chạm vào chú tiểu, chú tiểu dừng bước, xoay người hướng về phía Phật tử, chắp tay xá chào và mở hộp thoại trò chuyện:
+     1. *Quy tắc & nét đẹp khi đi chùa thật* (cách đi cổng Tam Quan, bước qua bậu cửa gỗ, thắp hương vừa đủ, giữ oai nghi).
+     2. *Một ngày tu học ở chùa của chú tiểu* (công phu khuya, chấp tác quét lá, tưới rau, học kinh).
+     3. *Xin một lời nhắn nhủ bình an hôm nay* (lời nhắc chánh niệm, hiếu kính cha mẹ — có thể lưu vào Sổ cầu an).
+     4. *Nhờ chú tiểu chỉ đường* đến từng khu vực trong chùa.
+
+7. **Sửa bảng tên không bị cột gỗ che chữ & Tối ưu tốc độ hiển thị cảnh nền lúc mới vào (`Grounds.tsx`, `Lumbini.tsx`, `World.tsx`)**:
+   - Đưa 2 trụ gỗ của toàn bộ biển hiệu (*Cây đa Bách Linh*, *Tâm Liên Hồ*, *Vườn Lộc Uyển*, *Vườn Lâm Tỳ Ni*) ra ngoài mép bảng chữ (`postX = width * 0.5 + 0.14`) để không che khuất bất kỳ nét chữ nào.
+   - Bọc riêng `<GuanyinGLB />` trong `<Suspense fallback={null}>` tại `World.tsx` để việc tải file GLB tượng Phật nghìn mắt nghìn tay trong điện không bao giờ chặn việc hiển thị ngay lập tức khung cảnh sân chùa, Cổng Tam Quan và bầu trời phía sau màn hình nhập tên.
 
 ## Build & chạy
 
@@ -33,7 +46,7 @@
 - Dev: `npm run dev`
 - Build tĩnh (bắt buộc có biến môi trường, không là MẤT multiplayer):
   `NEXT_PUBLIC_MULTIPLAYER_WS_URL=wss://chua-online-temple.hunganhz179.workers.dev/ws npm run build`
-- Test nhanh: `node test-v2-unit.js` (109 kiểm tra) + `npx tsc --noEmit` + build.
+- Test nhanh: `node test-v2-unit.js` (116 kiểm tra) + `npx tsc --noEmit` + build.
 
 ## 2026-11-04: repo chuyển sang public, Vercel tự deploy
 - Repo `haianhant/chua-online` chuyển từ private sang public lúc ~16:50 ngày 2026-11-04 (user tự đổi trong Settings) để Vercel gói Hobby deploy được commit của collaborator.

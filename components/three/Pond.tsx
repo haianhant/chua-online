@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { LAYOUT } from './controls';
+import { LAYOUT, releaseState } from './controls';
 
 /**
  * Lotus pond + koi release.
@@ -125,18 +125,20 @@ function Ripple({ x, z, onDone }: { x: number; z: number; onDone: () => void }) 
 
 function Koi({ fish, spawn }: { fish: Fish; spawn: { x: number; z: number } }) {
   const group = useRef<THREE.Group>(null);
+  const midRef = useRef<THREE.Group>(null);
   const tail = useRef<THREE.Group>(null);
+  const pectL = useRef<THREE.Mesh>(null);
+  const pectR = useRef<THREE.Mesh>(null);
   const state = useRef({
     x: spawn.x, z: spawn.z,
     heading: Math.atan2(POND_CENTER.x - spawn.x, POND_CENTER.z - spawn.z),
     target: { x: POND_CENTER.x, z: POND_CENTER.z },
     speed: 0.55 + (fish.seed % 5) * 0.06,
-    depth: -0.14,
+    depth: -0.12,
   });
   const pal = PALETTE[fish.colorIdx % PALETTE.length];
 
   const pickTarget = () => {
-    // Random point inside the pond ellipse, with margin from the bank.
     const a = Math.random() * Math.PI * 2;
     const r = Math.sqrt(Math.random()) * 0.78;
     return { x: POND_CENTER.x + Math.cos(a) * POND_RX * r, z: POND_CENTER.z + Math.sin(a) * POND_RZ * r };
@@ -152,8 +154,6 @@ function Koi({ fish, spawn }: { fish: Fish; spawn: { x: number; z: number } }) {
     const d = Math.hypot(dx, dz);
     if (d < 0.4) s.target = pickTarget();
     else {
-      // Smooth steering: turn at most ~1.4 rad/s, so the fish never
-      // snaps its head around.
       const want = Math.atan2(dx, dz);
       let diff = want - s.heading;
       while (diff > Math.PI) diff -= Math.PI * 2;
@@ -164,56 +164,241 @@ function Koi({ fish, spawn }: { fish: Fish; spawn: { x: number; z: number } }) {
       s.z += Math.cos(s.heading) * s.speed * dt;
     }
     const t = clock.getElapsedTime();
-    // Dive from the surface after release, then stay just below it.
     const age = (Date.now() - fish.born) / 1000;
-    const depth = age < 1 ? 0.05 - age * 0.19 : -0.14 + Math.sin(t * 1.6 + fish.seed) * 0.02;
+    const depth = age < 1 ? 0.05 - age * 0.17 : -0.12 + Math.sin(t * 1.6 + fish.seed) * 0.02;
     s.depth = depth;
     g.position.set(s.x, depth, s.z);
     g.rotation.y = s.heading;
     g.rotation.z = Math.sin(t * 1.6 + fish.seed) * 0.04;
-    if (tail.current) tail.current.rotation.y = Math.sin(t * 7 + fish.seed * 2) * 0.5;
+    const wave = Math.sin(t * 7.2 + fish.seed * 2);
+    if (midRef.current) midRef.current.rotation.y = wave * 0.22;
+    if (tail.current) tail.current.rotation.y = Math.sin(t * 7.2 + fish.seed * 2 - 0.8) * 0.48;
+    if (pectL.current) pectL.current.rotation.z = -0.45 + Math.sin(t * 4.5 + fish.seed) * 0.15;
+    if (pectR.current) pectR.current.rotation.z = 0.45 - Math.sin(t * 4.5 + fish.seed) * 0.15;
   });
 
   return (
-    <group ref={group} position={[spawn.x, 0.05, spawn.z]}>
-      {/* Body: elongated sphere, not a box — smooth koi silhouette. */}
-      <mesh castShadow scale={[1, 0.65, 2.2]}>
-        <sphereGeometry args={[0.32, 20, 16]} />
-        <meshStandardMaterial color={pal.body} roughness={0.45} />
+    <group ref={group} position={[spawn.x, 0.05, spawn.z]} scale={0.78}>
+      {/* Đầu & mình trước cá chép Koi thuôn mượt (Fore-body & rounded head) */}
+      <mesh castShadow position={[0, 0, 0.12]} scale={[0.82, 0.62, 1.55]}>
+        <sphereGeometry args={[0.28, 20, 16]} />
+        <meshStandardMaterial color={pal.body} roughness={0.32} metalness={0.08} />
       </mesh>
-      {/* Red head patch on the white variant only. */}
+      {/* Mõm cá tròn đầy & đôi râu cá chép (Snout & Koi barbels) */}
+      <mesh position={[0, -0.02, 0.48]} scale={[0.68, 0.48, 0.72]}>
+        <sphereGeometry args={[0.17, 14, 12]} />
+        <meshStandardMaterial color={pal.body} roughness={0.35} />
+      </mesh>
+      {[-1, 1].map((side) => (
+        <mesh key={`barbel-${side}`} position={[side * 0.09, -0.05, 0.56]} rotation={[0.5, 0, side * 0.45]}>
+          <cylinderGeometry args={[0.006, 0.012, 0.11, 6]} />
+          <meshStandardMaterial color={pal.tail} roughness={0.5} />
+        </mesh>
+      ))}
+      {/* Đốm đỏ Kohaku trên đỉnh đầu & lưng (Koi markings) */}
       {pal.patch && (
-        <mesh position={[0, 0.1, 0.22]} rotation={[0.4, 0, 0]}>
-          <sphereGeometry args={[0.14, 12, 12]} />
-          <meshStandardMaterial color="#d95d2e" roughness={0.5} />
-        </mesh>
+        <>
+          <mesh position={[0, 0.11, 0.28]} scale={[0.95, 0.48, 1.15]}>
+            <sphereGeometry args={[0.15, 14, 12]} />
+            <meshStandardMaterial color="#d94826" roughness={0.35} />
+          </mesh>
+          <mesh position={[0.03, 0.12, -0.04]} scale={[0.85, 0.45, 1.25]}>
+            <sphereGeometry args={[0.14, 14, 12]} />
+            <meshStandardMaterial color="#d94826" roughness={0.35} />
+          </mesh>
+        </>
       )}
-      {/* Dorsal fin */}
-      <mesh position={[0, 0.18, -0.05]} rotation={[0, 0, 0]}>
-        <boxGeometry args={[0.04, 0.18, 0.3]} />
-        <meshStandardMaterial color={pal.tail} roughness={0.6} />
+      {/* Vây lưng uốn lượn mềm mại (Sculpted dorsal fin) */}
+      <mesh position={[0, 0.19, -0.02]} rotation={[-0.28, 0, 0]} scale={[0.14, 0.75, 1.35]}>
+        <sphereGeometry args={[0.15, 12, 10]} />
+        <meshStandardMaterial color={pal.tail} roughness={0.45} transparent opacity={0.92} />
       </mesh>
-      {/* Pectoral fins */}
+      {/* Đôi vây ngực xòe quạt hai bên (Fan-shaped pectoral fins) */}
       {[-1, 1].map((side) => (
-        <mesh key={side} position={[side * 0.3, -0.05, 0.25]} rotation={[0, 0, side * 0.6]}>
-          <boxGeometry args={[0.22, 0.03, 0.18]} />
-          <meshStandardMaterial color={pal.tail} roughness={0.6} />
+        <mesh
+          key={`pect-${side}`}
+          ref={side < 0 ? pectL : pectR}
+          position={[side * 0.22, -0.05, 0.20]}
+          rotation={[0.2, side * -0.35, side * 0.45]}
+          scale={[1.15, 0.12, 0.78]}
+        >
+          <sphereGeometry args={[0.16, 12, 10]} />
+          <meshStandardMaterial color={pal.tail} roughness={0.45} transparent opacity={0.9} />
         </mesh>
       ))}
-      {/* Tail, wagged in useFrame */}
-      <group ref={tail} position={[0, 0, -0.55]}>
-        <mesh position={[0, 0, -0.22]} rotation={[0, 0, 0]}>
-          <boxGeometry args={[0.05, 0.3, 0.45]} />
-          <meshStandardMaterial color={pal.tail} roughness={0.6} />
+      {/* Đôi mắt cá chép sáng có viền ánh kim */}
+      {[-1, 1].map((side) => (
+        <group key={`eye-${side}`} position={[side * 0.185, 0.055, 0.40]}>
+          <mesh>
+            <sphereGeometry args={[0.038, 10, 10]} />
+            <meshStandardMaterial color="#f5d77f" roughness={0.3} />
+          </mesh>
+          <mesh position={[side * 0.012, 0, 0.01]}>
+            <sphereGeometry args={[0.026, 8, 8]} />
+            <meshStandardMaterial color="#151515" roughness={0.2} />
+          </mesh>
+        </group>
+      ))}
+      {/* Phần thân sau & cuống đuôi uốn lượn chữ S (Mid-body & caudal peduncle) */}
+      <group ref={midRef} position={[0, 0, -0.18]}>
+        <mesh castShadow position={[0, 0, -0.12]} scale={[0.62, 0.50, 1.15]}>
+          <sphereGeometry args={[0.22, 16, 14]} />
+          <meshStandardMaterial color={pal.body} roughness={0.34} />
         </mesh>
+        {/* Vây bụng nhỏ */}
+        {[-1, 1].map((side) => (
+          <mesh
+            key={`pelv-${side}`}
+            position={[side * 0.11, -0.09, -0.06]}
+            rotation={[0.3, 0, side * 0.5]}
+            scale={[0.7, 0.1, 0.55]}
+          >
+            <sphereGeometry args={[0.12, 10, 8]} />
+            <meshStandardMaterial color={pal.tail} roughness={0.5} transparent opacity={0.88} />
+          </mesh>
+        ))}
+        {/* Vây đuôi chẻ đôi xòe rộng lượn sóng (Bilobed fan tail fin) */}
+        <group ref={tail} position={[0, 0, -0.32]}>
+          {/* Thùy đuôi trên */}
+          <mesh position={[0, 0.07, -0.18]} rotation={[0.38, 0, 0]} scale={[0.14, 0.68, 1.35]}>
+            <sphereGeometry args={[0.17, 12, 10]} />
+            <meshStandardMaterial color={pal.tail} roughness={0.42} transparent opacity={0.9} />
+          </mesh>
+          {/* Thùy đuôi dưới */}
+          <mesh position={[0, -0.06, -0.17]} rotation={[-0.36, 0, 0]} scale={[0.14, 0.62, 1.25]}>
+            <sphereGeometry args={[0.16, 12, 10]} />
+            <meshStandardMaterial color={pal.tail} roughness={0.42} transparent opacity={0.9} />
+          </mesh>
+        </group>
       </group>
-      {/* Eyes */}
-      {[-1, 1].map((side) => (
-        <mesh key={side} position={[side * 0.24, 0.08, 0.55]}>
-          <sphereGeometry args={[0.045, 8, 8]} />
-          <meshStandardMaterial color="#1a1a1a" roughness={0.4} />
-        </mesh>
-      ))}
+    </group>
+  );
+}
+
+/**
+ * Hiệu ứng thả từng chú cá chép từ bát nước trên tay Phật tử nhảy nhẹ xuống Tâm Liên Hồ
+ * đúng với số lượng cá đã chọn (1, 2 hoặc 3 chú cá).
+ */
+function ReleasingFishArc() {
+  const arcGroup = useRef<THREE.Group>(null);
+  const fishRefs = useRef<Array<THREE.Group | null>>([null, null, null]);
+  const streamRef = useRef<THREE.Mesh>(null);
+  const splashRefs = useRef<Array<THREE.Mesh | null>>([null, null, null]);
+
+  useFrame(({ clock }) => {
+    const active = releaseState.phase === 'releasing';
+    if (arcGroup.current) arcGroup.current.visible = active;
+    if (!active) return;
+
+    const p = releaseState.progress; // 0..1 over ~3.8s
+    const count = releaseState.count;
+    const t = clock.getElapsedTime();
+
+    // Dòng nước nghiêng chảy từ bát phóng sinh xuống mặt hồ (p = 0.10..0.90)
+    if (streamRef.current) {
+      const showStream = p > 0.08 && p < 0.92;
+      streamRef.current.visible = showStream;
+      if (showStream) {
+        const sOp = p < 0.2 ? (p - 0.08) / 0.12 : p > 0.78 ? (0.92 - p) / 0.14 : 1;
+        (streamRef.current.material as THREE.MeshStandardMaterial).opacity = 0.58 * Math.max(0, Math.min(1, sOp));
+      }
+    }
+
+    // Điểm xuất phát từ bát trên tay người đứng ở bờ hồ (-11.1, 3.0) -> miệng bát (-11.68, 0.72, 3.0)
+    // Điểm chạm mặt nước hồ sen: (-12.95, 0.06, 3.0 + offset)
+    const startX = LAYOUT.pondApproach.x - 0.58;
+    const startY = 0.72;
+    const startZ = LAYOUT.pondApproach.z;
+    const endX = POND_CENTER.x + POND_RX - 0.45;
+    const endY = 0.04;
+
+    for (let i = 0; i < 3; i++) {
+      const fg = fishRefs.current[i];
+      const sp = splashRefs.current[i];
+      if (!fg || !sp) continue;
+      if (i >= count) {
+        fg.visible = false;
+        sp.visible = false;
+        continue;
+      }
+      // Stagger mỗi chú cá phóng sinh cách nhau một nhịp nhẹ nhàng
+      const windowStart = 0.14 + i * 0.22;
+      const windowEnd = windowStart + 0.38;
+      const zOff = count === 1 ? 0 : (i - (count - 1) / 2) * 0.26;
+      if (p >= windowStart && p <= windowEnd) {
+        fg.visible = true;
+        const k = (p - windowStart) / (windowEnd - windowStart);
+        const fx = startX + (endX - startX) * k;
+        // Quỹ đạo parabol mềm mại từ miệng bát lao nhẹ xuống mặt hồ
+        const fy = startY * (1 - k) + endY * k + Math.sin(k * Math.PI) * 0.28;
+        const fz = startZ + zOff * k;
+        fg.position.set(fx, fy, fz);
+        // Hướng đầu cá về phía tây (-Math.PI / 2) và chúc nhẹ xuống theo đường cong
+        fg.rotation.set(0.25 - k * 0.85, -Math.PI / 2, Math.sin(t * 14 + i) * 0.12);
+      } else {
+        fg.visible = false;
+      }
+
+      // Vòng sóng nước lan tỏa khi từng chú cá chạm mặt hồ
+      const splashStart = windowEnd - 0.05;
+      const splashEnd = splashStart + 0.28;
+      if (p >= splashStart && p <= splashEnd) {
+        sp.visible = true;
+        const sk = (p - splashStart) / (splashEnd - splashStart);
+        sp.position.set(endX, 0.09, startZ + zOff);
+        sp.scale.setScalar(0.35 + sk * 1.15);
+        (sp.material as THREE.MeshBasicMaterial).opacity = 0.65 * (1 - sk);
+      } else {
+        sp.visible = false;
+      }
+    }
+  });
+
+  return (
+    <group ref={arcGroup} visible={false}>
+      {/* Dòng nước trong từ bát nghiêng xuống hồ */}
+      <mesh
+        ref={streamRef}
+        position={[LAYOUT.pondApproach.x - 1.05, 0.40, LAYOUT.pondApproach.z]}
+        rotation={[0, 0, 0.88]}
+      >
+        <cylinderGeometry args={[0.035, 0.075, 1.15, 12]} />
+        <meshStandardMaterial color="#8ecae6" transparent opacity={0.55} roughness={0.2} />
+      </mesh>
+      {/* Tối đa 3 chú cá chép phóng sinh bay ra từ bát nước đúng theo số lượng chọn */}
+      {[0, 1, 2].map((i) => {
+        const pal = PALETTE[i % PALETTE.length];
+        return (
+          <group key={`rel-fish-${i}`}>
+            <group ref={(el) => { fishRefs.current[i] = el; }} scale={0.58}>
+              <mesh castShadow position={[0, 0, 0.1]} scale={[0.8, 0.6, 1.5]}>
+                <sphereGeometry args={[0.26, 16, 12]} />
+                <meshStandardMaterial color={pal.body} roughness={0.32} />
+              </mesh>
+              <mesh position={[0, 0.16, -0.02]} rotation={[-0.28, 0, 0]} scale={[0.14, 0.7, 1.2]}>
+                <sphereGeometry args={[0.14, 10, 8]} />
+                <meshStandardMaterial color={pal.tail} roughness={0.45} />
+              </mesh>
+              <mesh position={[0, 0.04, -0.38]} rotation={[0.32, 0, 0]} scale={[0.14, 0.7, 1.3]}>
+                <sphereGeometry args={[0.16, 10, 8]} />
+                <meshStandardMaterial color={pal.tail} roughness={0.45} />
+              </mesh>
+              <mesh position={[0, -0.04, -0.38]} rotation={[-0.32, 0, 0]} scale={[0.14, 0.65, 1.2]}>
+                <sphereGeometry args={[0.15, 10, 8]} />
+                <meshStandardMaterial color={pal.tail} roughness={0.45} />
+              </mesh>
+            </group>
+            <mesh
+              ref={(el) => { splashRefs.current[i] = el; }}
+              rotation={[-Math.PI / 2, 0, 0]}
+              visible={false}
+            >
+              <ringGeometry args={[0.18, 0.28, 24]} />
+              <meshBasicMaterial color="#ffffff" transparent opacity={0.65} depthWrite={false} />
+            </mesh>
+          </group>
+        );
+      })}
     </group>
   );
 }
@@ -345,6 +530,8 @@ export default function LotusPond({ spawnTick, spawnCount, remoteTick, onFishCou
       {fish.map((f) => (
         <Koi key={f.id} fish={f} spawn={spawnPoint} />
       ))}
+      {/* Parabolic release arc when the devotee releases 1..3 Koi into Tâm Liên Hồ */}
+      <ReleasingFishArc />
     </group>
   );
 }

@@ -5,6 +5,50 @@
  */
 
 export type CameraMode = 'menu' | 'intro' | 'follow' | 'burner' | 'chant' | 'sweep';
+export type PlayerGender = 'female' | 'male';
+
+/** Watering ritual (MÚC NƯỚC & TƯỚI CÂY, Vườn Lộc Uyển) shared state. */
+export type WaterPhase = 'idle' | 'scooping' | 'carrying' | 'watering';
+export const waterState = {
+  phase: 'idle' as WaterPhase,
+  /** 0..1 during watering (5s sequence). */
+  progress: 0,
+  /** 0..1 within current pour swing. */
+  pourT: 0,
+};
+
+/** Fish release ritual (THẢ CÁ PHÓNG SINH, Tâm Liên Hồ) shared state. */
+export type ReleasePhase = 'idle' | 'releasing';
+export const releaseState = {
+  phase: 'idle' as ReleasePhase,
+  count: 1 as 1 | 2 | 3,
+  /** 0..1 across the 4.2s release animation. */
+  progress: 0,
+};
+
+/** Two novice monks (2 Chú Tiểu) walking around the temple grounds. */
+export type MonkId = 'taman' | 'tamminh';
+export const monksState: Record<
+  MonkId,
+  { x: number; z: number; facing: number; name: string; title: string; talking: boolean }
+> = {
+  taman: {
+    x: -6.5,
+    z: 3.5,
+    facing: 0,
+    name: 'Chú tiểu Tâm An',
+    title: 'Chú tiểu tri khách · Khuôn viên Tây & Chính điện',
+    talking: false,
+  },
+  tamminh: {
+    x: 7.5,
+    z: 5.5,
+    facing: 0,
+    name: 'Chú tiểu Tâm Minh',
+    title: 'Chú tiểu chấp tác · Sân đa & Vườn Lộc Uyển',
+    talking: false,
+  },
+};
 
 /** Sweep (QUÉT LÁ ĐA) shared timeline state. The 3D loop (Grounds)
  * owns the timeline; the page only reads it for UI / movement lock
@@ -65,6 +109,10 @@ export const controls = {
   waypoints: [] as Array<{ x: number; z: number }>,
   mode: 'menu' as CameraMode,
   pose: 'stand' as 'stand' | 'sit' | 'pray' | 'kneel',
+  gender: 'female' as PlayerGender,
+  /** Active seat ID when sitting on a mat/bench/chair, so Player.tsx
+      can apply exact seat-height offset without floating. */
+  seatId: '' as string,
   /** Facing angle (atan2(x, z)) to turn to while sitting/kneeling.
       Hall seats face north (PI); lake seats face the water (west). */
   sitFacing: Math.PI,
@@ -83,8 +131,8 @@ export const controls = {
  *  These numbers MUST match Temple.tsx / Grounds.tsx. */
 export const LAYOUT = {
   spawn: { x: 0, z: 17.5 },
-  burner: { x: 0, z: -2.2 },
-  burnerApproach: { x: 0, z: 0.4 },
+  burner: { x: 0, z: -2.65 },
+  burnerApproach: { x: 0, z: -0.4 },
   chantPavilion: { x: 0, z: -10 }, // chanting spot: central aisle inside the hall, facing the main altar (Guanyin)
   chantApproach: { x: 0, z: -9 },
   /** Lotus pond (Tâm Liên Hồ, west side, spread out from central path) + the bank where you stand to release fish. */
@@ -278,8 +326,8 @@ export const COLLIDERS: Collider[] = [
   { kind: 'circle', x: -1.4, z: 13, r: 0.5 },
   { kind: 'circle', x: 1.4, z: 13, r: 0.5 },
   { kind: 'circle', x: 3.6, z: 13, r: 0.5 },
-  // Incense burner
-  { kind: 'circle', x: 0, z: -2.2, r: 1.05 },
+  // Incense burner (moved slightly north to z -2.65 so it sits right before the hall steps without blocking courtyard traffic)
+  { kind: 'circle', x: 0, z: -2.65, r: 0.88 },
   // Lotus pond (Tâm Liên Hồ, moved west to (-16.0, 3.0))
   { kind: 'circle', x: -16.0, z: 3.0, r: 3.6 },
   { kind: 'circle', x: 8.5, z: 3.5, r: 0.7 }, // courtyard tree (front-east)

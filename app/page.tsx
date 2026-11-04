@@ -2,7 +2,22 @@
 
 import dynamic from 'next/dynamic';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { controls, LAYOUT, SEATS, sweepState, bathState, type Seat, type SweepPhase, type BathPhase } from '@/components/three/controls';
+import {
+  controls,
+  LAYOUT,
+  SEATS,
+  isInHall,
+  sweepState,
+  bathState,
+  waterState,
+  releaseState,
+  monksState,
+  type Seat,
+  type SweepPhase,
+  type BathPhase,
+  type PlayerGender,
+  type MonkId,
+} from '@/components/three/controls';
 import ChantPanel, { type ChantMode } from '@/components/ui/ChantPanel';
 import type { ChantItem } from '@/lib/chanting';
 import { multiplayer, getSessionId, guestName, getStoredWsUrl, setStoredWsUrl, getSolo, setSolo, type MpStatus } from '@/lib/multiplayer';
@@ -46,6 +61,7 @@ type Ritual = 'none' | 'choosing' | 'offering' | 'done';
 
 const PRAYERS_KEY = 'thien-vien-prayers';
 const NAME_KEY = 'thien-vien-name';
+const GENDER_KEY = 'thien-vien-gender';
 
 function loadPrayers(): Prayer[] {
   try {
@@ -60,17 +76,24 @@ export default function Home() {
   const [entered, setEntered] = useState(false);
   const [name, setName] = useState('');
   const [nameInput, setNameInput] = useState('');
+  const [gender, setGender] = useState<PlayerGender>('female');
   const [zone, setZone] = useState<'burner' | 'chant' | 'pond' | 'altar' | 'none'>('none');
   const zoneRef = useRef<'burner' | 'chant' | 'pond' | 'altar' | 'none'>('none');
   // Fish release (lotus pond)
   const [releaseOpen, setReleaseOpen] = useState(false);
+  const [releasingFish, setReleasingFish] = useState(false);
+  const [releasingCount, setReleasingCount] = useState(1);
+  const [releaseProgress, setReleaseProgress] = useState(0);
   const [spawnTick, setSpawnTick] = useState(0);
   const [spawnCount, setSpawnCount] = useState(1);
   const [fishCount, setFishCount] = useState(0);
   const [releaseMessage, setReleaseMessage] = useState('');
   const [remoteTick, setRemoteTick] = useState(0);
-  // Hall ritual: kneel / sit in front of the Guanyin statue.
+  // Hall ritual: kneel / sit in front of the Guanyin statue + slow-walk etiquette
   const [hallRitual, setHallRitual] = useState<'none' | 'sit' | 'kneel'>('none');
+  const [inHall, setInHall] = useState(false);
+  const inHallPrevRef = useRef(false);
+  const [hallWhyOpen, setHallWhyOpen] = useState(false);
   const [wishOpen, setWishOpen] = useState(false);
   const [wishText, setWishText] = useState('');
   const [wishChoice, setWishChoice] = useState('');
@@ -117,9 +140,13 @@ export default function Home() {
   const [seatedSeat, setSeatedSeat] = useState<Seat | null>(null);
   const [sitPending, setSitPending] = useState<Seat | null>(null);
   // Context action (nearest object, hysteresis in the poll below).
-  type Ctx = { kind: 'seat' | 'broom' | 'jar' | 'bed' | 'bell' | 'bath'; id: string; label: string };
+  type Ctx = { kind: 'seat' | 'broom' | 'jar' | 'bed' | 'bell' | 'bath' | 'monk'; id: string; label: string };
   const [ctxAction, setCtxAction] = useState<Ctx | null>(null);
   const ctxRef = useRef<Ctx | null>(null);
+  // 2 Chú tiểu đi quanh chùa (Novice monks interactive dialogue)
+  const [activeMonk, setActiveMonk] = useState<MonkId | null>(null);
+  const [monkTopic, setMonkTopic] = useState<'welcome' | 'etiquette' | 'daily' | 'blessing' | 'wayfinding'>('welcome');
+  const [monkBlessingIdx, setMonkBlessingIdx] = useState(0);
   // Sweep leaves (Request C, 2026-11-04): the timeline lives in
   // Grounds (sweepState); the page mirrors it for UI + movement
   // lock, and owns start / pause / resume / cancel. Leaf positions
@@ -157,6 +184,7 @@ export default function Home() {
   const [carryingWater, setCarryingWater] = useState(false);
   const [soilWet, setSoilWet] = useState(false);
   const [waterStream, setWaterStream] = useState(false);
+  const [waterProgress, setWaterProgress] = useState(0);
   const [waterCardOpen, setWaterCardOpen] = useState(false);
   // Mindful walk, bell, reading, map, info boards
   const [bellPlaying, setBellPlaying] = useState(false);
@@ -177,12 +205,25 @@ export default function Home() {
   const [knob, setKnob] = useState({ x: 0, y: 0 });
   const joyRef = useRef<HTMLDivElement | null>(null);
 
+  const changeGender = (g: PlayerGender) => {
+    setGender(g);
+    controls.gender = g;
+    try {
+      localStorage.setItem(GENDER_KEY, g);
+    } catch { /* ignore */ }
+  };
+
   useEffect(() => {
     const saved = localStorage.getItem(NAME_KEY);
     if (saved) {
       setName(saved);
       setNameInput(saved);
       setSettingsName(saved);
+    }
+    const savedGender = localStorage.getItem(GENDER_KEY);
+    if (savedGender === 'male' || savedGender === 'female') {
+      setGender(savedGender);
+      controls.gender = savedGender;
     }
     setPrayers(loadPrayers());
     setSoloMode(getSolo());
@@ -287,6 +328,19 @@ export default function Home() {
     setPrayers(next);
   };
 
+  const openMonkModal = (id: MonkId) => {
+    setActiveMonk(id);
+    setMonkTopic('welcome');
+    monksState.taman.talking = id === 'taman';
+    monksState.tamminh.talking = id === 'tamminh';
+  };
+
+  const closeMonkModal = () => {
+    setActiveMonk(null);
+    monksState.taman.talking = false;
+    monksState.tamminh.talking = false;
+  };
+
   // Camera mode + pose follow the current activity (intro is left alone
   // until CameraRig itself finishes the sweep and switches to follow).
   const canMove =
@@ -302,11 +356,16 @@ export default function Home() {
     !dedicationOpen &&
     !mobileMenuOpen &&
     !releaseOpen &&
+    !releasingFish &&
+    !waterStream &&
+    !activeMonk &&
+    !hallWhyOpen &&
     hallRitual === 'none' &&
     !seatedSeat &&
     !bellRinging;
 
   useEffect(() => {
+    controls.seatId = seatedSeat ? seatedSeat.id : '';
     if (!entered) {
       controls.mode = 'menu';
       return;
@@ -383,6 +442,7 @@ export default function Home() {
         setSettingsOpen(false); setHelpOpen(false); setBookOpen(false);
         setChantOpen(false); setReleaseOpen(false); setWishOpen(false);
         setMobileMenuOpen(false); setSweepWhyOpen(false); setWaterCardOpen(false);
+        setHallWhyOpen(false); closeMonkModal();
         return;
       }
       if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
@@ -488,6 +548,14 @@ export default function Home() {
       const px = controls.playerPos.x;
       const pz = controls.playerPos.z;
       setPlayerPos({ x: px, z: pz });
+      const insideHallNow = isInHall(px, pz);
+      if (insideHallNow !== inHallPrevRef.current) {
+        inHallPrevRef.current = insideHallNow;
+        setInHall(insideHallNow);
+        if (insideHallNow) {
+          showToast('🙏 Bước vào Chính điện — Đi nhẹ bước êm để giữ sự thanh tịnh, tôn nghiêm nơi thờ Phật.');
+        }
+      }
       if (sitPending) {
         if (Math.hypot(px - sitPending.x, pz - sitPending.z) < 0.45) {
           setSeatedSeat(sitPending);
@@ -576,27 +644,34 @@ export default function Home() {
       }
       {
         const d = Math.hypot(px - LAYOUT.waterJar.x, pz - LAYOUT.waterJar.z);
-        if (d < 1.6 && !carryingWater) candidates.push({ kind: 'jar', id: 'jar', label: 'Múc nước', d });
+        if (d < 1.8 && !carryingWater) candidates.push({ kind: 'jar', id: 'jar', label: 'Múc nước vào gáo', d });
       }
-      if (carryingWater) {
+      if (carryingWater && !waterStream) {
         const d = Math.hypot(px - LAYOUT.vegBed.x, pz - LAYOUT.vegBed.z);
-        if (d < 1.8) candidates.push({ kind: 'bed', id: 'bed', label: 'Tưới cây', d });
+        if (d < 2.4) candidates.push({ kind: 'bed', id: 'bed', label: 'Cầm gáo tưới rau', d });
       }
       {
         const d = Math.hypot(px - LAYOUT.bellTower.x, pz - LAYOUT.bellTower.z);
-        // Radius 3.0 (was 2.0): the new standing spot (-12,-5.5) is
-        // 2.69m from the tower centre, so 2.0 never triggered here.
         if (d < 3.0) candidates.push({ kind: 'bell', id: 'bell', label: 'Thỉnh chuông', d });
       }
-      // Bathing ritual (Request E): within 2.5m of the basin
-      // centre (-17,-19.5). The basin collider keeps the player
-      // ~1m out, so 2.5m is reachable from the ritual spot and
-      // the platform edge alike. Uses bathState directly (like
-      // the sweep), not the mirrored React state, so the prompt
-      // never goes stale between polls.
       if (bathState.phase === 'idle' && !bathPending) {
         const d = Math.hypot(px - LAYOUT.lumbiniBasin.x, pz - LAYOUT.lumbiniBasin.z);
         if (d < 2.5) candidates.push({ kind: 'bath', id: 'bath', label: 'Tắm Phật', d });
+      }
+      // 2 Chú tiểu đi quanh chùa: khi lại gần (< 3.0m) có thể bắt chuyện hỏi thăm
+      if (!activeMonk) {
+        for (const mId of ['taman', 'tamminh'] as const) {
+          const m = monksState[mId];
+          const d = Math.hypot(px - m.x, pz - m.z);
+          if (d < 3.0) {
+            candidates.push({
+              kind: 'monk',
+              id: mId,
+              label: `Trò chuyện cùng ${m.name}`,
+              d,
+            });
+          }
+        }
       }
       candidates.sort((a, b) => a.d - b.d);
       const best = candidates[0] ?? null;
@@ -614,17 +689,17 @@ export default function Home() {
     }, 200);
     return () => clearInterval(iv);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entered, sitPending, sweepPending, sweepDone, bathPending, seatedSeat, carryingWater]);
+  }, [entered, sitPending, sweepPending, sweepDone, bathPending, seatedSeat, carryingWater, waterStream, activeMonk]);
+
   const doCtxAction = () => {
     const a = ctxRef.current;
     if (!a) return;
     if (a.kind === 'seat') {
       const s = SEATS.find((x) => x.id === a.id);
       if (s) sitAtSeat(s);
+    } else if (a.kind === 'monk') {
+      openMonkModal(a.id as MonkId);
     } else if (a.kind === 'broom') {
-      // Request C auto flow (one click, 13s total): walk to the
-      // sweep spot first; the poll starts 'preparing' on arrival.
-      // If already at the spot, start at once.
       if (Math.hypot(controls.playerPos.x - LAYOUT.sweepSpot.x, controls.playerPos.z - LAYOUT.sweepSpot.z) < 0.45) {
         controls.sweepAutoWalk = false;
         sweepState.paused = false;
@@ -642,19 +717,32 @@ export default function Home() {
       }
     } else if (a.kind === 'jar') {
       setCarryingWater(true);
-      showToast('Đã múc một gáo nước — tới luống rau ở vườn sau để tưới.');
+      waterState.phase = 'carrying';
+      waterState.progress = 0;
+      showToast('🪣 Đã múc đầy một gáo nước gỗ — hãy cầm gáo bước tới luống rau Vườn Lộc Uyển để tưới.');
     } else if (a.kind === 'bed') {
       setWaterStream(true);
-      setTimeout(() => {
-        setWaterStream(false);
-        setSoilWet(true);
-        setCarryingWater(false);
-        setWaterCardOpen(true);
-      }, 3000);
+      setWaterProgress(0);
+      waterState.phase = 'watering';
+      waterState.progress = 0;
+      touchFlame();
+      const t0 = Date.now();
+      const dur = 4200;
+      const iv = setInterval(() => {
+        const k = Math.min(1, (Date.now() - t0) / dur);
+        waterState.progress = k;
+        waterState.pourT = k;
+        setWaterProgress(k);
+        if (k >= 1) {
+          clearInterval(iv);
+          setWaterStream(false);
+          waterState.phase = 'idle';
+          setSoilWet(true);
+          setCarryingWater(false);
+          setWaterCardOpen(true);
+        }
+      }, 60);
     } else if (a.kind === 'bath') {
-      // Request E flow (mirrors the broom flow): walk to the
-      // ritual spot first; the poll starts 'pray' on arrival.
-      // If already at the spot, start at once.
       if (Math.hypot(controls.playerPos.x - LAYOUT.lumbiniSpot.x, controls.playerPos.z - LAYOUT.lumbiniSpot.z) < 0.45) {
         controls.bathAutoWalk = false;
         controls.pose = 'pray';
@@ -669,12 +757,6 @@ export default function Home() {
         showToast('Đang đi đến lễ đài Tắm Phật…');
       }
     } else if (a.kind === 'bell') {
-      // Cooldown (5s) + ring lock (3s): no spam, no overlapping
-      // animations. Sound is the old bell.mp3 (3.5s decay, as before
-      // B — the 9s synth decay was too long and, with the mute check
-      // + delayed AudioContext, produced no sound at all on live).
-      // Bell sound plays even when background music is muted, as
-      // before B: the mute button only mutes background music.
       if (bellRinging || Date.now() < bellCooldownUntil.current) return;
       bellCooldownUntil.current = Date.now() + 5000;
       setBellRingSeq((s) => s + 1);
@@ -717,40 +799,28 @@ export default function Home() {
     setBathPhase('idle');
   };
   const goToZone = (zoneId: string) => {
-    // Leaving the area stops a running sweep first — no
-    // background animation after leaving.
     if (sweepState.phase !== 'idle') cancelSweep();
-    // Same for a running bath: the ladle returns to its rest
-    // spot (Lumbini resets on the transition to idle).
     if (bathState.phase !== 'idle') cancelBath();
     setMapOpen(false);
     const routes: Record<string, { target: { x: number; z: number }; via: Array<{ x: number; z: number }> }> = {
-      hall: { target: LAYOUT.altarSpot, via: [{ x: -2.5, z: 0.5 }, { x: -2.5, z: -4 }, { x: 0, z: -4 }, { x: 0, z: -9 }] },
+      hall: { target: LAYOUT.altarSpot, via: [{ x: -2.5, z: 0.5 }, { x: -2.5, z: -4.2 }, { x: 0, z: -4.2 }, { x: 0, z: -9 }] },
       burner: { target: LAYOUT.burnerApproach, via: [] },
-      chant: { target: LAYOUT.chantApproach, via: [{ x: -2.5, z: 0.5 }, { x: -2.5, z: -4 }, { x: 0, z: -4 }] },
+      chant: { target: LAYOUT.chantApproach, via: [{ x: -2.5, z: 0.5 }, { x: -2.5, z: -4.2 }, { x: 0, z: -4.2 }] },
       pond: { target: LAYOUT.pondApproach, via: [{ x: 0, z: 10 }, { x: -11.1, z: 10 }] },
       banyan: { target: LAYOUT.banyan, via: [{ x: 0, z: 10 }, { x: 14.5, z: 10 }, { x: 14.5, z: 8 }] },
       garden: { target: LAYOUT.garden, via: [{ x: 14.5, z: 2 }, { x: 14.5, z: -6 }, { x: 14.5, z: -10 }, { x: 20.0, z: -10 }, { x: 26.5, z: -10 }] },
       tea: { target: { x: 38.3, z: -17.7 }, via: [{ x: 14.5, z: 2 }, { x: 14.5, z: -6 }, { x: 14.5, z: -10 }, { x: 20.0, z: -10 }, { x: 26.5, z: -10 }, { x: 36.5, z: -10 }, { x: 36.5, z: -14.0 }, { x: 38.3, z: -14.0 }] },
-      bell: { target: { x: -22, z: -6.2 }, via: [{ x: -3.5, z: 1.5 }, { x: -3.5, z: -5 }, { x: -22, z: -5 }] }, // around the pond, never through it
+      bell: { target: { x: -22, z: -6.2 }, via: [{ x: -3.5, z: 1.5 }, { x: -3.5, z: -5 }, { x: -22, z: -5 }] },
       lumbini: { target: { ...LAYOUT.lumbiniSpot }, via: [{ x: -3.5, z: 1.5 }, { x: -3.5, z: -5 }, { x: -28, z: -5 }, { x: -28, z: -20.8 }] },
       gate: { target: { x: 0, z: 15 }, via: [] },
     };
     const r = routes[zoneId];
     if (r) {
-      // Starting inside the hall (2026-11-04): the hall's only
-      // exit is the doorway (x -1.7..1.7 at z -5.8) — the front
-      // and side walls meet in a solid corner, so a direct
-      // diagonal out wedges the player between the front wall and
-      // a door post (v3 froze at (7.33,-6.46); v4's creep reached
-      // the corner and stalled there). Stage out through the
-      // doorway first, then follow the normal route. Hall and
-      // chant targets are inside, so they keep their own staging.
       const px = controls.playerPos.x;
       const pz = controls.playerPos.z;
       const insideHall = px > -9.5 && px < 9.5 && pz > -26 && pz < -5.8;
       const via = insideHall && zoneId !== 'hall' && zoneId !== 'chant'
-        ? [{ x: 0, z: -4 }, ...r.via]
+        ? [{ x: 0, z: -4.2 }, ...r.via]
         : r.via;
       goTo(r.target, via);
     }
@@ -796,18 +866,45 @@ export default function Home() {
     }, 100);
   };
 
-  // Fish release: no money, no points, no saved history — just a
-  // gentle animation, a ripple, and a short blessing message.
+  // Fish release: player gently bends at the pond bank holding a terracotta
+  // bowl with both hands while the exact number of Koi (1, 2, or 3) leap
+  // along a parabolic water arc into Tâm Liên Hồ.
   const confirmRelease = (count: number, blessing: boolean) => {
+    const exactCount = (count >= 3 ? 3 : count === 2 ? 2 : 1) as 1 | 2 | 3;
     setReleaseOpen(false);
-    setSpawnCount(count);
-    setSpawnTick((t) => t + 1);
-    multiplayer.sendRelease();
-    const msg = blessing
-      ? `${name} vừa thả cá cầu bình an. Nguyện một niệm lành gửi theo làn nước.`
-      : 'Bạn đã thả cá xuống hồ sen. Chúc bạn thân tâm an yên.';
-    setReleaseMessage(msg);
-    setTimeout(() => setReleaseMessage(''), 7000);
+    setReleasingFish(true);
+    setReleasingCount(exactCount);
+    setReleaseProgress(0);
+    releaseState.count = exactCount;
+    releaseState.phase = 'releasing';
+    releaseState.progress = 0;
+    touchFlame();
+
+    let spawnedInPond = false;
+    const t0 = Date.now();
+    const dur = 3200;
+    const iv = setInterval(() => {
+      const k = Math.min(1, (Date.now() - t0) / dur);
+      releaseState.progress = k;
+      setReleaseProgress(k);
+      if (!spawnedInPond && k >= 0.52) {
+        spawnedInPond = true;
+        setSpawnCount(exactCount);
+        setSpawnTick((t) => t + 1);
+        multiplayer.sendRelease();
+      }
+      if (k >= 1) {
+        clearInterval(iv);
+        releaseState.phase = 'idle';
+        releaseState.progress = 0;
+        setReleasingFish(false);
+        const msg = blessing
+          ? `${name} vừa nhẹ tay thả ${exactCount} chú cá chép cầu bình an. Nguyện một niệm lành gửi theo làn nước.`
+          : `Bạn đã nhẹ tay thả ${exactCount} chú cá chép xuống Tâm Liên Hồ. Chúc bạn thân tâm an yên.`;
+        setReleaseMessage(msg);
+        setTimeout(() => setReleaseMessage(''), 7000);
+      }
+    }, 50);
   };
 
   const makeDedication = useCallback(
@@ -939,6 +1036,7 @@ export default function Home() {
         <World
           key={worldKey}
           name={name || 'Khách'}
+          gender={gender}
           entered={entered}
           canMove={canMove}
           bellRingSeq={bellRingSeq}
@@ -961,6 +1059,7 @@ export default function Home() {
           waterStream={waterStream}
           carryingWater={carryingWater}
           festivalOn={festivalOn}
+          onSelectMonk={openMonkModal}
         />
         </WorldErrorBoundary>
         ) : (
@@ -1254,7 +1353,7 @@ export default function Home() {
               ngồi niệm Phật và hồi hướng cho những người bạn thương.
             </p>
             <label className="mt-5 block text-left text-sm font-medium text-stone-700" htmlFor="visitor-name">
-              Tên của bạn
+              Tên hoặc Pháp danh của bạn
             </label>
             <input
               id="visitor-name"
@@ -1269,16 +1368,49 @@ export default function Home() {
               className="mt-1 w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-base outline-none focus:border-amber-700"
               autoFocus
             />
+            <p className="mt-4 text-left text-sm font-medium text-stone-700">
+              Chọn nhân vật & trang phục Phật tử
+            </p>
+            <div className="mt-1.5 grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => changeGender('female')}
+                className={`flex flex-col items-center rounded-2xl border px-3 py-3 text-center transition ${
+                  gender === 'female'
+                    ? 'border-amber-800 bg-amber-800 text-white shadow'
+                    : 'border-stone-300 bg-white text-stone-700 hover:border-amber-700/60'
+                }`}
+              >
+                <span className="text-sm font-semibold">👩 Nữ Phật tử</span>
+                <span className={`mt-0.5 text-[11px] ${gender === 'female' ? 'text-amber-100' : 'text-stone-500'}`}>
+                  Áo lam cổ tàu vạt chéo · tóc búi cài trâm
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => changeGender('male')}
+                className={`flex flex-col items-center rounded-2xl border px-3 py-3 text-center transition ${
+                  gender === 'male'
+                    ? 'border-amber-800 bg-amber-800 text-white shadow'
+                    : 'border-stone-300 bg-white text-stone-700 hover:border-amber-700/60'
+                }`}
+              >
+                <span className="text-sm font-semibold">👨 Nam Phật tử</span>
+                <span className={`mt-0.5 text-[11px] ${gender === 'male' ? 'text-amber-100' : 'text-stone-500'}`}>
+                  Đồ lam cư sĩ nẹp thẳng · tóc ngắn gọn gàng
+                </span>
+              </button>
+            </div>
             <button
               type="button"
               onClick={enterTemple}
-              className="mt-4 w-full rounded-full bg-amber-800 py-3.5 text-base font-medium text-white shadow hover:bg-amber-900"
+              className="mt-5 w-full rounded-full bg-amber-800 py-3.5 text-base font-medium text-white shadow hover:bg-amber-900"
             >
               Bước vào chùa
             </button>
             <p className="mt-2 text-xs text-amber-800">Khi vào chùa, bạn sẽ nghe nhạc tĩnh tâm. Có thể tắt bằng nút loa.</p>
             <p className="mt-3 text-xs text-stone-500">
-              Tên chỉ lưu trên thiết bị của bạn (localStorage), không cần tài khoản và không tự động công khai.
+              Tên và hình mẫu nhân vật chỉ lưu trên thiết bị của bạn (localStorage), không cần tài khoản và không tự động công khai.
               Khi phòng chung được bật, người khác chỉ thấy tên và nhân vật của bạn đi lại trong chùa — không thấy lời nguyện riêng.
             </p>
           </div>
@@ -1336,30 +1468,30 @@ export default function Home() {
       {releaseOpen && (
         <div className="absolute inset-0 z-30 flex items-end justify-center bg-black/25 p-4 sm:items-center">
           <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-3xl border border-amber-900/20 bg-[#fdf8ec] p-5 shadow-2xl">
-            <h2 className="font-serif text-xl font-semibold text-amber-900">Phóng sinh</h2>
+            <h2 className="font-serif text-xl font-semibold text-amber-900">Phóng sinh tại Tâm Liên Hồ</h2>
             <p className="mt-1 text-sm leading-relaxed text-stone-600">
-              Thả cá chép xuống hồ sen, gửi một niệm lành theo làn nước.
-              Cá chỉ bơi trong hồ này, không lưu lại, không tính điểm.
+              Hai tay nâng bát sành, nhẹ nhàng nghiêng bát thả đúng số lượng cá chép xuống hồ sen,
+              gửi một niệm lành theo làn nước mát.
             </p>
             <p className="mt-2 text-xs text-stone-500">Trải nghiệm mô phỏng — cá chỉ bơi trong hồ này, hồ chứa tối đa 18 con.</p>
             <div className="mt-4 grid grid-cols-3 gap-2">
-              {[1, 3, 5].map((n) => (
+              {[1, 2, 3].map((n) => (
                 <button
                   key={n}
                   type="button"
                   onClick={() => confirmRelease(n, false)}
-                  className="rounded-xl bg-amber-100 px-3 py-3 text-sm font-medium text-amber-900"
+                  className="rounded-xl bg-amber-100 px-3 py-3 text-sm font-medium text-amber-900 hover:bg-amber-200"
                 >
-                  Thả {n} con
+                  Thả {n} chú cá
                 </button>
               ))}
             </div>
             <button
               type="button"
               onClick={() => confirmRelease(3, true)}
-              className="mt-3 w-full rounded-full bg-amber-800 py-3 font-medium text-white"
+              className="mt-3 w-full rounded-full bg-amber-800 py-3 font-medium text-white shadow hover:bg-amber-900"
             >
-              🪷 Thả cá cầu bình an
+              🪷 Thả 3 chú cá chép cầu bình an
             </button>
             <button
               type="button"
@@ -1368,6 +1500,22 @@ export default function Home() {
             >
               Để sau
             </button>
+          </div>
+        </div>
+      )}
+      {entered && releasingFish && (
+        <div className="absolute bottom-28 left-1/2 z-30 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-3xl bg-[#fdf8ec] p-4 text-center shadow-2xl sm:bottom-24">
+          <p className="font-medium text-amber-900">
+            🐟 Đang nhẹ tay thả {releasingCount} chú cá chép xuống Tâm Liên Hồ…
+          </p>
+          <p className="mt-1 text-xs text-stone-600">
+            Nghiêng bát sành để đàn cá chép vẫy đuôi bơi vào làn nước mát.
+          </p>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-stone-200">
+            <div
+              className="h-full rounded-full bg-amber-800 transition-all duration-100"
+              style={{ width: `${Math.round(releaseProgress * 100)}%` }}
+            />
           </div>
         </div>
       )}
@@ -1572,6 +1720,31 @@ export default function Home() {
               onChange={(e) => setSettingsName(e.target.value)}
               className="mt-1 w-full rounded-xl border border-stone-300 px-3 py-2.5 text-sm"
             />
+            <p className="mt-4 text-sm font-medium text-stone-700">Hình mẫu nhân vật Phật tử</p>
+            <div className="mt-1.5 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => changeGender('female')}
+                className={`rounded-xl border px-3 py-2.5 text-xs font-medium transition ${
+                  gender === 'female'
+                    ? 'border-amber-800 bg-amber-800 text-white'
+                    : 'border-stone-300 bg-white text-stone-700'
+                }`}
+              >
+                👩 Nữ Phật tử (Áo lam nữ)
+              </button>
+              <button
+                type="button"
+                onClick={() => changeGender('male')}
+                className={`rounded-xl border px-3 py-2.5 text-xs font-medium transition ${
+                  gender === 'male'
+                    ? 'border-amber-800 bg-amber-800 text-white'
+                    : 'border-stone-300 bg-white text-stone-700'
+                }`}
+              >
+                👨 Nam Phật tử (Đồ lam cư sĩ)
+              </button>
+            </div>
             <button
               type="button"
               onClick={() => {
@@ -1580,12 +1753,12 @@ export default function Home() {
                 setName(clean);
                 localStorage.setItem(NAME_KEY, clean);
                 multiplayer.updateName(clean);
-                showToast('Đã đổi tên thành ' + clean + '.');
+                showToast('Đã lưu cài đặt nhân vật ' + clean + '.');
                 setSettingsOpen(false);
               }}
               className="mt-3 w-full rounded-full bg-amber-800 py-3 font-medium text-white"
             >
-              Lưu tên
+              Lưu tên & nhân vật
             </button>
             <div className="mt-5 rounded-2xl border border-stone-200 bg-white p-3">
               <h3 className="font-medium text-amber-900">Phòng chung (multiplayer)</h3>
@@ -1640,7 +1813,7 @@ export default function Home() {
 
       {/* Context action: at most one, nearest object, stable prompt.
           Shows only when no existing zone prompt is active. */}
-      {entered && zone === 'none' && !seatedSeat && !sitPending && hallRitual === 'none' && ritual === 'none' && !chantOpen && !releaseOpen && !mapOpen && ctxAction && (
+      {entered && zone === 'none' && !seatedSeat && !sitPending && hallRitual === 'none' && ritual === 'none' && !chantOpen && !releaseOpen && !releasingFish && !waterStream && !activeMonk && !mapOpen && ctxAction && (
         <>
           <div className="absolute bottom-28 left-1/2 z-20 hidden -translate-x-1/2 sm:bottom-24 md:block">
             {ctxAction.kind === 'bath' ? (
@@ -1650,7 +1823,7 @@ export default function Home() {
               </div>
             ) : (
               <button type="button" onClick={doCtxAction} className="rounded-full bg-amber-800 px-5 py-3 text-sm font-medium text-white shadow-xl">
-                {ctxAction.kind === 'seat' ? '🪑 ' : ctxAction.kind === 'broom' ? '🧹 ' : ctxAction.kind === 'jar' ? '🪣 ' : ctxAction.kind === 'bed' ? '💧 ' : ctxAction.kind === 'bell' ? '🔔 ' : '📖 '}
+                {ctxAction.kind === 'seat' ? '🪑 ' : ctxAction.kind === 'broom' ? '🧹 ' : ctxAction.kind === 'jar' ? '🪣 ' : ctxAction.kind === 'bed' ? '💧 ' : ctxAction.kind === 'bell' ? '🔔 ' : ctxAction.kind === 'monk' ? '🙏 ' : '📖 '}
                 {ctxAction.label}
               </button>
             )}
@@ -1692,12 +1865,11 @@ export default function Home() {
         </div>
       )}
 
-      {/* Sweep leaves bar (Request C): auto flow, 13s total.
-          No instant-clear button anymore — that was the bug. */}
+      {/* Sweep leaves bar (Request C): auto flow, 13s total. */}
       {entered && sweepPhase !== 'idle' && (
         <div className="absolute bottom-28 left-1/2 z-30 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-3xl bg-[#fdf8ec] p-4 text-center shadow-2xl sm:bottom-24">
-          <p className="font-medium text-amber-900">🧹 Đang quét lá dưới gốc đa</p>
-          <p className="mt-1 text-sm text-stone-600">{sweepPhase === 'preparing' ? 'Chuẩn bị: cầm chổi, chổi chạm đất…' : sweepPhase === 'sweeping' ? 'Đang quét — từng nhát chổi gom lá dần về một đống.' : sweepPhase === 'gathering' ? 'Gom lá — đống lá đang thu dần vào giỏ.' : 'Xong rồi — sân sạch, một phút giây an yên.'}{sweepPaused ? ' (đang tạm dừng)' : ''}</p>
+          <p className="font-medium text-amber-900">🧹 Đang quét lá dưới gốc đa Bách Linh</p>
+          <p className="mt-1 text-sm text-stone-600">{sweepPhase === 'preparing' ? 'Chuẩn bị: hai tay cầm cán chổi tre, chổi chạm sân gạch…' : sweepPhase === 'sweeping' ? 'Đang đưa chổi ngang gom lá — từng nhát chổi đều đặn gom lá về một cụm.' : sweepPhase === 'gathering' ? 'Gom lá — đống lá đa đang thu dần gọn gàng vào giỏ.' : 'Xong rồi — sân sạch, một phút giây an yên.'}{sweepPaused ? ' (đang tạm dừng)' : ''}</p>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-stone-200">
             <div className="h-full rounded-full bg-amber-800 transition-all duration-200" style={{ width: `${Math.round(sweepProgress * 100)}%` }} />
           </div>
@@ -1711,9 +1883,7 @@ export default function Home() {
       {entered && sweepPending && (
         <div className="absolute bottom-28 left-1/2 z-30 -translate-x-1/2 rounded-full bg-black/60 px-4 py-2 text-sm text-amber-50">Đang đi đến chỗ quét lá…</div>
       )}
-      {/* Bath ritual bar (Request E): 24s total, light ivory/wood
-          palette, pour-round status, stop button. Hidden once the
-          blessing dialog opens (phase 'done'). */}
+      {/* Bath ritual bar (Request E): 24s total */}
       {entered && bathPhase !== 'idle' && bathPhase !== 'done' && (
         <div className="absolute bottom-28 left-1/2 z-30 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-3xl bg-[#fdf8ec] p-4 text-center shadow-2xl sm:bottom-24">
           <p className="font-medium text-amber-900">🪷 Đang tắm Phật — lễ đài Lâm Tỳ Ni</p>
@@ -1781,23 +1951,291 @@ export default function Home() {
         </div>
       )}
 
-      {/* Water vegetables card */}
+      {/* Water vegetables progress bar & card */}
+      {entered && waterStream && (
+        <div className="absolute bottom-28 left-1/2 z-30 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-3xl bg-[#fdf8ec] p-4 text-center shadow-2xl sm:bottom-24">
+          <p className="font-medium text-amber-900">🌱 Đang nghiêng gáo tưới rau Vườn Lộc Uyển…</p>
+          <p className="mt-1 text-xs text-stone-600">
+            Từng gáo nước mát lành thấm dần xuống các luống rau xanh.
+          </p>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-stone-200">
+            <div
+              className="h-full rounded-full bg-emerald-700 transition-all duration-100"
+              style={{ width: `${Math.round(waterProgress * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
       {waterCardOpen && (
         <div className="absolute inset-0 z-40 flex items-end justify-center bg-black/25 p-4 sm:items-center">
           <div className="w-full max-w-md rounded-3xl bg-[#fdf8ec] p-5 shadow-2xl">
             <h2 className="font-serif text-xl font-semibold text-amber-900">Đã tưới xong một lượt</h2>
-            <p className="mt-2 text-sm leading-relaxed text-stone-700">Đất đã sẫm lại. Chăm vườn cũng giống chăm một việc chung: không cần tưới thật nhiều một lần, chỉ cần đều đặn, đúng chỗ, và để ý xem cây đang cần gì. Một lượt là đủ cho hôm nay.</p>
+            <p className="mt-2 text-sm leading-relaxed text-stone-700">Đất đã sẫm lại, lá rau xanh mát. Chăm vườn cũng giống chăm một việc chung: không cần tưới thật nhiều một lần, chỉ cần đều đặn, đúng chỗ, và để ý xem cây đang cần gì. Một lượt là đủ cho hôm nay.</p>
             <button type="button" onClick={() => setWaterCardOpen(false)} className="mt-4 w-full rounded-full bg-amber-800 py-3 font-medium text-white">Đã hiểu</button>
           </div>
         </div>
       )}
-      {entered && carryingWater && (
+      {entered && carryingWater && !waterStream && (
         <div className="pointer-events-none absolute bottom-32 left-1/2 z-30 -translate-x-1/2">
-          <p className="rounded-full bg-black/60 px-4 py-2 text-sm text-amber-50">Đang mang một gáo nước — tới luống rau để tưới.</p>
+          <p className="rounded-full bg-black/65 px-4 py-2 text-sm text-amber-50 shadow">
+            🪣 Đang cầm gáo nước gỗ — hãy bước tới luống rau Vườn Lộc Uyển để tưới.
+          </p>
         </div>
       )}
 
-      {/* Bell indicator (mindful slow-walk removed 2026-11-03 at the user's order) */}
+      {/* Main Hall slow-walk banner & explanation modal */}
+      {entered && inHall && !seatedSeat && hallRitual === 'none' && (
+        <div className="pointer-events-auto absolute left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full border border-amber-200/50 bg-stone-900/75 px-4 py-1.5 text-xs text-amber-100 shadow-lg backdrop-blur top-[calc(env(safe-area-inset-top)+56px)] md:top-16">
+          <span>🙏 Trong Chính điện: Đang đi chậm rãi, nhẹ bước</span>
+          <button
+            type="button"
+            onClick={() => setHallWhyOpen(true)}
+            className="rounded-full bg-amber-700/80 px-2.5 py-0.5 text-[11px] font-medium text-white hover:bg-amber-600"
+          >
+            Vì sao?
+          </button>
+        </div>
+      )}
+      {hallWhyOpen && (
+        <div className="absolute inset-0 z-40 flex items-end justify-center bg-black/30 p-4 sm:items-center">
+          <div className="w-full max-w-md rounded-3xl bg-[#fdf8ec] p-5 shadow-2xl">
+            <h2 className="font-serif text-xl font-semibold text-amber-900">
+              Vì sao vào Chính điện cần đi chậm?
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-stone-700">
+              Tại các ngôi chùa truyền thống Việt Nam, Chính điện (Tam Bảo) là không gian tôn nghiêm nhất — nơi thờ Phật và là chỗ mọi người đang tĩnh tâm lễ bái, tụng kinh hoặc ngồi thiền.
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-stone-700">
+              Khi bước qua ngưỡng cửa vào Chính điện, người Phật tử tự giác <b>“đi nhẹ bước êm, nói khẽ mỉm cười”</b>:
+            </p>
+            <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm text-stone-700">
+              <li>Giữ không gian thanh tịnh, không gây tiếng động làm ảnh hưởng đến những người đang lễ Phật và tọa thiền xung quanh.</li>
+              <li>Thể hiện lòng cung kính trước Tam Bảo qua từng bước chân khoan thai, chánh niệm.</li>
+              <li>Giúp chính tâm mình chậm lại, buông bớt sự vội vã ngoài đời trước khi chắp tay lễ Phật.</li>
+            </ul>
+            <button
+              type="button"
+              onClick={() => setHallWhyOpen(false)}
+              className="mt-4 w-full rounded-full bg-amber-800 py-3 font-medium text-white"
+            >
+              Đã hiểu
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 2 Chú Tiểu (Tâm An & Tâm Minh) interactive dialogue modal */}
+      {activeMonk && (
+        <div className="absolute inset-0 z-40 flex items-end justify-center bg-black/35 p-4 sm:items-center">
+          <div className="max-h-[88dvh] w-full max-w-md overflow-y-auto rounded-3xl border border-amber-900/20 bg-[#fdf8ec] p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-amber-800">
+                  {monksState[activeMonk].title}
+                </p>
+                <h2 className="font-serif text-xl font-semibold text-amber-900">
+                  🙏 {monksState[activeMonk].name}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={closeMonkModal}
+                className="rounded-full bg-stone-200 px-3 py-1 text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Dialogue content based on selected topic */}
+            <div className="mt-3 rounded-2xl border border-amber-900/15 bg-white p-4 text-sm leading-relaxed text-stone-700 shadow-inner">
+              {monkTopic === 'welcome' && (
+                <>
+                  <p className="font-medium text-amber-900">
+                    “A Di Đà Phật! Chú tiểu {activeMonk === 'taman' ? 'Tâm An' : 'Tâm Minh'} xin chắp tay kính chào Phật tử {name || 'Khách'}!”
+                  </p>
+                  <p className="mt-2">
+                    {activeMonk === 'taman'
+                      ? 'Sáng nay gió mát, lá sen bên Tâm Liên Hồ thơm dịu lắm ạ. Chú đang đi kinh hành quanh sân Tây, trông coi Gác Chuông và lễ đài Tắm Phật Vườn Lâm Tỳ Ni. Phật tử có điều gì muốn hỏi chú tiểu không ạ?'
+                      : 'Chú vừa quét xong mấy chiếc lá đa bên gốc đa Bách Linh và thăm luống rau xanh ở Vườn Lộc Uyển. Phật tử đi dạo chùa có thấy lòng nhẹ nhàng hơn chút nào chưa ạ?'}
+                  </p>
+                </>
+              )}
+
+              {monkTopic === 'etiquette' && (
+                <>
+                  <p className="font-medium text-amber-900">
+                    🌿 Nét đẹp & quy tắc khi đi chùa ngoài đời thực:
+                  </p>
+                  <ul className="mt-2 list-disc space-y-1.5 pl-5 text-xs sm:text-sm">
+                    <li>
+                      <b>Qua cổng Tam Quan:</b> Ở chùa thật, khách thập phương thường đi vào bằng cửa bên phải (cửa Giả) và đi ra bằng cửa bên trái (cửa Không), nhường cửa chính giữa (Trung đạo) cho bậc cao tăng và các nghi lễ trọng đại.
+                    </li>
+                    <li>
+                      <b>Bước qua bậu cửa gỗ:</b> Khi bước vào Chính điện, ông bà ta dặn bước hẳn qua thanh bậu cửa gỗ dưới chân chứ không giẫm lên, vừa giữ vẻ trang nghiêm vừa tránh trượt chân.
+                    </li>
+                    <li>
+                      <b>Thắp hương vừa đủ:</b> Khi lễ chùa thật, chỉ cần dâng 1 nén tâm hương (hoặc 3 nén) ở lư hương đồng ngoài sân trước để giữ không khí trong Chính điện thoáng sạch, an toàn.
+                    </li>
+                    <li>
+                      <b>Trang phục & bước chân:</b> Mặc đồ lam hoặc quần áo kín đáo, lịch sự; khi vào Chính điện thì đi chậm, nói khẽ để giữ sự tĩnh lặng chung.
+                    </li>
+                  </ul>
+                </>
+              )}
+
+              {monkTopic === 'daily' && (
+                <>
+                  <p className="font-medium text-amber-900">
+                    🔔 Một ngày tu học ở chùa của chú tiểu:
+                  </p>
+                  <p className="mt-1.5 text-xs sm:text-sm">
+                    Nhiều người tưởng ở chùa cả ngày chỉ ngồi im, nhưng thật ra ngày của chú tiểu vui và đều đặn lắm ạ:
+                  </p>
+                  <ul className="mt-2 list-disc space-y-1.5 pl-5 text-xs sm:text-sm">
+                    <li><b>4h00 sáng (Công phu khuya):</b> Thức dậy khi tiếng đại hồng chung ngân vang giữa sương sớm, cùng đại chúng tụng kinh cầu quốc thái dân an.</li>
+                    <li><b>Buổi sáng (Chấp tác):</b> Quét lá đa rụng ngoài sân gạch, múc nước giếng tưới rau ở Vườn Lộc Uyển, lau dọn bàn thờ và học chữ, học giáo lý.</li>
+                    <li><b>Buổi chiều & tối:</b> Học oai nghi người tu, đi kinh hành chậm rãi quanh hồ sen và tĩnh tọa lắng tâm trước giờ chỉ tịnh.</li>
+                  </ul>
+                </>
+              )}
+
+              {monkTopic === 'blessing' && (
+                <>
+                  <p className="font-medium text-amber-900">
+                    🪷 Lời nhắn nhủ bình an hôm nay từ {monksState[activeMonk].name}:
+                  </p>
+                  <p className="mt-2 italic text-stone-800">
+                    {[
+                      '“Đi chùa không nhất thiết phải cầu xin thật nhiều điều lớn lao. Chỉ cần khi bước ra khỏi cổng chùa, lòng mình bớt đi một chút nóng giận, biết nói lời dịu dàng hơn với cha mẹ và người thương — đó đã là phước lành lớn nhất rồi ạ.”',
+                      '“Giống như quét lá đa ngoài sân chùa: hôm nay quét sạch, mai lá lại rơi, nhưng khi quét mình cứ vui vẻ với từng nhát chổi. Việc học, việc làm ngoài đời cũng vậy — cứ làm trọn vẹn từng việc nhỏ trước mắt, đừng để lo âu ngày mai làm mỏi mệt hôm nay.”',
+                      '“Mỗi khi thấy lòng bất an hay áp lực, Phật tử hãy thử dừng lại vài giây, thở vào thật sâu như đang đứng bên bờ Tâm Liên Hồ, rồi thở ra thật chậm. Tâm lắng trong thì chuyện rối đến mấy cũng sẽ tìm được lối mở.”',
+                      '“Hai vị Phật gần gũi nhất trong mỗi gia đình chính là Cha và Mẹ. Hôm nay về nhà, Phật tử nhớ hỏi thăm hoặc mỉm cười thật ấm áp với người thân của mình nhé ạ!”',
+                    ][monkBlessingIdx % 4]}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setMonkBlessingIdx((i) => i + 1)}
+                      className="rounded-full bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-900 hover:bg-amber-200"
+                    >
+                      🔄 Nghe lời nhắn khác
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const msg = [
+                          'Bớt một chút nóng giận, nói lời dịu dàng với cha mẹ và người thương.',
+                          'Làm trọn vẹn từng việc nhỏ trước mắt với tâm an vui như quét lá sân chùa.',
+                          'Dừng lại thở sâu 3 nhịp mỗi khi lòng bất an để tâm lắng trong như mặt hồ sen.',
+                          'Hiếu kính và dành nụ cười ấm áp cho cha mẹ, gia đình ngay hôm nay.',
+                        ][monkBlessingIdx % 4];
+                        savePrayer(`Lời nhắn từ ${monksState[activeMonk].name}`, msg);
+                        showToast('📖 Đã lưu lời nhắn của chú tiểu vào Sổ cầu an!');
+                      }}
+                      className="rounded-full bg-amber-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-900"
+                    >
+                      📖 Lưu vào Sổ cầu an
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {monkTopic === 'wayfinding' && (
+                <>
+                  <p className="font-medium text-amber-900">
+                    🗺 Chú tiểu chỉ đường thăm Chùa Hải An:
+                  </p>
+                  <p className="mt-1 text-xs text-stone-600">
+                    Chọn nơi muốn ghé thăm, chú tiểu sẽ chỉ lối để nhân vật tự bước đến đó:
+                  </p>
+                  <div className="mt-2.5 grid grid-cols-2 gap-2">
+                    {([
+                      ['burner', '🪔 Lư hương đồng'],
+                      ['hall', '🏯 Vào Chính điện'],
+                      ['pond', '🪷 Tâm Liên Hồ'],
+                      ['lumbini', '🙏 Vườn Lâm Tỳ Ni'],
+                      ['banyan', '🌳 Cây đa Bách Linh'],
+                      ['garden', '🥬 Vườn Lộc Uyển'],
+                      ['bell', '🔔 Gác Chuông'],
+                      ['tea', '🍵 Nhà Trà · Hiên đọc'],
+                    ] as const).map(([zId, zLabel]) => (
+                      <button
+                        key={zId}
+                        type="button"
+                        onClick={() => {
+                          closeMonkModal();
+                          goToZone(zId);
+                        }}
+                        className="rounded-xl border border-amber-800/20 bg-amber-50/80 px-3 py-2 text-left text-xs font-medium text-amber-900 hover:bg-amber-100"
+                      >
+                        {zLabel}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Topic selector buttons */}
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setMonkTopic('etiquette')}
+                className={`rounded-xl px-3 py-2.5 text-xs font-medium transition ${
+                  monkTopic === 'etiquette'
+                    ? 'bg-amber-800 text-white'
+                    : 'bg-amber-100 text-amber-900 hover:bg-amber-200'
+                }`}
+              >
+                🌿 Quy tắc đi chùa thật
+              </button>
+              <button
+                type="button"
+                onClick={() => setMonkTopic('daily')}
+                className={`rounded-xl px-3 py-2.5 text-xs font-medium transition ${
+                  monkTopic === 'daily'
+                    ? 'bg-amber-800 text-white'
+                    : 'bg-amber-100 text-amber-900 hover:bg-amber-200'
+                }`}
+              >
+                🔔 Một ngày của chú tiểu
+              </button>
+              <button
+                type="button"
+                onClick={() => setMonkTopic('blessing')}
+                className={`rounded-xl px-3 py-2.5 text-xs font-medium transition ${
+                  monkTopic === 'blessing'
+                    ? 'bg-amber-800 text-white'
+                    : 'bg-amber-100 text-amber-900 hover:bg-amber-200'
+                }`}
+              >
+                🪷 Xin lời nhắn bình an
+              </button>
+              <button
+                type="button"
+                onClick={() => setMonkTopic('wayfinding')}
+                className={`rounded-xl px-3 py-2.5 text-xs font-medium transition ${
+                  monkTopic === 'wayfinding'
+                    ? 'bg-amber-800 text-white'
+                    : 'bg-amber-100 text-amber-900 hover:bg-amber-200'
+                }`}
+              >
+                🗺 Nhờ chú tiểu chỉ đường
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={closeMonkModal}
+              className="mt-3 w-full rounded-full bg-stone-200 py-2.5 text-sm font-medium text-stone-700"
+            >
+              Chắp tay chào chú tiểu
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bell indicator */}
       {bellPlaying && (
         <div className="pointer-events-none absolute bottom-32 left-1/2 z-30 -translate-x-1/2">
           <p className="rounded-full bg-black/60 px-4 py-2 text-sm text-amber-50">🔔 Đang thỉnh chuông — hãy để âm ngân hết.</p>

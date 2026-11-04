@@ -611,18 +611,23 @@ export default function Lumbini({ festivalOn }: { festivalOn: boolean }) {
         </mesh>
       </group>
 
-      {/* Yard sign: "Vườn Lâm Tỳ Ni" (east of the entrance path, facing south,
-          clear of the stone lamp and festival sign) */}
+      {/* Yard sign: "Vườn Lâm Tỳ Ni" (posts placed outside the board edges
+          so they never overlap the letters) */}
       <group position={[2.4, 0, 5.8]}>
-        <mesh castShadow position={[-0.5, 0.6, 0]}>
-          <cylinderGeometry args={[0.05, 0.05, 1.2, 10]} />
+        <mesh castShadow position={[-0.92, 0.68, 0]}>
+          <cylinderGeometry args={[0.05, 0.055, 1.36, 10]} />
           <meshStandardMaterial color={wood} roughness={0.8} />
         </mesh>
-        <mesh castShadow position={[0.5, 0.6, 0]}>
-          <cylinderGeometry args={[0.05, 0.05, 1.2, 10]} />
+        <mesh castShadow position={[0.92, 0.68, 0]}>
+          <cylinderGeometry args={[0.05, 0.055, 1.36, 10]} />
           <meshStandardMaterial color={wood} roughness={0.8} />
         </mesh>
-        <TextSign text="Vườn Lâm Tỳ Ni" position={[0, 1.35, 0]} width={1.6} height={0.4} />
+        <mesh castShadow position={[0, 1.35, 0]}>
+          <boxGeometry args={[1.72, 0.46, 0.05]} />
+          <meshStandardMaterial color="#3b2313" roughness={0.85} />
+        </mesh>
+        <TextSign text="Vườn Lâm Tỳ Ni" position={[0, 1.35, 0.028]} width={1.6} height={0.4} />
+        <TextSign text="Vườn Lâm Tỳ Ni" position={[0, 1.35, -0.028]} width={1.6} height={0.4} rotationY={Math.PI} />
       </group>
 
       {/* Garden: slender trees, shrubs, flower bushes, lotus pots,

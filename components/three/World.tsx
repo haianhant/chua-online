@@ -8,14 +8,16 @@ import GuanyinGLB from './GuanyinGLB';
 import IncenseBurner from './IncenseBurner';
 import LotusPond from './Pond';
 import Player from './Player';
+import NoviceMonks from './NoviceMonks';
 import RemotePlayers from './RemotePlayers';
 import CameraRig from './CameraRig';
-import { controls, isInHall } from './controls';
+import { controls, isInHall, LAYOUT, type MonkId, type PlayerGender } from './controls';
 import Grounds from './Grounds';
 import Lumbini from './Lumbini';
 
 type Props = {
   name: string;
+  gender: PlayerGender;
   entered: boolean;
   canMove: boolean;
   burnerStage: 'idle' | 'inserting' | 'lit';
@@ -40,6 +42,8 @@ type Props = {
   bellRingSeq: number;
   /** Vesak festival decoration on/off (localStorage, default off). */
   festivalOn: boolean;
+  /** Talk with one of the two walking novice monks. */
+  onSelectMonk: (id: MonkId) => void;
 };
 
 /**
@@ -49,6 +53,7 @@ type Props = {
  */
 export default function World({
   name,
+  gender,
   entered,
   canMove,
   burnerStage,
@@ -68,6 +73,7 @@ export default function World({
   carryingWater,
   bellRingSeq,
   festivalOn,
+  onSelectMonk,
 }: Props) {
   return (
     <Canvas
@@ -102,35 +108,31 @@ export default function World({
         <Garden />
         <MainHall entered={entered} />
         <TamQuan />
-        {/* Chant pavilion REMOVED 2026-11-03 at the user's order:
-            it stood next to the banyan, cluttered that corner, and
-            there was no Buddha there to chant to. Chanting now
-            happens inside the main hall, facing the main altar. */}
       </Suspense>
-      {/* Thousand-Armed Guanyin, seated on the raised altar platform
-          (hall floor 0.975 + platform 0.36 = 1.335) at the altar end
-          of the EXPANDED hall (world z -23.5, back wall -26) */}
+
+      {/* Thousand-Armed Guanyin wrapped in its own Suspense boundary so the
+          heavy GLB download never blocks initial rendering of the courtyard
+          and Tam Quan behind the entry screen! */}
       <group position={[0, 1.335, -23.5]}>
-        <GuanyinGLB />
+        <Suspense fallback={null}>
+          <GuanyinGLB />
+        </Suspense>
       </group>
+
       <Grounds
         soilWet={soilWet}
         waterStream={waterStream}
         carryingWater={carryingWater}
         bellRingSeq={bellRingSeq}
       />
-      {/* Vườn Lâm Tỳ Ni – Lễ đài Tắm Phật (Request E): behind the
-          bell tower, left of the hall. Statue slot is intentionally
-          empty until a licensed infant model is approved. */}
+      {/* Vườn Lâm Tỳ Ni – Lễ đài Tắm Phật */}
       <Lumbini festivalOn={festivalOn} />
       <LotusPond spawnTick={spawnTick} spawnCount={spawnCount} remoteTick={remoteTick} onFishCount={onFishCount} />
 
-      {/* The burner itself is NEVER moved, rotated or resized by
-          multiplayer. Remote incense only adds a short, static smoke
-          puff at the burner's fixed position, capped at one puff. */}
+      {/* Đỉnh đồng Lư hương trước thềm Chính điện */}
       <IncenseBurner stage={burnerStage} insertT={insertT} onInteract={onInteractBurner} />
       {remoteIncenseActive && (
-        <group position={[0, 1.5, -2.2]}>
+        <group position={[LAYOUT.burner.x, 1.65, LAYOUT.burner.z]}>
           <mesh position={[0, 0, 0]}>
             <sphereGeometry args={[0.12, 12, 12]} />
             <meshStandardMaterial color="#e8e8e8" transparent opacity={0.55} />
@@ -146,22 +148,20 @@ export default function World({
         </group>
       )}
 
+      {/* 2 Chú Tiểu đi kinh hành quanh khuôn viên chùa */}
+      <NoviceMonks entered={entered} onSelectMonk={onSelectMonk} />
+
       {/* Invisible ground click-plane for click-to-move */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
         position={[0, 0.06, -5]}
         onClick={(e) => {
           if (e.delta < 8 && canMove && entered) {
-            // Clicking inside the hall from the courtyard would walk
-            // straight through the burner (x 0, z -2.2) and stall
-            // head-on, so route around its west side first, then
-            // through the centre doorway — same detour as the
-            // "Vào chính điện" button.
-            if (isInHall(e.point.x, e.point.z) && controls.playerPos.z > -2.2) {
+            if (isInHall(e.point.x, e.point.z) && controls.playerPos.z > LAYOUT.burner.z) {
               controls.waypoints = [
                 { x: -2.5, z: 0.5 },
-                { x: -2.5, z: -4 },
-                { x: 0, z: -4 },
+                { x: -2.5, z: -4.2 },
+                { x: 0, z: -4.2 },
                 { x: 0, z: -7 },
               ];
             } else {
@@ -172,11 +172,19 @@ export default function World({
           }
         }}
       >
-        <planeGeometry args={[70, 78]} />
+        <planeGeometry args={[88, 60]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
 
-      <Player name={name} visible={entered} canMove={canMove} onZone={onZone} />
+      <Player
+        name={name}
+        gender={gender}
+        visible={entered}
+        canMove={canMove}
+        carryingWater={carryingWater}
+        waterStream={waterStream}
+        onZone={onZone}
+      />
       <RemotePlayers hidden={hideOthers || !entered} />
       <CameraRig />
     </Canvas>

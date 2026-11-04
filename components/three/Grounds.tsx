@@ -24,45 +24,47 @@ function TempleSignboard({
   rotationY?: number;
   width?: number;
 }) {
-  const postX = width * 0.42;
+  // Đặt 2 trụ gỗ hoàn toàn ra NGOÀI mép bảng chữ (width/2 + 0.14)
+  // để không bao giờ che hay lấn vào chữ trên biển hiệu.
+  const postX = width * 0.5 + 0.14;
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
-      {/* Chân tảng đá (Stone plinth bases) */}
+      {/* Chân tảng đá & 2 trụ gỗ lim bên ngoài khung bảng */}
       {[-postX, postX].map((px, i) => (
         <group key={i} position={[px, 0, 0]}>
           <mesh receiveShadow castShadow position={[0, 0.08, 0]}>
-            <cylinderGeometry args={[0.13, 0.16, 0.16, 12]} />
+            <cylinderGeometry args={[0.12, 0.15, 0.16, 12]} />
             <meshStandardMaterial color="#8d8a82" roughness={0.95} />
           </mesh>
-          <mesh castShadow position={[0, 0.82, 0]}>
-            <cylinderGeometry args={[0.065, 0.075, 1.52, 12]} />
+          <mesh castShadow position={[0, 0.84, 0]}>
+            <cylinderGeometry args={[0.058, 0.068, 1.56, 12]} />
             <meshStandardMaterial color="#4a2e1a" roughness={0.82} />
           </mesh>
         </group>
       ))}
-      {/* Khung bảng gỗ chạm khắc (Wooden signboard frame) */}
+      {/* Khung bảng gỗ chạm khắc nằm gọn giữa 2 trụ */}
       <mesh castShadow position={[0, 1.32, 0]}>
-        <boxGeometry args={[width + 0.12, 0.52, 0.07]} />
+        <boxGeometry args={[width + 0.14, 0.52, 0.06]} />
         <meshStandardMaterial color="#3b2313" roughness={0.85} />
       </mesh>
-      {/* Mặt chữ vàng phía trước (+Z) và phía sau (-Z) */}
-      <TextSign text={text} width={width} height={0.44} position={[0, 1.32, 0.038]} rotationY={0} />
-      <TextSign text={text} width={width} height={0.44} position={[0, 1.32, -0.038]} rotationY={Math.PI} />
+      {/* Mặt chữ vàng phía trước (+Z) và phía sau (-Z), nổi hoàn toàn trước khung */}
+      <TextSign text={text} width={width} height={0.44} position={[0, 1.32, 0.034]} rotationY={0} />
+      <TextSign text={text} width={width} height={0.44} position={[0, 1.32, -0.034]} rotationY={Math.PI} />
       {/* Xà ngang đỡ mái & mái ngói che biển hiệu */}
-      <mesh castShadow position={[0, 1.62, 0]}>
-        <boxGeometry args={[width + 0.36, 0.08, 0.24]} />
+      <mesh castShadow position={[0, 1.63, 0]}>
+        <boxGeometry args={[width + 0.46, 0.08, 0.24]} />
         <meshStandardMaterial color="#4a2e1a" roughness={0.82} />
       </mesh>
-      <mesh castShadow position={[0, 1.72, 0.11]} rotation={[0.42, 0, 0]}>
-        <boxGeometry args={[width + 0.48, 0.06, 0.32]} />
+      <mesh castShadow position={[0, 1.73, 0.11]} rotation={[0.42, 0, 0]}>
+        <boxGeometry args={[width + 0.58, 0.06, 0.32]} />
         <meshStandardMaterial color="#a8432a" roughness={0.85} />
       </mesh>
-      <mesh castShadow position={[0, 1.72, -0.11]} rotation={[-0.42, 0, 0]}>
-        <boxGeometry args={[width + 0.48, 0.06, 0.32]} />
+      <mesh castShadow position={[0, 1.73, -0.11]} rotation={[-0.42, 0, 0]}>
+        <boxGeometry args={[width + 0.58, 0.06, 0.32]} />
         <meshStandardMaterial color="#a8432a" roughness={0.85} />
       </mesh>
-      <mesh castShadow position={[0, 1.79, 0]}>
-        <boxGeometry args={[width + 0.5, 0.07, 0.09]} />
+      <mesh castShadow position={[0, 1.80, 0]}>
+        <boxGeometry args={[width + 0.6, 0.07, 0.09]} />
         <meshStandardMaterial color="#7a2d1e" roughness={0.85} />
       </mesh>
     </group>
@@ -207,62 +209,63 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         b.position.set(LAYOUT.broom.x, 0.08, LAYOUT.broom.z);
         b.rotation.set(0, 0.6, 0);
       } else if (cur === 'preparing') {
-        // A (1.5s): broom travels gently from rest to the hand,
-        // fan down to the ground — no snap, no sudden camera move
-        // (the camera lerps to sweep mode in the same window).
+        // A (1.5s): broom rises smoothly into the player's two hands,
+        // angled downward so the straw fan touches the ground in front
+        // while the bamboo handle reaches up to the hands.
         const k = smooth(Math.min(1, tt / PREPARE_T));
-        const hx = p.x + fx * 0.7;
-        const hz = p.z + fz * 0.7;
+        const hx = p.x + fx * 0.72 - sx * 0.28;
+        const hz = p.z + fz * 0.72 - sz * 0.28;
         b.position.set(
           LAYOUT.broom.x + (hx - LAYOUT.broom.x) * k,
-          0.08 + (0.2 - 0.08) * k,
+          0.08 + (0.21 - 0.08) * k,
           LAYOUT.broom.z + (hz - LAYOUT.broom.z) * k,
         );
-        b.rotation.set(0.5 * k, 0.6 + (f - 0.6) * k, 0);
+        b.rotation.set(0.72 * k, 0.6 + (f - 0.32 - 0.6) * k, 0.18 * k);
         headX = hx; headZ = hz;
       } else if (cur === 'sweeping') {
-        // B (6s, 6 strokes of 1s): triangular push/return. Phase
-        // 0..0.5 pushes forward (leaves move), 0.5..1 returns
-        // (leaves stay — they are NOT dragged back). Stroke centre
-        // walks east from 15.8 to 16.6 so the swept area clears
-        // gradually, west to east, toward the pile.
+        // B (6s, 6 lateral brush strokes of 1s): realistic side-to-side
+        // sweeping arc across the front of the player (right-to-left
+        // brush stroke 0..0.62 with fan brushing the ground, then lifted
+        // return 0.62..1.0 back to the right).
         const strokePhase = (tt % 1) / 1;
         sweepState.strokePhase = strokePhase;
         const strokeIdx = Math.floor(tt / 1);
-        const cx = 21.4 + (Math.min(strokeIdx, 5) / 5) * 1.2;
-        const cz = 9.5 + Math.sin(strokeIdx * 1.3) * 0.3;
-        const pushT = strokePhase < 0.5 ? strokePhase * 2 : (1 - strokePhase) * 2;
-        const off = -0.4 + pushT * 0.8;
-        const sway = Math.sin(strokePhase * Math.PI * 2) * 0.12;
-        headX = cx + fx * off + sx * sway;
-        headZ = cz + fz * off + sz * sway;
-        const lift = strokePhase < 0.5 ? 0.2 : 0.26; // head touches ground on push
-        b.position.set(headX - fx * 0.4, lift, headZ - fz * 0.4);
-        b.rotation.set(0.5, f, 0);
-        // Push: only leaves near the head, only during the push
-        // half-stroke, sliding toward the pile then decelerating.
-        if (strokePhase < 0.5) {
+        const progressReach = (Math.min(strokeIdx, 5) / 5) * 0.55;
+        const brushActive = strokePhase < 0.62;
+        const arcK = brushActive
+          ? smooth(strokePhase / 0.62)
+          : 1 - smooth((strokePhase - 0.62) / 0.38);
+        // arc goes from -0.52 (right side) to +0.52 (left/pile side)
+        const latArc = -0.52 + arcK * 1.04;
+        const fwdReach = 0.74 + progressReach * 0.45 + Math.cos(latArc * 1.4) * 0.12;
+        headX = p.x + fx * fwdReach + sx * (latArc * 0.68);
+        headZ = p.z + fz * fwdReach + sz * (latArc * 0.68);
+        const lift = brushActive ? 0.19 : 0.28; // straw fan brushes ground on sweep, lifts on return
+        b.position.set(headX - fx * 0.18, lift, headZ - fz * 0.18);
+        b.rotation.set(0.72, f + latArc * 0.52, -latArc * 0.32);
+        // Push leaves during the active lateral brush stroke
+        if (brushActive) {
           for (const l of leavesRef.current) {
             if (l.state !== 'ground' && l.state !== 'sliding') continue;
-            if (Math.hypot(l.x - headX, l.z - headZ) > 0.9) continue;
+            if (Math.hypot(l.x - headX, l.z - headZ) > 1.05) continue;
             const dx = pile.x - l.x;
             const dz = pile.z - l.z;
             const d = Math.hypot(dx, dz) || 1;
-            l.vx = (dx / d) * 0.85 + fx * 0.35 + (Math.random() - 0.5) * 0.2;
-            l.vz = (dz / d) * 0.85 + fz * 0.35 + (Math.random() - 0.5) * 0.2;
+            l.vx = (dx / d) * 0.9 + (fx * 0.25 + sx * 0.35) + (Math.random() - 0.5) * 0.18;
+            l.vz = (dz / d) * 0.9 + (fz * 0.25 + sz * 0.35) + (Math.random() - 0.5) * 0.18;
             l.state = 'sliding';
           }
         }
       } else if (cur === 'gathering') {
-        // C (4s): first 1.5s final strokes around the pile, then
-        // 2.5s pile shrinking — one leaf at a time slides to the
-        // basket (17.5,11), staggered, never a mass vanish.
-        sweepState.strokePhase = (tt % 1) / 1;
-        const ang = tt * Math.PI; // slow circle around the pile
-        headX = pile.x + Math.cos(ang) * 0.6;
-        headZ = pile.z + Math.sin(ang) * 0.6;
-        b.position.set(headX - fx * 0.4, 0.2, headZ - fz * 0.4);
-        b.rotation.set(0.5, f, 0);
+        // C (5s): first 1.5s gentle curved strokes gathering around the pile,
+        // then leaves slide neatly into the basket at (23.5, 9.0).
+        const strokePhase = (tt % 1) / 1;
+        sweepState.strokePhase = strokePhase;
+        const latArc = Math.sin(strokePhase * Math.PI * 2) * 0.42;
+        headX = pile.x - fx * 0.25 + sx * (latArc * 0.55);
+        headZ = pile.z - fz * 0.25 + sz * (latArc * 0.55);
+        b.position.set(headX - fx * 0.22, 0.20, headZ - fz * 0.22);
+        b.rotation.set(0.72, f + latArc * 0.45, -latArc * 0.28);
         if (tt < 1.5) {
           for (const l of leavesRef.current) {
             if (l.state !== 'ground' && l.state !== 'sliding') continue;
@@ -671,7 +674,7 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         <circleGeometry args={[0.42, 14]} />
         <meshStandardMaterial color="#7aa8c8" roughness={0.3} />
       </mesh>
-      {/* Dipper: at the jar, or tilted over the bed while watering */}
+      {/* Dipper: rests at the jar only when the player is not holding it */}
       {!carryingWater && !waterStream && (
         <group position={[25.6, 0.7, -12.8]} rotation={[0, 0, 0.6]}>
           <mesh castShadow position={[0, 0.3, 0]}>
@@ -685,15 +688,14 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         </group>
       )}
       {waterStream && (
-        <group position={[27.5, 0, -20]}>
-          <mesh position={[0, 0.9, 0]} rotation={[0, 0, 0.9]}>
-            <cylinderGeometry args={[0.03, 0.03, 0.6, 8]} />
-            <meshStandardMaterial color="#a8824a" roughness={0.9} />
-          </mesh>
-          <mesh position={[0.25, 0.45, 0]}>
-            <cylinderGeometry args={[0.04, 0.06, 0.8, 8]} />
-            <meshStandardMaterial color="#7aa8c8" roughness={0.2} transparent opacity={0.8} />
-          </mesh>
+        <group position={[27.5, 0.26, -20]}>
+          {/* Gentle water splashes & wet shimmer spreading across the vegetable rows */}
+          {[-1.4, -0.5, 0.4, 1.3].map((dx, idx) => (
+            <mesh key={idx} rotation={[-Math.PI / 2, 0, 0]} position={[dx, 0.02, (idx % 2 === 0 ? -0.15 : 0.15)]}>
+              <ringGeometry args={[0.12, 0.26, 16]} />
+              <meshBasicMaterial color="#9ad0ec" transparent opacity={0.65} depthWrite={false} />
+            </mesh>
+          ))}
         </group>
       )}
 

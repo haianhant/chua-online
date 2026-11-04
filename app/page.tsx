@@ -1121,7 +1121,7 @@ export default function Home() {
     const routes: Record<string, { target: { x: number; z: number }; via: Array<{ x: number; z: number }> }> = {
       hall: { target: LAYOUT.altarSpot, via: [{ x: -2.5, z: 0.5 }, { x: -2.5, z: -4.2 }, { x: 0, z: -4.2 }, { x: 0, z: -9 }] },
       burner: { target: LAYOUT.burnerApproach, via: [] },
-      chant: { target: LAYOUT.chantApproach, via: [{ x: -2.5, z: 0.5 }, { x: -2.5, z: -4.2 }, { x: 0, z: -4.2 }] },
+      chant: { target: { x: -15.5, z: -13.0 }, via: [{ x: -3.5, z: 1.5 }, { x: -3.5, z: -5 }, { x: -15.5, z: -5 }] }, // same approach as westChant: the map 'chant' entry is labelled Đình Niệm Phật sân Tây, so it must route west, not to the removed hall spot
       westChant: { target: { x: -15.5, z: -13.0 }, via: [{ x: -3.5, z: 1.5 }, { x: -3.5, z: -5 }, { x: -15.5, z: -5 }] },
       stupaChant: { target: { x: 35.0, z: 5.8 }, via: [{ x: 14.5, z: 8 }, { x: 26, z: 8 }] },
       merit: { target: { ...LAYOUT.meritSpot }, via: [] },
@@ -1577,7 +1577,7 @@ export default function Home() {
               <button type="button" onClick={() => { setMobileMenuOpen(false); setBookOpen(true); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">📖 Sổ cầu an</button>
               <button type="button" onClick={() => { setMobileMenuOpen(false); setHelpOpen(true); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">❓ Hướng dẫn</button>
               <button type="button" onClick={() => { setMobileMenuOpen(false); goTo(LAYOUT.burnerApproach); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">🪔 Đến lư hương</button>
-              <button type="button" onClick={() => { setMobileMenuOpen(false); goTo(LAYOUT.chantApproach); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">📿 Đến khu niệm Phật</button>
+              <button type="button" onClick={() => { setMobileMenuOpen(false); goToZone('westChant'); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">📿 Đến khu niệm Phật</button>
               <button type="button" onClick={() => { setMobileMenuOpen(false); goTo(LAYOUT.pondApproach, [{ x: 0, z: 10 }]); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">🪷 Đến hồ sen</button>
               <button type="button" onClick={() => { setMobileMenuOpen(false); goTo(LAYOUT.altarSpot, [{ x: -2.5, z: 0.5 }, { x: -2.5, z: -4 }, { x: 0, z: -4 }, { x: 0, z: -7 }]); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">🏯 Vào chính điện hành lễ</button>
               <button type="button" onClick={toggleSound} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">{soundPlaying ? '🔊 Tắt âm thanh' : '🔇 Bật âm thanh'}</button>

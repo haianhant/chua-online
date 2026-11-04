@@ -513,12 +513,16 @@ export default function Player({
       }
     }
 
-    // Interaction zones (bao gồm cả Niệm Phật Đường Tây & Đài Niệm Kinh Bảo Tháp)
+    // Interaction zones: chanting lives ONLY in the dedicated chanting
+    // halls (Niệm Phật Đường Tây & Đài Niệm Kinh Bảo Tháp). The old
+    // central-aisle hall spot (LAYOUT.chantPavilion) is intentionally
+    // NOT a chant zone anymore (user decision 2026-11-05): the main
+    // hall keeps kneel/sit/wish + fortune sticks, chanting moved
+    // next door to its own halls.
     const db = Math.hypot(pos.current.x - LAYOUT.burner.x, pos.current.z - LAYOUT.burner.z);
-    const dc1 = Math.hypot(pos.current.x - LAYOUT.chantPavilion.x, pos.current.z - LAYOUT.chantPavilion.z);
     const dc2 = Math.hypot(pos.current.x - LAYOUT.westChantHall.x, pos.current.z - LAYOUT.westChantHall.z);
     const dc3 = Math.hypot(pos.current.x - LAYOUT.eastChantPavilion.x, pos.current.z - LAYOUT.eastChantPavilion.z);
-    const dc = Math.min(dc1, dc2, dc3);
+    const dc = Math.min(dc2, dc3);
     const dp = Math.hypot(pos.current.x - LAYOUT.pond.x, pos.current.z - LAYOUT.pond.z);
     const da = Math.hypot(pos.current.x - LAYOUT.altarSpot.x, pos.current.z - LAYOUT.altarSpot.z);
     const zone: 'burner' | 'chant' | 'pond' | 'altar' | 'none' =

@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#__next {
+  height: 100%;
+  margin: 0;
+  background: #e6d9b8;
+  overflow: hidden;
+  /* The page never scrolls under a joystick drag or a canvas swipe;
+     only modal/bottom-sheet panels scroll internally. */
+  overscroll-behavior: none;
+}
+
+/* No double-tap zoom delay on tappable controls (desktop unaffected). */
+button {
+  touch-action: manipulation;
+}
+
+/* Never stretch Vietnamese diacritics apart */
+h1,
+h2,
+h3,
+p,
+button,
+input,
+textarea,
+label {
+  letter-spacing: normal;
+  text-rendering: optimizeLegibility;
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-float-slow { animation: float-slow 4s ease-in-out infinite; }
+.animate-fade-in { animation: fade-in 0.4s ease-out both; }
+
+canvas {
+  touch-action: none;
+  display: block;
+}

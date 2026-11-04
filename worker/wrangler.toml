@@ -1,0 +1,12 @@
+name = "chua-online-temple"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[durable_objects.bindings]]
+name = "TEMPLE_ROOM"
+class_name = "TempleRoom"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["TempleRoom"]

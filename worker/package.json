@@ -1,0 +1,1 @@
+{"dependencies":{},"devDependencies":{"@cloudflare/workers-types":"4.20250109.0","typescript":"5.5.4","wrangler":"3.99.0"},"name":"chua-online-temple-worker","private":true,"scripts":{"deploy":"wrangler deploy","dev":"wrangler dev","typecheck":"tsc --noEmit"},"version":"1.0.0"}

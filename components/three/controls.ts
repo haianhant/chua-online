@@ -87,9 +87,9 @@ export const LAYOUT = {
   burnerApproach: { x: 0, z: 0.4 },
   chantPavilion: { x: 0, z: -10 }, // chanting spot: central aisle inside the hall, facing the main altar (Guanyin)
   chantApproach: { x: 0, z: -9 },
-  /** Lotus pond (west side) + the bank where you stand to release fish. */
-  pond: { x: -8.5, z: 1.5 },
-  pondApproach: { x: -3.6, z: 1.5 }, // east of the bank stones, on dry land (was -4.6, at the water edge)
+  /** Lotus pond (Tâm Liên Hồ, west side, spread out from central path) + the bank where you stand to release fish. */
+  pond: { x: -16.0, z: 3.0 },
+  pondApproach: { x: -11.1, z: 3.0 }, // east of the bank stones, on dry land
   hallFront: { x: 0, z: -5 },
   /** Main hall interior (world coords, matching Temple.tsx):
       expanded v7: front wall z -5.8 with a 3.2m centre doorway,
@@ -108,38 +108,36 @@ export const LAYOUT = {
       the central aisle. */
   sideAltarWest: { x: -8.0, z: -21 },
   sideAltarEast: { x: 8.0, z: -21 },
-  /** Grounds loop zones */
-  banyan: { x: 16, z: 10 },
-  banyanBench: { x: 16, z: 13.2 },
-  broom: { x: 14.2, z: 11.5 },
+  /** Grounds loop zones (spread out across the enlarged 88x50m compound) */
+  banyan: { x: 22, z: 8 },
+  banyanBench: { x: 22, z: 11.2 },
+  broom: { x: 20.2, z: 9.5 },
   /** Sweep spot (auto-walk target) + pile centre (near the basket).
-      Spot is clear of the banyan trunk (16,10) r 0.9, the bench
-      (16,13.2) and the basket (17.5,11). */
-  sweepSpot: { x: 15.5, z: 11.5 },
-  sweepPile: { x: 16.9, z: 11.6 },
+      Spot is clear of the banyan trunk (22,8) r 0.9, the bench
+      (22,11.2) and the basket (23.5,9). */
+  sweepSpot: { x: 21.5, z: 9.5 },
+  sweepPile: { x: 22.9, z: 9.6 },
   corridorChair: { x: 13.5, z: -2 },
-  gardenGate: { x: 16.0, z: -10 },
-  garden: { x: 20, z: -13.5 },
-  waterJar: { x: 18.5, z: -12.8 },
-  vegBed: { x: 21, z: -20 },
-  teaTable: { x: 27.5, z: -18.5 },
-  northPath: { x: 0, z: -30 },
-  lakeBank: { x: -4.6, z: 1.5 },
-  lakeSeat: { x: -4.2, z: 3.2 },
-  bellTower: { x: -14, z: -8.5 },
-  /** Vườn Lâm Tỳ Ni – Lễ đài Tắm Phật (Request E, 2026-11-04):
-      behind the bell tower, left of the hall, in the empty
-      north-west quadrant — no bounds expansion needed.
-      Pavilion centre (-17,-20), 5x5m, platform top 0.4;
-      basin centre (-17,-19.5) r 0.6; ritual spot (-17,-18.4)
-      is 1.1m south of the basin centre, clear of the basin
-      collider's effective radius (0.6+0.38=0.98) by 0.12m.
-      Yard ~12x10m centred (-17,-19), x -23..-11, z -24..-14. */
-  lumbini: { x: -17, z: -20 },
-  lumbiniBasin: { x: -17, z: -19.5 },
-  lumbiniSpot: { x: -17, z: -18.4 },
-  lumbiniLadleRest: { x: -16.2, z: -19.5 },
-  bounds: { minX: -32, maxX: 32, minZ: -40, maxZ: 30 },
+  gardenGate: { x: 20.0, z: -10 },
+  garden: { x: 26.5, z: -13.5 },
+  waterJar: { x: 25.0, z: -12.8 },
+  vegBed: { x: 27.5, z: -20 },
+  teaTable: { x: 36.5, z: -18.5 },
+  northPath: { x: 0, z: -32 },
+  lakeBank: { x: -12.1, z: 3.0 },
+  lakeSeat: { x: -11.7, z: 4.7 },
+  bellTower: { x: -22, z: -9.0 },
+  /** Vườn Lâm Tỳ Ni – Lễ đài Tắm Phật:
+      placed spaciously in the north-west quadrant at (-28,-24),
+      giving 11.4m open courtyard from the Main Hall and 7.5m from
+      the Bell Tower. Pavilion centre (-28,-24), 5x5m, platform top 0.4;
+      basin centre (-28,-23.5) r 0.6; ritual spot (-28,-22.4).
+      Yard ~12x10m centred (-28,-23), x -34..-22, z -28..-18. */
+  lumbini: { x: -28, z: -24 },
+  lumbiniBasin: { x: -28, z: -23.5 },
+  lumbiniSpot: { x: -28, z: -22.4 },
+  lumbiniLadleRest: { x: -27.2, z: -23.5 },
+  bounds: { minX: -46, maxX: 46, minZ: -44, maxZ: 32 },
 };
 
 /** Usable seats. Hall = 8 mats, all facing the main altar.
@@ -168,10 +166,10 @@ export const SEATS: Seat[] = [
   { id: 'hall-r3', x: 3.4, z: -14, facing: Math.PI, kind: 'mat', area: 'hall', label: 'Đệm phải, hàng sau' },
   { id: 'hall-r4', x: 5.6, z: -14, facing: Math.PI, kind: 'mat', area: 'hall', label: 'Đệm phải, hàng sau' },
   // Outdoor seats (not counted in the hall 9)
-  { id: 'banyan-bench', x: 16, z: 13.2, facing: 0, kind: 'bench', area: 'banyan', label: 'Bệ ngồi dưới tán đa' },
+  { id: 'banyan-bench', x: 22, z: 11.2, facing: 0, kind: 'bench', area: 'banyan', label: 'Bệ ngồi dưới tán đa Bách Linh' },
   { id: 'corridor-chair', x: 13.5, z: -2, facing: -Math.PI / 2, kind: 'corridorChair', area: 'corridor', label: 'Ghế cuối hiên, ngắm mái điện' },
-  { id: 'lake-step', x: -4.2, z: 3.2, facing: -Math.PI / 2, kind: 'lakeStep', area: 'lake', label: 'Bậc ngồi ngắm hồ' },
-  { id: 'tea-seat', x: 29.3, z: -18.5, facing: -Math.PI / 2, kind: 'teaSeat', area: 'tea', label: 'Ghế nhà trà, nhìn ra luống rau' },
+  { id: 'lake-step', x: -11.7, z: 4.7, facing: -Math.PI / 2, kind: 'lakeStep', area: 'lake', label: 'Bậc ngồi ngắm Tâm Liên Hồ' },
+  { id: 'tea-seat', x: 38.3, z: -18.5, facing: -Math.PI / 2, kind: 'teaSeat', area: 'tea', label: 'Ghế nhà trà, nhìn ra Vườn Lộc Uyển' },
 ];
 
 /** True when the player stands inside the main hall. */
@@ -185,33 +183,29 @@ export function floorYAt(x: number, z: number): number {
   if (isInHall(x, z)) return LAYOUT.hall.floorY;
   const p = LAYOUT.platform;
   if (x > p.minX && x < p.maxX && z > p.minZ && z < p.maxZ) return p.floorY;
-  // Tea house platform (site plan v2, 2026-11-04): stone slab top
-  // 0.45, x 24..31, z -21.75..-15.25 — without this the player
-  // sank into the slab when walking/sitting in the tea house.
-  if (x > 24 && x < 31 && z > -21.75 && z < -15.25) return 0.45;
-  // Vegetable beds (v2): soil top 0.24, x 18.5..23.5, rows
-  // z -22.6..-21.4 / -20.6..-19.4 / -18.6..-17.4 — standing on a
-  // bed to water it no longer sinks the feet into the soil.
-  if (x > 18.5 && x < 23.5) {
+  // Tea house platform: stone slab top 0.45, x 33..40, z -21.75..-15.25
+  if (x > 33 && x < 40 && z > -21.75 && z < -15.25) return 0.45;
+  // Vegetable beds (Vườn Lộc Uyển): soil top 0.24, x 25.0..30.0, rows
+  // z -22.6..-21.4 / -20.6..-19.4 / -18.6..-17.4
+  if (x > 25.0 && x < 30.0) {
     if ((z > -22.6 && z < -21.4) || (z > -20.6 && z < -19.4) || (z > -18.6 && z < -17.4)) return 0.24;
   }
-  // Lumbini pavilion platform (Request E): stone slab top 0.4,
-  // x -19.5..-14.5, z -22.5..-17.5, plus two south steps
-  // (tops 0.27 / 0.13, x -18..-16). Same rule as the tea
-  // house: without this the player sinks into the slab.
-  if (x > -19.5 && x < -14.5 && z > -22.5 && z < -17.5) return 0.4;
+  // Lumbini pavilion platform: stone slab top 0.4,
+  // x -30.5..-25.5, z -26.5..-21.5, plus two south steps
+  // (tops 0.27 / 0.13, x -29..-27).
+  if (x > -30.5 && x < -25.5 && z > -26.5 && z < -21.5) return 0.4;
   const lumbiniSteps = [
-    { minX: -18, maxX: -16, minZ: -17.5, maxZ: -17.0, top: 0.27 },
-    { minX: -18, maxX: -16, minZ: -17.0, maxZ: -16.5, top: 0.13 },
+    { minX: -29, maxX: -27, minZ: -21.5, maxZ: -21.0, top: 0.27 },
+    { minX: -29, maxX: -27, minZ: -21.0, maxZ: -20.5, top: 0.13 },
   ];
   for (const s of lumbiniSteps) {
     if (x > s.minX && x < s.maxX && z > s.minZ && z < s.maxZ) return s.top;
   }
-  // Tea house south steps (v2, top 0.30 / 0.15, x 25.5..29.5),
+  // Tea house south steps (top 0.30 / 0.15, x 34.5..38.5),
   // matching Grounds.tsx step boxes.
   const teaSteps = [
-    { minX: 25.5, maxX: 29.5, minZ: -15.25, maxZ: -14.75, top: 0.3 },
-    { minX: 25.5, maxX: 29.5, minZ: -14.75, maxZ: -14.25, top: 0.15 },
+    { minX: 34.5, maxX: 38.5, minZ: -15.25, maxZ: -14.75, top: 0.3 },
+    { minX: 34.5, maxX: 38.5, minZ: -14.75, maxZ: -14.25, top: 0.15 },
   ];
   for (const s of teaSteps) {
     if (x > s.minX && x < s.maxX && z > s.minZ && z < s.maxZ) return s.top;
@@ -273,9 +267,12 @@ export const COLLIDERS: Collider[] = [
   { kind: 'box', minX: 7.0, maxX: 9.0, minZ: -21.8, maxZ: -20.2 },
   // Tam quan LOW STONE WALLS + perimeter front wall (z 13):
   // The gate openings (between the ±3.6 / ±1.4 pillars) stay walkable;
-  // the low compound wall extends from ±3.6 all the way to ±32.
-  { kind: 'box', minX: -32, maxX: -3.6, minZ: 12.75, maxZ: 13.25 }, // west front compound wall
-  { kind: 'box', minX: 3.6, maxX: 32, minZ: 12.75, maxZ: 13.25 }, // east front compound wall
+  // the low compound wall extends from ±3.6 all the way to ±44.
+  { kind: 'box', minX: -44, maxX: -3.6, minZ: 12.75, maxZ: 13.25 }, // west front compound wall
+  { kind: 'box', minX: 3.6, maxX: 44, minZ: 12.75, maxZ: 13.25 }, // east front compound wall
+  { kind: 'box', minX: -44.25, maxX: -43.75, minZ: -36, maxZ: 13 }, // west perimeter wall
+  { kind: 'box', minX: 43.75, maxX: 44.25, minZ: -36, maxZ: 13 }, // east perimeter wall
+  { kind: 'box', minX: -44, maxX: 44, minZ: -36.25, maxZ: -35.75 }, // north perimeter wall
   // Tam quan pillars (the three openings stay walkable)
   { kind: 'circle', x: -3.6, z: 13, r: 0.5 },
   { kind: 'circle', x: -1.4, z: 13, r: 0.5 },
@@ -283,64 +280,66 @@ export const COLLIDERS: Collider[] = [
   { kind: 'circle', x: 3.6, z: 13, r: 0.5 },
   // Incense burner
   { kind: 'circle', x: 0, z: -2.2, r: 1.05 },
-  // Lotus pond (larger now, so the collider matches the water edge)
-  { kind: 'circle', x: -8.5, z: 1.5, r: 3.6 },
-  { kind: 'circle', x: 7.5, z: 3.5, r: 0.7 }, // tree (moved east, clear of central path, lanterns, and hall facade)
-  { kind: 'circle', x: 5, z: 8.5, r: 1.1 }, // bamboo (moved west, away from the banyan)
-  { kind: 'circle', x: -9.5, z: 8.5, r: 1.1 },
-  { kind: 'circle', x: -22.5, z: -4.5, r: 0.7 }, // tree (clear of bell tower and Lumbini path)
+  // Lotus pond (Tâm Liên Hồ, moved west to (-16.0, 3.0))
+  { kind: 'circle', x: -16.0, z: 3.0, r: 3.6 },
+  { kind: 'circle', x: 8.5, z: 3.5, r: 0.7 }, // courtyard tree (front-east)
+  { kind: 'circle', x: 6.5, z: 8.5, r: 1.1 }, // bamboo (front-east)
+  { kind: 'circle', x: -7.5, z: 8.5, r: 1.1 }, // bamboo (front-west, clear of pond at -16)
+  { kind: 'circle', x: -36.0, z: -8.0, r: 0.7 }, // courtyard tree (west of bell tower)
+  { kind: 'circle', x: -16.5, z: -28.0, r: 0.7 }, // courtyard tree (between main hall and Lumbini)
+  { kind: 'circle', x: 32.0, z: 2.0, r: 0.7 }, // courtyard tree (east of Cây đa Bách Linh)
   { kind: 'circle', x: -2.4, z: 8, r: 0.45 },
   { kind: 'circle', x: 2.4, z: 8, r: 0.45 },
   { kind: 'circle', x: -2.4, z: 3.5, r: 0.45 },
   { kind: 'circle', x: 2.4, z: 3.5, r: 0.45 },
   { kind: 'circle', x: -4.6, z: -2.0, r: 0.6 }, // bonsai (moved off the steps)
   { kind: 'circle', x: 4.6, z: -2.0, r: 0.6 }, // bonsai (moved off the steps)
-  // Grounds loop: banyan trunk, corridor pillars, garden wall (gate open),
-  // tea table, bell tower, lake bank stones. The garden gate at
-  // (16.0, -10) is OPEN — the wall segments stop on either side of it.
-  { kind: 'circle', x: 16, z: 10, r: 0.9 },
-  { kind: 'circle', x: 19.0, z: 10.5, r: 0.25 }, // banyan prop trunk (east)
-  { kind: 'circle', x: 17.8, z: 8.0, r: 0.25 }, // banyan prop trunk (north-east, clear of west walkway)
-  { kind: 'circle', x: 18.2, z: 12.0, r: 0.25 }, // banyan prop trunk (south-east)
-  // Corridor pillars at their REAL positions (Request D:
-  // widened to 11.2/15.8, 4.6m apart, ~3.4m clear walkway).
+  // Grounds loop: Cây đa Bách Linh at (22, 8), corridor pillars,
+  // Vườn Lộc Uyển gate at (20.0, -10), Nhà trà at (36.5, -18.5),
+  // Gác chuông at (-22, -9), Tâm Liên Hồ stones & signboards.
+  { kind: 'circle', x: 22, z: 8, r: 0.9 },
+  { kind: 'circle', x: 25.0, z: 8.5, r: 0.25 }, // banyan prop trunk (east)
+  { kind: 'circle', x: 23.8, z: 6.0, r: 0.25 }, // banyan prop trunk (north-east)
+  { kind: 'circle', x: 24.2, z: 10.0, r: 0.25 }, // banyan prop trunk (south-east)
+  // Signboards ("Cây đa Bách Linh", "Tâm Liên Hồ", "Vườn Lộc Uyển")
+  { kind: 'circle', x: 18.2, z: 11.2, r: 0.25 }, // signboard "Cây đa Bách Linh"
+  { kind: 'circle', x: -13.2, z: 7.8, r: 0.25 }, // signboard "Tâm Liên Hồ"
+  { kind: 'circle', x: 18.4, z: -7.6, r: 0.25 }, // signboard "Vườn Lộc Uyển"
+  // Corridor pillars at their REAL positions (widened to 11.2/15.8)
   { kind: 'circle', x: 11.2, z: 2, r: 0.2 },
   { kind: 'circle', x: 15.8, z: 2, r: 0.2 },
   { kind: 'circle', x: 11.2, z: -2, r: 0.2 },
   { kind: 'circle', x: 15.8, z: -2, r: 0.2 },
   { kind: 'circle', x: 11.2, z: -6, r: 0.2 },
   { kind: 'circle', x: 15.8, z: -6, r: 0.2 },
-  { kind: 'box', minX: 15.8, maxX: 16.2, minZ: -14.5, maxZ: -11.2 }, // garden wall, south of gate (moved to x 16.0, east of corridor path)
-  { kind: 'box', minX: 15.8, maxX: 16.2, minZ: -8.8, maxZ: -6.8 }, // garden wall, north of gate
-  { kind: 'circle', x: 16.0, z: -11.2, r: 0.25 }, // garden gate post (south)
-  { kind: 'circle', x: 16.0, z: -8.8, r: 0.25 }, // garden gate post (north)
+  { kind: 'box', minX: 19.8, maxX: 20.2, minZ: -14.5, maxZ: -11.2 }, // garden wall, south of gate (at x 20.0)
+  { kind: 'box', minX: 19.8, maxX: 20.2, minZ: -8.8, maxZ: -6.8 }, // garden wall, north of gate
+  { kind: 'circle', x: 20.0, z: -11.2, r: 0.25 }, // garden gate post (south)
+  { kind: 'circle', x: 20.0, z: -8.8, r: 0.25 }, // garden gate post (north)
   // NOTE (2026-11-04): the corridor chair deliberately has NO
   // collider — its seat IS the chair centre (13.5,-2).
-  { kind: 'box', minX: 26.65, maxX: 28.35, minZ: -19, maxZ: -18 }, // tea table (site plan v2, 2026-11-04)
-  // Tea house pillars (v2, corners of the widened platform):
-  { kind: 'circle', x: 24.6, z: -21.1, r: 0.25 },
-  { kind: 'circle', x: 30.4, z: -21.1, r: 0.25 },
-  { kind: 'circle', x: 24.6, z: -15.9, r: 0.25 },
-  { kind: 'circle', x: 30.4, z: -15.9, r: 0.25 },
-  { kind: 'box', minX: -15.7, maxX: -12.3, minZ: -10.2, maxZ: -6.8 }, // bell tower platform at (-14, -8.5)
-  { kind: 'box', minX: -14.6, maxX: -13.4, minZ: -6.8, maxZ: -6.4 }, // bell tower steps (south, clear of z -5.0 path)
-  // Lumbini pavilion (Request E): four corner columns inset
-  // 0.4m from the 5x5m platform edges; the centre (basin
-  // aside) and the south entrance stay walkable.
-  { kind: 'circle', x: -19.1, z: -22.1, r: 0.25 },
-  { kind: 'circle', x: -14.9, z: -22.1, r: 0.25 },
-  { kind: 'circle', x: -19.1, z: -17.9, r: 0.25 },
-  { kind: 'circle', x: -14.9, z: -17.9, r: 0.25 },
-  // Lumbini bathing basin (r 0.6): the ritual spot (-17,-18.4)
-  // is 1.1m south, clear of the effective radius 0.98 by 0.12m.
-  { kind: 'circle', x: -17, z: -19.5, r: 0.6 },
+  { kind: 'box', minX: 35.65, maxX: 37.35, minZ: -19, maxZ: -18 }, // tea table at (36.5, -18.5)
+  // Tea house pillars (corners of the platform at x 33..40):
+  { kind: 'circle', x: 33.6, z: -21.1, r: 0.25 },
+  { kind: 'circle', x: 39.4, z: -21.1, r: 0.25 },
+  { kind: 'circle', x: 33.6, z: -15.9, r: 0.25 },
+  { kind: 'circle', x: 39.4, z: -15.9, r: 0.25 },
+  { kind: 'box', minX: -23.7, maxX: -20.3, minZ: -10.7, maxZ: -7.3 }, // bell tower platform at (-22, -9.0)
+  { kind: 'box', minX: -22.6, maxX: -21.4, minZ: -7.3, maxZ: -6.9 }, // bell tower steps (south, clear of z -5.0 path)
+  // Lumbini pavilion at (-28, -24): four corner columns inset
+  // 0.4m from the 5x5m platform edges
+  { kind: 'circle', x: -30.1, z: -26.1, r: 0.25 },
+  { kind: 'circle', x: -25.9, z: -26.1, r: 0.25 },
+  { kind: 'circle', x: -30.1, z: -21.9, r: 0.25 },
+  { kind: 'circle', x: -25.9, z: -21.9, r: 0.25 },
+  // Lumbini bathing basin (r 0.6) at (-28, -23.5)
+  { kind: 'circle', x: -28, z: -23.5, r: 0.6 },
   // Lumbini garden trees (trunks) + yard entrance sign post:
-  // all clear of the stone path (x -17) and the pavilion.
-  { kind: 'circle', x: -21.5, z: -21.5, r: 0.5 },
-  { kind: 'circle', x: -12.8, z: -22, r: 0.5 },
-  { kind: 'circle', x: -21, z: -16.8, r: 0.5 },
-  { kind: 'circle', x: -14.6, z: -14.2, r: 0.15 },
-  { kind: 'circle', x: -4.2, z: 0.2, r: 0.4 }, // lake bank stone
+  { kind: 'circle', x: -32.5, z: -25.5, r: 0.5 },
+  { kind: 'circle', x: -23.8, z: -26.0, r: 0.5 },
+  { kind: 'circle', x: -32.0, z: -20.8, r: 0.5 },
+  { kind: 'circle', x: -25.6, z: -18.2, r: 0.15 },
+  { kind: 'circle', x: -11.7, z: 1.7, r: 0.4 }, // lake bank stone at Tâm Liên Hồ
 ];
 
 export function collides(x: number, z: number): boolean {

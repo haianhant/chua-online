@@ -703,37 +703,37 @@ export function Garden() {
           no overlap. A traditional low perimeter wall wraps the entire
           64x46m compound so every structure sits unmistakably inside
           the temple grounds. */}
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -6]}>
-        <planeGeometry args={[110, 110]} />
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -8]}>
+        <planeGeometry args={[150, 150]} />
         <meshStandardMaterial map={grass} roughness={1} />
       </mesh>
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, -10]}>
-        <planeGeometry args={[64, 46]} />
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, -11.5]}>
+        <planeGeometry args={[88, 49]} />
         <meshStandardMaterial color="#9a6b52" roughness={0.95} />
       </mesh>
       <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 16.5]}>
-        <planeGeometry args={[16, 7]} />
+        <planeGeometry args={[18, 7]} />
         <meshStandardMaterial color="#9a6b52" roughness={0.95} />
       </mesh>
-      {/* Stone border curbing for the entrance forecourt (x ±8, z 13..20) */}
-      {[-8, 8].map((x, i) => (
+      {/* Stone border curbing for the entrance forecourt (x ±9, z 13..20) */}
+      {[-9, 9].map((x, i) => (
         <mesh key={`fc-${i}`} receiveShadow position={[x, 0.04, 16.5]}>
           <boxGeometry args={[0.3, 0.06, 7]} />
           <meshStandardMaterial color="#8d8a82" roughness={0.95} />
         </mesh>
       ))}
       {/* Traditional low temple compound perimeter wall (tường bao khuôn viên chùa)
-          connecting from Tam Quan side walls (±6.8, 13) to (±32, 13),
-          then North to (±32, -33) and across the back (-32..32, -33). */}
+          connecting from Tam Quan side walls (±6.8, 13) to (±44, 13),
+          then North to (±44, -36) and across the back (-44..44, -36). */}
       {[
-        // Front West & East segments (x -32..-6.8 and 6.8..32 at z 13)
-        [-19.4, 13, 25.2, 0.42],
-        [19.4, 13, 25.2, 0.42],
-        // West & East perimeter walls (x ±32, z -33..13)
-        [-32, -10, 0.42, 46],
-        [32, -10, 0.42, 46],
-        // North perimeter wall (z -33, x -32..32)
-        [0, -33, 64.4, 0.42],
+        // Front West & East segments (x -44..-6.8 and 6.8..44 at z 13)
+        [-25.4, 13, 37.2, 0.42],
+        [25.4, 13, 37.2, 0.42],
+        // West & East perimeter walls (x ±44, z -36..13)
+        [-44, -11.5, 0.42, 49],
+        [44, -11.5, 0.42, 49],
+        // North perimeter wall (z -36, x -44..44)
+        [0, -36, 88.4, 0.42],
       ].map(([x, z, w, d], i) => (
         <group key={`pwall-${i}`} position={[x, 0, z]}>
           {/* Stone plinth base */}
@@ -755,10 +755,10 @@ export function Garden() {
       ))}
       {/* Corner & interval pillars along the temple perimeter wall */}
       {[
-        [-32, 13], [-19, 13], [19, 13], [32, 13],
-        [-32, -2], [-32, -17], [-32, -33],
-        [32, -2], [32, -17], [32, -33],
-        [-16, -33], [0, -33], [16, -33],
+        [-44, 13], [-25, 13], [25, 13], [44, 13],
+        [-44, -3], [-44, -19], [-44, -36],
+        [44, -3], [44, -19], [44, -36],
+        [-22, -36], [0, -36], [22, -36],
       ].map(([x, z], i) => (
         <group key={`ppillar-${i}`} position={[x, 0, z]}>
           <mesh castShadow position={[0, 0.62, 0]}>
@@ -780,39 +780,30 @@ export function Garden() {
           <meshStandardMaterial color="#b0a894" roughness={0.95} />
         </mesh>
       ))}
-      {/* Lotus pond lives in Pond.tsx now (interactive, with koi). */}
-      {/* Tree moved east-south to (7.5, 3.5) so its canopy never covers
-          the central stone path, the (2.4, 3.5) lantern, or the hall facade. */}
-      <Tree position={[7.5, 0, 3.5]} scale={1.05} />
-      {/* West tree moved to (-22.5, -4.5), well clear of the bell tower at (-14, -8.5) and Lumbini path. */}
-      <Tree position={[-22.5, 0, -4.5]} scale={1.0} />
-      <Tree position={[-11, 0, 10]} scale={0.9} />
-      {/* Bamboo moved west (was 8,7.5): its stalks stood against the banyan canopy. */}
-      <Bamboo position={[5, 0, 8.5]} />
-      <Bamboo position={[-9.5, 0, 8.5]} />
+      {/* Lotus pond (Tâm Liên Hồ) lives in Pond.tsx now. */}
+      {/* Courtyard trees spread out across the enlarged 88x49m compound,
+          matching colliders in controls.ts and leaving generous open space
+          between architectural zones. */}
+      <Tree position={[8.5, 0, 3.5]} scale={1.05} />
+      <Tree position={[-36.0, 0, -8.0]} scale={1.05} />
+      <Tree position={[-16.5, 0, -28.0]} scale={0.95} />
+      <Tree position={[32.0, 0, 2.0]} scale={1.0} />
+      <Bamboo position={[6.5, 0, 8.5]} />
+      <Bamboo position={[-7.5, 0, 8.5]} />
       <StoneLantern position={[-2.4, 0, 8]} />
       <StoneLantern position={[2.4, 0, 8]} />
       <StoneLantern position={[-2.4, 0, 3.5]} />
       <StoneLantern position={[2.4, 0, 3.5]} />
-      {/* Bonsai flanking the steps, ON FLAT COURTYARD GROUND
-          (z -2.0, south of the last step which ends at z -2.95).
-          Before this they stood at z -3.2, ON the middle step,
-          so the step slab cut straight through the pot. */}
+      {/* Bonsai flanking the steps, ON FLAT COURTYARD GROUND */}
       <Bonsai position={[-4.6, 0, -2.0]} />
       <Bonsai position={[4.6, 0, -2.0]} />
 
-      {/* Distant misty hills — smooth DOMES far outside the
-          walkable bounds (fixed 2026-11-03): the old sharp cones
-          stood at (-22,-28)/(22,-32)/(0,-38) with radii 14-18, so
-          the north path at z -30 ran straight THROUGH the middle
-          hill (up to 4.5m of slope over the path). These domes
-          sit 6m+ clear of every path and of the bounds, and a
-          squashed sphere reads as a rolling hill, not a pyramid. */}
+      {/* Distant misty hills — smooth DOMES far outside the enlarged compound */}
       {(
         [
-          [-38, -48, 22, '#7a9a6a'],
-          [38, -52, 24, '#6a8a62'],
-          [0, -62, 26, '#7a9a72'],
+          [-54, -64, 24, '#7a9a6a'],
+          [54, -66, 26, '#6a8a62'],
+          [0, -74, 28, '#7a9a72'],
         ] as Array<[number, number, number, string]>
       ).map(([x, z, r, col], i) => (
         <mesh key={i} position={[x, 0, z]} scale={[1, 0.35, 1]}>

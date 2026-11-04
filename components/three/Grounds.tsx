@@ -6,7 +6,68 @@ import * as THREE from 'three';
 import { controls, LAYOUT, sweepState } from './controls';
 import BellTower from './BellTower';
 import { Roof } from './Temple';
+import TextSign from './TextSign';
 import { useTextures } from './textures';
+
+/**
+ * Biển hiệu gỗ truyền thống trong khuôn viên chùa (hai trụ gỗ lim đặt trên
+ * chân tảng đá, bảng gỗ chạm khắc chữ vàng hai mặt và mái ngói nhỏ che mưa nắng).
+ */
+function TempleSignboard({
+  text,
+  position,
+  rotationY = 0,
+  width = 1.9,
+}: {
+  text: string;
+  position: [number, number, number];
+  rotationY?: number;
+  width?: number;
+}) {
+  const postX = width * 0.42;
+  return (
+    <group position={position} rotation={[0, rotationY, 0]}>
+      {/* Chân tảng đá (Stone plinth bases) */}
+      {[-postX, postX].map((px, i) => (
+        <group key={i} position={[px, 0, 0]}>
+          <mesh receiveShadow castShadow position={[0, 0.08, 0]}>
+            <cylinderGeometry args={[0.13, 0.16, 0.16, 12]} />
+            <meshStandardMaterial color="#8d8a82" roughness={0.95} />
+          </mesh>
+          <mesh castShadow position={[0, 0.82, 0]}>
+            <cylinderGeometry args={[0.065, 0.075, 1.52, 12]} />
+            <meshStandardMaterial color="#4a2e1a" roughness={0.82} />
+          </mesh>
+        </group>
+      ))}
+      {/* Khung bảng gỗ chạm khắc (Wooden signboard frame) */}
+      <mesh castShadow position={[0, 1.32, 0]}>
+        <boxGeometry args={[width + 0.12, 0.52, 0.07]} />
+        <meshStandardMaterial color="#3b2313" roughness={0.85} />
+      </mesh>
+      {/* Mặt chữ vàng phía trước (+Z) và phía sau (-Z) */}
+      <TextSign text={text} width={width} height={0.44} position={[0, 1.32, 0.038]} rotationY={0} />
+      <TextSign text={text} width={width} height={0.44} position={[0, 1.32, -0.038]} rotationY={Math.PI} />
+      {/* Xà ngang đỡ mái & mái ngói che biển hiệu */}
+      <mesh castShadow position={[0, 1.62, 0]}>
+        <boxGeometry args={[width + 0.36, 0.08, 0.24]} />
+        <meshStandardMaterial color="#4a2e1a" roughness={0.82} />
+      </mesh>
+      <mesh castShadow position={[0, 1.72, 0.11]} rotation={[0.42, 0, 0]}>
+        <boxGeometry args={[width + 0.48, 0.06, 0.32]} />
+        <meshStandardMaterial color="#a8432a" roughness={0.85} />
+      </mesh>
+      <mesh castShadow position={[0, 1.72, -0.11]} rotation={[-0.42, 0, 0]}>
+        <boxGeometry args={[width + 0.48, 0.06, 0.32]} />
+        <meshStandardMaterial color="#a8432a" roughness={0.85} />
+      </mesh>
+      <mesh castShadow position={[0, 1.79, 0]}>
+        <boxGeometry args={[width + 0.5, 0.07, 0.09]} />
+        <meshStandardMaterial color="#7a2d1e" roughness={0.85} />
+      </mesh>
+    </group>
+  );
+}
 
 type Props = {
   soilWet: boolean;
@@ -52,12 +113,12 @@ function makeLeaves(): Leaf[] {
   let tries = 0;
   while (leaves.length < 24 && tries < 2000) {
     tries++;
-    const x = 14.8 + rng() * 2.2; // 14.8..17.0, in front of the sweep spot
-    const z = 10.8 + rng() * 1.6; // 10.8..12.4, south of the banyan trunk
-    // Keep out of the trunk (16,10) r 1.3, the basket (17.5,11) r 0.9,
-    // and away from other leaves (min 0.35m apart).
-    if (Math.hypot(x - 16, z - 10) < 1.3) continue;
-    if (Math.hypot(x - 17.5, z - 11) < 0.9) continue;
+    const x = 20.8 + rng() * 2.2; // 20.8..23.0, in front of the sweep spot under Cây đa Bách Linh
+    const z = 8.8 + rng() * 1.6; // 8.8..10.4, south of the banyan trunk (22, 8)
+    // Keep out of the trunk (22,8) r 1.3, the basket (23.5,9) r 0.9,
+    // and away from other leaves (min 0.30m apart).
+    if (Math.hypot(x - 22, z - 8) < 1.3) continue;
+    if (Math.hypot(x - 23.5, z - 9) < 0.9) continue;
     if (leaves.some((l) => Math.hypot(l.x - x, l.z - z) < 0.30)) continue;
     leaves.push({ x, z, rot: rng() * Math.PI * 2, vx: 0, vz: 0, state: 'ground', collectT: 0 });
   }
@@ -168,8 +229,8 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         const strokePhase = (tt % 1) / 1;
         sweepState.strokePhase = strokePhase;
         const strokeIdx = Math.floor(tt / 1);
-        const cx = 15.4 + (Math.min(strokeIdx, 5) / 5) * 1.2;
-        const cz = 11.5 + Math.sin(strokeIdx * 1.3) * 0.3;
+        const cx = 21.4 + (Math.min(strokeIdx, 5) / 5) * 1.2;
+        const cz = 9.5 + Math.sin(strokeIdx * 1.3) * 0.3;
         const pushT = strokePhase < 0.5 ? strokePhase * 2 : (1 - strokePhase) * 2;
         const off = -0.4 + pushT * 0.8;
         const sway = Math.sin(strokePhase * Math.PI * 2) * 0.12;
@@ -261,8 +322,8 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
           // interpolated, so the pile visibly shrinks leaf by leaf.
           const sx0 = pile.x + (l.x - pile.x) * (1 - k);
           const sz0 = pile.z + (l.z - pile.z) * (1 - k);
-          l.x = sx0 + (17.5 - sx0) * k;
-          l.z = sz0 + (11 - sz0) * k;
+          l.x = sx0 + (23.5 - sx0) * k;
+          l.z = sz0 + (9.0 - sz0) * k;
           if (l.collectT >= 1) l.state = 'collected';
         }
       }
@@ -279,34 +340,29 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
 
   return (
     <group>
-      {/* --- Banyan courtyard (east): NO separate ground plane
-          anymore (site plan v2, 2026-11-04) — the old 12x12 brown
-          plane overlapped the brick courtyard (x 10..13) and left
-          a grass strip (z 3..4) to the corridor floor: the "3
-          patches" the user photographed. The banyan now stands on
-          the single courtyard, with a flat stone ring around the
-          trunk for definition (no collider, walkable). --- */}
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[16, 0.03, 10]}>
+      {/* --- Cây đa Bách Linh (east, moved out to (22, 8) for spaciousness) --- */}
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[22, 0.03, 8]}>
         <ringGeometry args={[1.3, 2.0, 24]} />
         <meshStandardMaterial color="#b0a894" roughness={0.95} />
       </mesh>
-      {/* Stone path: main courtyard -> banyan (5 stones, ending at
-          x 13.8 so the last stone stays 0.2m clear of the r 2.0
-          banyan stone ring at x 14.0..18.0 — zero overlap). */}
+      {/* Stone path: main courtyard -> corridor (x 14.5, z 10) -> Cây đa Bách Linh (22, 8) */}
       {Array.from({ length: 5 }).map((_, i) => (
-        <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[4.6 + i * 2.1, 0.04, 10]}>
+        <mesh key={`bpath-s-${i}`} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[4.6 + i * 2.2, 0.04, 10]}>
           <planeGeometry args={[1.6, 1.1]} />
           <meshStandardMaterial color="#b0a894" roughness={0.95} />
         </mesh>
       ))}
-      {/* Banyan (cây đa) — unmistakably a banyan, unlike the other
-          trees in the scene (single trunk + one round crown):
-          a thick flared trunk with buttress roots, THICK branches
-          radiating out, a very wide multi-blob canopy, PROP trunks
-          grown from aerial roots (3, reaching the ground), plus
-          HANGING aerial roots that stop mid-air. Deep green, not
-          the lighter green of the garden trees. */}
-      <group position={[16, 0, 10]}>
+      {[16.4, 18.0, 19.4].map((x, i) => (
+        <mesh key={`bpath-e-${i}`} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.04, 8]}>
+          <planeGeometry args={[1.4, 1.1]} />
+          <meshStandardMaterial color="#b0a894" roughness={0.95} />
+        </mesh>
+      ))}
+      {/* Biển hiệu "Cây đa Bách Linh" đặt cạnh lối vào sân đa */}
+      <TempleSignboard text="Cây đa Bách Linh" position={[18.2, 0, 11.2]} rotationY={-0.25} width={2.1} />
+
+      {/* Banyan (Cây đa Bách Linh) at (22, 0, 8) */}
+      <group position={[22, 0, 8]}>
         {/* Main flared trunk + buttress roots */}
         <mesh castShadow position={[0, 1.75, 0]}>
           <cylinderGeometry args={[0.6, 1.15, 3.5, 12]} />
@@ -335,7 +391,7 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
             <meshStandardMaterial color="#5a3a22" roughness={0.9} />
           </mesh>
         ))}
-        {/* Prop trunks: aerial roots that reached the ground (moved off the west walkway) */}
+        {/* Prop trunks: aerial roots that reached the ground */}
         {[
           [3.0, 0.5, 0],
           [1.8, -2.0, 0],
@@ -377,13 +433,13 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
           </mesh>
         ))}
       </group>
-      {/* Low bench around the south side of the trunk (seat: 16, 13.2) */}
-      <mesh receiveShadow castShadow position={[16, 0.2, 13.2]}>
+      {/* Low bench around the south side of the trunk (seat: 22, 11.2) */}
+      <mesh receiveShadow castShadow position={[22, 0.2, 11.2]}>
         <boxGeometry args={[3.2, 0.4, 0.7]} />
         <meshStandardMaterial color="#8d8a82" roughness={0.95} />
       </mesh>
       {/* Basket for swept leaves */}
-      <mesh castShadow position={[17.5, 0.35, 11]}>
+      <mesh castShadow position={[23.5, 0.35, 9]}>
         <cylinderGeometry args={[0.45, 0.35, 0.7, 12]} />
         <meshStandardMaterial color="#a8824a" roughness={0.9} />
       </mesh>
@@ -536,14 +592,13 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         </mesh>
       </group>
 
-      {/* --- Garden wall (lime) with an open gate at (16.0, -10) ---
-          Placed along the west boundary of the back garden (x 16.0),
-          EAST of the corridor walkway (x 14.5), so walking north along
-          the corridor and turning east at z -10 leads straight through
-          the garden gate into the garden and tea house. */}
+      {/* --- Garden wall (lime) with an open gate at (20.0, -10) ---
+          Placed along the west boundary of Vườn Lộc Uyển (x 20.0),
+          well east of the corridor walkway (x 14.5) and main hall,
+          giving generous breathing room between architectures. */}
       {[
-        [16.0, -12.85, 3.3],
-        [16.0, -7.8, 2.0],
+        [20.0, -12.85, 3.3],
+        [20.0, -7.8, 2.0],
       ].map(([x, z, len], i) => (
         <mesh key={i} castShadow position={[x, 0.9, z]}>
           <boxGeometry args={[0.4, 1.8, len]} />
@@ -553,35 +608,40 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
       {/* Gate posts + lintel + mini tiled roof (the gate itself
           stays open at z -11.2 .. -8.8). */}
       {[-11.2, -8.8].map((z, i) => (
-        <mesh key={i} castShadow position={[16.0, 1.4, z]}>
+        <mesh key={i} castShadow position={[20.0, 1.4, z]}>
           <boxGeometry args={[0.5, 2.8, 0.5]} />
           <meshStandardMaterial color="#8d8a82" roughness={0.95} />
         </mesh>
       ))}
-      <mesh castShadow position={[16.0, 2.95, -10]}>
-        <boxGeometry args={[0.6, 0.3, 3.2]} />
+      <mesh castShadow position={[20.0, 2.95, -10]}>
+        <boxGeometry args={[0.6, 0.34, 3.2]} />
         <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
       </mesh>
-      <mesh castShadow position={[16.0, 3.25, -10]}>
+      <mesh castShadow position={[20.0, 3.25, -10]}>
         <boxGeometry args={[0.9, 0.25, 3.6]} />
         <meshStandardMaterial color="#a8432a" roughness={0.85} />
       </mesh>
+      {/* Hoành phi tên cổng "Vườn Lộc Uyển" gắn trên xà cổng (2 mặt Tây & Đông) */}
+      <TextSign text="Vườn Lộc Uyển" width={1.8} height={0.34} position={[19.68, 2.95, -10]} rotationY={-Math.PI / 2} />
+      <TextSign text="Vườn Lộc Uyển" width={1.8} height={0.34} position={[20.32, 2.95, -10]} rotationY={Math.PI / 2} />
+      {/* Biển hiệu đứng "Vườn Lộc Uyển" đặt cạnh lối vào cổng vườn */}
+      <TempleSignboard text="Vườn Lộc Uyển" position={[18.4, 0, -7.6]} rotationY={-0.35} width={2.0} />
 
-      {/* --- Back garden: vegetable beds, water jar, dipper ---
-          Green lawn [6.4, 13.2] at (20.6, 0.03, -18.4) -> x 17.4..23.8,
-          z -25.0..-11.8, at y 0.03 with a stone border curb (y 0.05).
+      {/* --- Vườn Lộc Uyển (Back garden): vegetable beds, water jar, dipper ---
+          Green lawn [7.6, 13.2] at (27.2, 0.03, -18.4) -> x 23.4..31.0,
+          z -25.0..-11.8, at y 0.03 with a stone border curb (y 0.045).
           Trimmed so it NEVER overlaps the z -10 stone path (y 0.04)
-          and NEVER runs under the tea house platform (x 24.0..31.0). */}
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[20.6, 0.03, -18.4]}>
-        <planeGeometry args={[6.4, 13.2]} />
+          and stays 2.0m clear of the tea house platform (x 33.0..40.0). */}
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[27.2, 0.03, -18.4]}>
+        <planeGeometry args={[7.6, 13.2]} />
         <meshStandardMaterial color="#7a9a5a" roughness={1} />
       </mesh>
       {/* Stone edging curb around the garden lawn */}
       {[
-        [20.6, -11.8, 6.6, 0.22],
-        [20.6, -25.0, 6.6, 0.22],
-        [17.4, -18.4, 0.22, 13.2],
-        [23.8, -18.4, 0.22, 13.2],
+        [27.2, -11.8, 7.8, 0.22],
+        [27.2, -25.0, 7.8, 0.22],
+        [23.4, -18.4, 0.22, 13.2],
+        [31.0, -18.4, 0.22, 13.2],
       ].map(([x, z, w, d], i) => (
         <mesh key={`gcurb-${i}`} receiveShadow position={[x, 0.045, z]}>
           <boxGeometry args={[w, 0.05, d]} />
@@ -589,7 +649,7 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         </mesh>
       ))}
       {[0, 1, 2].map((i) => (
-        <group key={i} position={[21, 0, -22 + i * 2]}>
+        <group key={i} position={[27.5, 0, -22 + i * 2]}>
           <mesh receiveShadow position={[0, 0.12, 0]}>
             <boxGeometry args={[5.0, 0.24, 1.2]} />
             <meshStandardMaterial color={soilWet ? '#3a2a1a' : '#6a4a2a'} roughness={1} />
@@ -602,19 +662,18 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
           ))}
         </group>
       ))}
-      {/* Water jar + water surface (v2: south-west of the beds,
-          clear of the E-W path at z -10 and the x 20 leg) */}
-      <mesh castShadow position={[18.5, 0.45, -12.8]}>
+      {/* Water jar + water surface at (25.0, -12.8) */}
+      <mesh castShadow position={[25.0, 0.45, -12.8]}>
         <cylinderGeometry args={[0.5, 0.4, 0.9, 14]} />
         <meshStandardMaterial color="#a8432a" roughness={0.85} />
       </mesh>
-      <mesh position={[18.5, 0.92, -12.8]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[25.0, 0.92, -12.8]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[0.42, 14]} />
         <meshStandardMaterial color="#7aa8c8" roughness={0.3} />
       </mesh>
       {/* Dipper: at the jar, or tilted over the bed while watering */}
       {!carryingWater && !waterStream && (
-        <group position={[19.1, 0.7, -12.8]} rotation={[0, 0, 0.6]}>
+        <group position={[25.6, 0.7, -12.8]} rotation={[0, 0, 0.6]}>
           <mesh castShadow position={[0, 0.3, 0]}>
             <cylinderGeometry args={[0.03, 0.03, 0.6, 8]} />
             <meshStandardMaterial color="#a8824a" roughness={0.9} />
@@ -626,7 +685,7 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         </group>
       )}
       {waterStream && (
-        <group position={[21, 0, -20]}>
+        <group position={[27.5, 0, -20]}>
           <mesh position={[0, 0.9, 0]} rotation={[0, 0, 0.9]}>
             <cylinderGeometry args={[0.03, 0.03, 0.6, 8]} />
             <meshStandardMaterial color="#a8824a" roughness={0.9} />
@@ -638,30 +697,25 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         </group>
       )}
 
-      {/* --- Tea house (site plan v2, 2026-11-04): MOVED east +
-          widened so the tea cluster no longer overlaps the beds.
+      {/* --- Tea house: moved further east to (36.5, -18.5) so Vườn Lộc Uyển
+          and Nhà trà sit as distinct, airy pavilions with 5.5m separation.
           Stone platform 7.0x6.5 (top 0.45, two south steps), 4 wood
-          columns on stone bases, beams, REAL pitched tile roof
-          (eaves 3.95m, ridge ~5.15m), open on all sides. Gaps
-          around the table: west 1.04m / east 1.04m / north 1.09m /
-          south 1.59m — all passable for the 0.76m player (the old
-          5.5-wide platform left 0.44m, which is why the far side
-          was unreachable). Platform height is in floorYAt. */}
-      <mesh receiveShadow position={[27.5, 0.225, -18.5]}>
+          columns on stone bases, beams, pitched tile roof. */}
+      <mesh receiveShadow position={[36.5, 0.225, -18.5]}>
         <boxGeometry args={[7.0, 0.45, 6.5]} />
         <meshStandardMaterial color="#8d8a82" roughness={0.95} />
       </mesh>
       {/* South steps: 0.15 then 0.30, then platform 0.45 */}
-      <mesh receiveShadow position={[27.5, 0.225, -15.0]}>
+      <mesh receiveShadow position={[36.5, 0.225, -15.0]}>
         <boxGeometry args={[4.0, 0.15, 0.5]} />
         <meshStandardMaterial color="#8d8a82" roughness={0.95} />
       </mesh>
-      <mesh receiveShadow position={[27.5, 0.075, -14.5]}>
+      <mesh receiveShadow position={[36.5, 0.075, -14.5]}>
         <boxGeometry args={[4.0, 0.15, 0.5]} />
         <meshStandardMaterial color="#a39e92" roughness={0.95} />
       </mesh>
       {[
-        [24.6, -21.1], [30.4, -21.1], [24.6, -15.9], [30.4, -15.9],
+        [33.6, -21.1], [39.4, -21.1], [33.6, -15.9], [39.4, -15.9],
       ].map(([x, z], i) => (
         <group key={i} position={[x, 0, z]}>
           <mesh castShadow position={[0, 0.6, 0]}>
@@ -674,63 +728,55 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
           </mesh>
         </group>
       ))}
-      {/* Beams: x-beams at each pillar row, z-beams at each column.
-          (The old code put BOTH z-beams at x 18.5, stacked on each
-          other — fixed here: each beam uses its own x.) */}
       {[-21.1, -15.9].map((z, i) => (
-        <mesh key={i} castShadow position={[27.5, 3.85, z]}>
+        <mesh key={i} castShadow position={[36.5, 3.85, z]}>
           <boxGeometry args={[6.4, 0.2, 0.2]} />
           <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
         </mesh>
       ))}
-      {[24.6, 30.4].map((x, i) => (
+      {[33.6, 39.4].map((x, i) => (
         <mesh key={i} castShadow position={[x, 3.85, -18.5]}>
           <boxGeometry args={[0.2, 0.2, 5.8]} />
           <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
         </mesh>
       ))}
-      {/* Tea roof: Roof has no x prop (group [0,y,z]), so it MUST
-          be wrapped in an outer group at the tea house position —
-          the unwrapped version rendered at x=0, inside the hall,
-          leaving the tea house roofless (caught by the D test). */}
-      <group position={[27.5, 3.95, -18.5]}>
+      <group position={[36.5, 3.95, -18.5]}>
         <Roof width={7.0} depth={6.5} rise={1.2} y={0} z={0} tile={roofTile} />
       </group>
-      {/* Low tea table + legs (platform top 0.45, table top 1.02 —
-          sized to avatar scale, as in the morning pass) */}
-      <mesh castShadow position={[27.5, 0.98, -18.5]}>
+      {/* Low tea table + legs at (36.5, -18.5) */}
+      <mesh castShadow position={[36.5, 0.98, -18.5]}>
         <boxGeometry args={[1.7, 0.08, 1.0]} />
         <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
       </mesh>
       {[-0.72, 0.72].map((dx) => [-0.4, 0.4].map((dz) => (
-        <mesh key={`${dx}${dz}`} castShadow position={[27.5 + dx, 0.695, -18.5 + dz]}>
+        <mesh key={`${dx}${dz}`} castShadow position={[36.5 + dx, 0.695, -18.5 + dz]}>
           <boxGeometry args={[0.1, 0.49, 0.1]} />
           <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
         </mesh>
       )))}
-      {/* Tea set: tray, teapot (body + lid + spout + handle), 3 cups */}
-      <mesh castShadow position={[27.3, 1.035, -18.6]}>
+      {/* Tea set: tray, teapot, 3 cups */}
+      <mesh castShadow position={[36.3, 1.035, -18.6]}>
         <boxGeometry args={[0.8, 0.03, 0.45]} />
         <meshStandardMaterial color="#a8824a" roughness={0.8} />
       </mesh>
-      <mesh castShadow position={[27.15, 1.13, -18.6]} scale={[1, 0.8, 1]}>
+      <mesh castShadow position={[36.15, 1.13, -18.6]} scale={[1, 0.8, 1]}>
         <sphereGeometry args={[0.11, 14, 14]} />
         <meshStandardMaterial color="#d8e8f0" roughness={0.3} />
       </mesh>
-      <mesh castShadow position={[27.15, 1.22, -18.6]}>
+      <mesh castShadow position={[36.15, 1.22, -18.6]}>
         <cylinderGeometry args={[0.05, 0.05, 0.03, 10]} />
         <meshStandardMaterial color="#d8e8f0" roughness={0.3} />
       </mesh>
-      <mesh castShadow position={[27.28, 1.15, -18.6]} rotation={[0, 0, -0.7]}>
+      <mesh castShadow position={[36.28, 1.15, -18.6]} rotation={[0, 0, -0.7]}>
         <cylinderGeometry args={[0.015, 0.02, 0.16, 8]} />
         <meshStandardMaterial color="#d8e8f0" roughness={0.3} />
       </mesh>
-      <mesh castShadow position={[27.02, 1.13, -18.6]} rotation={[0, Math.PI / 2, 0]}>
+      <mesh castShadow position={[36.02, 1.13, -18.6]} rotation={[0, Math.PI / 2, 0]}>
         <torusGeometry args={[0.06, 0.015, 8, 16]} />
         <meshStandardMaterial color="#d8e8f0" roughness={0.3} />
       </mesh>
       {[
-        [27.55, -18.45, 1.08], [27.65, -18.65, 1.08], [27.95, -18.35, 1.05],
+        [36.55, -18.45, 1.08], [36.65, -18.65, 1.08], [36.95, -18.35, 1.05],
       ].map(([x, z, y], i) => (
         <group key={i} position={[x, y, z]}>
           <mesh castShadow>
@@ -744,12 +790,12 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         </group>
       ))}
       {/* Flower vase on the table corner */}
-      <mesh castShadow position={[28.0, 1.11, -18.75]}>
+      <mesh castShadow position={[37.0, 1.11, -18.75]}>
         <cylinderGeometry args={[0.05, 0.07, 0.18, 10]} />
         <meshStandardMaterial color="#a8432a" roughness={0.7} />
       </mesh>
       {[-0.2, 0, 0.2].map((a, i) => (
-        <group key={i} position={[28.0, 1.28, -18.75]} rotation={[a, 0, a]}>
+        <group key={i} position={[37.0, 1.28, -18.75]} rotation={[a, 0, a]}>
           <mesh position={[0, 0.06, 0]}>
             <cylinderGeometry args={[0.008, 0.008, 0.25, 6]} />
             <meshStandardMaterial color="#3a7a2a" roughness={0.9} />
@@ -760,15 +806,8 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
           </mesh>
         </group>
       ))}
-      {/* Low chair = the tea seat, now EAST of the table facing
-          WEST (site plan v2): the sitter has the table in front
-          and the vegetable rows beyond it. The old south chair
-          overlapped the table (seated body reached z -20.58 vs
-          the table edge -20.5); the new seat clears the table's
-          east edge by 0.57m, and its back panel is on the EAST
-          side (behind a west-facing sitter). Group base on the
-          platform top 0.45, seat top 0.95, back to ~1.98. */}
-      <group position={[29.3, 0.45, -18.5]}>
+      {/* Low chair = the tea seat, EAST of the table facing WEST at (38.3, -18.5) */}
+      <group position={[38.3, 0.45, -18.5]}>
         {[-0.33, 0.33].map((dx) => [-0.33, 0.33].map((dz) => (
           <mesh key={`${dx}${dz}`} castShadow position={[dx, 0.21, dz]}>
             <boxGeometry args={[0.11, 0.42, 0.11]} />
@@ -784,42 +823,37 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
           <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
         </mesh>
       </group>
-      {/* Cushions: north + south of the table, 2 on the south
-          porch strip — all clear of the east-gap route (x 29.3)
-          and of the table collider. */}
+      {/* Cushions */}
       {[
-        [27.5, -20.0, '#a8824a'], [27.5, -17.0, '#7a1f1f'],
-        [25.8, -15.7, '#a8824a'], [28.0, -15.7, '#7a1f1f'],
+        [36.5, -20.0, '#a8824a'], [36.5, -17.0, '#7a1f1f'],
+        [34.8, -15.7, '#a8824a'], [37.0, -15.7, '#7a1f1f'],
       ].map(([x, z, c], i) => (
         <mesh key={i} castShadow position={[x as number, 0.53, z as number]}>
           <boxGeometry args={[0.75, 0.16, 0.75]} />
           <meshStandardMaterial color={c as string} roughness={0.9} />
         </mesh>
       ))}
-      {/* Side table with two books (north-west interior, clear of
-          the north gap passage and of the NW pillar base) */}
-      <mesh castShadow position={[25.0, 0.98, -20.9]}>
+      {/* Side table with two books */}
+      <mesh castShadow position={[34.0, 0.98, -20.9]}>
         <boxGeometry args={[0.8, 0.06, 0.55]} />
         <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
       </mesh>
       {[-0.15, 0.15].map((dx) => [-0.1, 0.1].map((dz) => (
-        <mesh key={`${dx}${dz}`} castShadow position={[25.0 + dx, 0.7, -20.9 + dz]}>
+        <mesh key={`${dx}${dz}`} castShadow position={[34.0 + dx, 0.7, -20.9 + dz]}>
           <boxGeometry args={[0.07, 0.5, 0.07]} />
           <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
         </mesh>
       )))}
-      <mesh castShadow position={[25.0, 1.03, -20.9]} rotation={[0, 0.1, 0]}>
+      <mesh castShadow position={[34.0, 1.03, -20.9]} rotation={[0, 0.1, 0]}>
         <boxGeometry args={[0.35, 0.04, 0.25]} />
         <meshStandardMaterial color="#7a1f1f" roughness={0.8} />
       </mesh>
-      <mesh castShadow position={[25.0, 1.07, -20.9]} rotation={[0, -0.15, 0]}>
+      <mesh castShadow position={[34.0, 1.07, -20.9]} rotation={[0, -0.15, 0]}>
         <boxGeometry args={[0.32, 0.035, 0.22]} />
         <meshStandardMaterial color="#2a4a6a" roughness={0.8} />
       </mesh>
-      {/* Small stone lantern (no light, just form) on the lawn
-          north-east of the tea house — NOT on the platform (the
-          old NW-corner spot collided with the NW pillar base). */}
-      <group position={[24.0, 0, -23.5]}>
+      {/* Small stone lantern north-west of the tea house */}
+      <group position={[33.0, 0, -23.5]}>
         <mesh castShadow position={[0, 0.075, 0]}>
           <boxGeometry args={[0.32, 0.15, 0.32]} />
           <meshStandardMaterial color="#8d8a82" roughness={0.95} />
@@ -837,9 +871,8 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
           <meshStandardMaterial color="#a8432a" roughness={0.85} />
         </mesh>
       </group>
-      {/* Pots flanking the south steps (on the lawn, outside the
-          platform, clear of the step width x 25.5..29.5) */}
-      {[[24.8, -14.6], [30.2, -14.6]].map(([x, z], i) => (
+      {/* Pots flanking the south steps */}
+      {[[33.8, -14.6], [39.2, -14.6]].map(([x, z], i) => (
         <group key={i} position={[x, 0, z]}>
           <mesh castShadow position={[0, 0.175, 0]}>
             <cylinderGeometry args={[0.28, 0.22, 0.35, 10]} />
@@ -852,17 +885,17 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         </group>
       ))}
 
-      {/* --- Garden path: ALL STRAIGHT axis-aligned lines on the
-          brick courtyard (y 0.04) — one straight N-S line at x 14.5
-          from the banyan (z 8) through the corridor to z -10, then
-          straight E-W at z -10 through the garden gate (16.0, -10)
-          to the garden turn (20, -10) and tea porch turn (27.5, -10),
-          then N-S at x 27.5 (z -12, -14) up to the tea steps. */}
+      {/* --- Garden & Tea path: ALL STRAIGHT axis-aligned lines on the
+          brick courtyard (y 0.04) — N-S at x 14.5 from z 8 to z -10,
+          then E-W at z -10 through the garden gate (20.0, -10) to the
+          garden turn (26.5, -10) and tea porch turn (36.5, -10),
+          then N-S at x 36.5 (z -12, -14) up to the tea steps. */}
       {[
         [14.5, 8], [14.5, 6], [14.5, 4],
         [14.5, 2], [14.5, 0], [14.5, -2], [14.5, -4], [14.5, -6], [14.5, -8], [14.5, -10],
-        [16.2, -10], [18, -10], [20, -10], [22, -10], [24, -10], [26, -10],
-        [27.5, -10], [27.5, -12], [27.5, -14],
+        [16.4, -10], [18.2, -10], [20.0, -10], [22.0, -10], [24.2, -10], [26.5, -10],
+        [28.5, -10], [30.5, -10], [32.5, -10], [34.5, -10], [36.5, -10],
+        [36.5, -12], [36.5, -14],
       ].map(([x, z], i) => (
         <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.04, z]}>
           <planeGeometry args={[1.5, 1.5]} />
@@ -870,18 +903,18 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         </mesh>
       ))}
       {/* Low shrubs (clear of paths and walls) */}
-      {[[11.5, -7.5], [12.0, -13.5], [22.5, -13.2]].map(([x, z], i) => (
+      {[[11.5, -7.5], [12.0, -13.5], [31.6, -13.2]].map(([x, z], i) => (
         <mesh key={i} castShadow position={[x, 0.4, z]}>
           <icosahedronGeometry args={[0.4, 1]} />
           <meshStandardMaterial color="#3a7a2a" roughness={0.9} flatShading />
         </mesh>
       ))}
       {/* Flower bed inside the south-east corner of the garden lawn */}
-      <mesh receiveShadow position={[22.2, 0.09, -15.2]}>
+      <mesh receiveShadow position={[29.6, 0.09, -15.2]}>
         <boxGeometry args={[0.9, 0.15, 0.6]} />
         <meshStandardMaterial color="#6a4a2a" roughness={1} />
       </mesh>
-      {[[22.0, -15.2], [22.2, -15.0], [22.4, -15.3], [22.2, -15.4]].map(([x, z], i) => (
+      {[[29.4, -15.2], [29.6, -15.0], [29.8, -15.3], [29.6, -15.4]].map(([x, z], i) => (
         <group key={i} position={[x, 0.16, z]}>
           <mesh position={[0, 0.1, 0]}>
             <cylinderGeometry args={[0.01, 0.01, 0.2, 6]} />
@@ -893,9 +926,8 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
           </mesh>
         </group>
       ))}
-      {/* Stone lanterns flanking the garden entrance (the x 20
-          turn onto the lawn; 1.5m clear of the stone line) */}
-      {[[18.5, -10.8], [21.5, -10.8]].map(([x, z], i) => (
+      {/* Stone lanterns flanking the garden entrance turn at x 26.5 */}
+      {[[25.0, -10.8], [28.0, -10.8]].map(([x, z], i) => (
         <group key={i} position={[x, 0, z]}>
           <mesh castShadow position={[0, 0.1, 0]}>
             <boxGeometry args={[0.36, 0.2, 0.36]} />
@@ -916,60 +948,50 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         </group>
       ))}
 
-      {/* --- North path behind the hall (garden -> lake) --- */}
-      {Array.from({ length: 14 }).map((_, i) => (
-        <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[-16 + i * 2.4, 0.04, -30]}>
+      {/* --- North path behind the hall (z -32) --- */}
+      {Array.from({ length: 21 }).map((_, i) => (
+        <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[-24 + i * 2.4, 0.04, -32]}>
           <planeGeometry args={[2.0, 1.1]} />
           <meshStandardMaterial color="#b0a894" roughness={0.95} />
         </mesh>
       ))}
-      {/* Path around the pond, WIDENED and on dry land (fixed
-          2026-11-03): the old straight path at x -11 ran
-          straight THROUGH the pond water (pond spans x -12.4..
-          -4.6 at z 0..3). Now an L around the pond's north and
-          east sides: east-west along z -5 (north of the pond,
-          bank edge -2.9) then south along x -3.5 (east of the
-          pond, bank edge -4.1), widened to 1.4m, to the lake
-          bank. Site plan v2: the west stone now ABUTS the
-          bell<->Lumbini stone line at x -11.6 (shared edge, no
-          overlap — the old -13 stone sat on top of it), and the
-          corner stone at (-3.5,-5) is dropped (the E-W stone
-          already paves the corner). */}
-      {[-10.5, -8.3, -6.1, -3.9].map((x, i) => (
-        <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.04, -5]}>
-          <planeGeometry args={[2.2, 1.4]} />
+      {/* --- West stone paths: connecting main courtyard -> Tâm Liên Hồ (-16, 3)
+          -> Gác chuông (-22, -9) -> Vườn Lâm Tỳ Ni (-28, -24) --- */}
+      {[-21.5, -19.1, -16.7, -14.3, -11.9, -9.5, -7.1, -4.7].map((x, i) => (
+        <mesh key={`wpath-ew-${i}`} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.04, -5]}>
+          <planeGeometry args={[2.1, 1.4]} />
           <meshStandardMaterial color="#b0a894" roughness={0.95} />
         </mesh>
       ))}
-      {[-2.8, -0.6, 1.6].map((z, i) => (
-        <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[-3.5, 0.04, z]}>
-          <planeGeometry args={[1.4, 2.2]} />
+      {[-2.8, -0.6, 1.6, 3.8, 6.0, 8.2, 10.0].map((z, i) => (
+        <mesh key={`wpath-ns-${i}`} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[-11.1, 0.04, z]}>
+          <planeGeometry args={[1.4, 1.8]} />
+          <meshStandardMaterial color="#b0a894" roughness={0.95} />
+        </mesh>
+      ))}
+      {[-9.0, -6.8, -4.6].map((x, i) => (
+        <mesh key={`wpath-s-${i}`} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.04, 10]}>
+          <planeGeometry args={[1.8, 1.2]} />
           <meshStandardMaterial color="#b0a894" roughness={0.95} />
         </mesh>
       ))}
 
-      {/* Bell tower (Request B): Vietnamese tower + Lathe bronze
-          bell + hung mallet, in BellTower.tsx. Old flat slab + cone
-          bell removed 2026-11-03. */}
+      {/* Biển hiệu "Tâm Liên Hồ" đặt tại bờ đông nam hồ sen */}
+      <TempleSignboard text="Tâm Liên Hồ" position={[-13.2, 0, 7.8]} rotationY={0.25} width={1.9} />
+
+      {/* Bell tower at (-22, 0, -9.0) */}
       <BellTower ringSeq={bellRingSeq} />
 
-      {/* --- Lake bank steps (seat: -4.2, 3.2, facing west to water) ---
-          Two abutting stone tiers (upper seat x -4.05 w 0.7 -> -4.4..-3.7;
-          lower step x -4.6 w 0.4 -> -4.8..-4.4), no overlap. */}
-      <mesh receiveShadow castShadow position={[-4.05, 0.2, 3.2]}>
+      {/* --- Lake bank steps at Tâm Liên Hồ (seat: -11.7, 4.7, facing west to water) ---
+          Two abutting stone tiers (upper seat x -11.55 w 0.7; lower step x -12.1 w 0.4). */}
+      <mesh receiveShadow castShadow position={[-11.55, 0.2, 4.7]}>
         <boxGeometry args={[0.7, 0.4, 1.1]} />
         <meshStandardMaterial color="#8d8a82" roughness={0.95} />
       </mesh>
-      <mesh receiveShadow castShadow position={[-4.6, 0.1, 3.2]}>
+      <mesh receiveShadow castShadow position={[-12.1, 0.1, 4.7]}>
         <boxGeometry args={[0.4, 0.2, 1.0]} />
         <meshStandardMaterial color="#a39e92" roughness={0.95} />
       </mesh>
-
-      {/* Roadside signs removed at the user's request (2026-11-03):
-          no posts, direction signs or info boards stand on the
-          paths anymore. Wayfinding lives in the 2D map only.
-          The gate sign, the CHÍNH ĐIỆN facade sign and the side
-          altar name boards stay, as they belong to buildings. */}
     </group>
   );
 }

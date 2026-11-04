@@ -728,26 +728,12 @@ export default function Home() {
       hall: { target: LAYOUT.altarSpot, via: [{ x: -2.5, z: 0.5 }, { x: -2.5, z: -4 }, { x: 0, z: -4 }, { x: 0, z: -9 }] },
       burner: { target: LAYOUT.burnerApproach, via: [] },
       chant: { target: LAYOUT.chantApproach, via: [{ x: -2.5, z: 0.5 }, { x: -2.5, z: -4 }, { x: 0, z: -4 }] },
-      pond: { target: LAYOUT.pondApproach, via: [{ x: 0, z: 10 }, { x: -3.6, z: 10 }] },
-      banyan: { target: LAYOUT.banyan, via: [{ x: 0, z: 10 }, { x: 8, z: 10 }] },
-      // Garden/tea routes (site plan v2, 2026-11-04): ALL
-      // axis-aligned, following the straight stone lines —
-      // corridor walkway x 14.5 (0.32m clear of the chair, 0.29m
-      // clear of the east pillars), south to the gate, through
-      // the gate at z -10, east along z -10 (1.0m south of the
-      // lawn edge) to the garden turn (20,-10) or the tea porch
-      // (27.5,-14.0), then the east gap (x 29.3) to the seat
-      // approach (29.3,-17.7), 0.8m from the tea seat. The old
-      // diagonal west-edge staircase is gone.
-      garden: { target: LAYOUT.garden, via: [{ x: 14.5, z: 2 }, { x: 14.5, z: -6 }, { x: 14.5, z: -10 }, { x: 16.0, z: -10 }, { x: 20, z: -10 }] },
-      tea: { target: { x: 29.3, z: -17.7 }, via: [{ x: 14.5, z: 2 }, { x: 14.5, z: -6 }, { x: 14.5, z: -10 }, { x: 16.0, z: -10 }, { x: 20, z: -10 }, { x: 27.5, z: -10 }, { x: 27.5, z: -14.0 }, { x: 29.3, z: -14.0 }] },
-      bell: { target: { x: -14, z: -5.8 }, via: [{ x: -3.5, z: 1.5 }, { x: -3.5, z: -5 }, { x: -14, z: -5 }] }, // around the pond, never through it
-      // Lumbini (site plan v2): around the pond like the bell
-      // route, then straight west along z -5 (0.88m clear of
-      // the bell steps' expanded edge -5.88), straight north
-      // along x -17 on the stone line to the steps, then
-      // the ritual spot.
-      lumbini: { target: { ...LAYOUT.lumbiniSpot }, via: [{ x: -3.5, z: 1.5 }, { x: -3.5, z: -5 }, { x: -17, z: -5 }, { x: -17, z: -16.8 }] },
+      pond: { target: LAYOUT.pondApproach, via: [{ x: 0, z: 10 }, { x: -11.1, z: 10 }] },
+      banyan: { target: LAYOUT.banyan, via: [{ x: 0, z: 10 }, { x: 14.5, z: 10 }, { x: 14.5, z: 8 }] },
+      garden: { target: LAYOUT.garden, via: [{ x: 14.5, z: 2 }, { x: 14.5, z: -6 }, { x: 14.5, z: -10 }, { x: 20.0, z: -10 }, { x: 26.5, z: -10 }] },
+      tea: { target: { x: 38.3, z: -17.7 }, via: [{ x: 14.5, z: 2 }, { x: 14.5, z: -6 }, { x: 14.5, z: -10 }, { x: 20.0, z: -10 }, { x: 26.5, z: -10 }, { x: 36.5, z: -10 }, { x: 36.5, z: -14.0 }, { x: 38.3, z: -14.0 }] },
+      bell: { target: { x: -22, z: -6.2 }, via: [{ x: -3.5, z: 1.5 }, { x: -3.5, z: -5 }, { x: -22, z: -5 }] }, // around the pond, never through it
+      lumbini: { target: { ...LAYOUT.lumbiniSpot }, via: [{ x: -3.5, z: 1.5 }, { x: -3.5, z: -5 }, { x: -28, z: -5 }, { x: -28, z: -20.8 }] },
       gate: { target: { x: 0, z: 15 }, via: [] },
     };
     const r = routes[zoneId];
@@ -1869,50 +1855,46 @@ export default function Home() {
               <h2 className="font-serif text-xl font-semibold text-amber-900">Sơ đồ Chùa Hải An</h2>
               <button type="button" onClick={() => setMapOpen(false)} className="rounded-full bg-stone-200 px-3 py-1 text-sm">✕</button>
             </div>
-            <svg viewBox="0 0 640 700" className="mt-3 w-full rounded-2xl bg-[#e8e0cc]">
-              {/* Map formula (site plan v2, 2026-11-04): x=(wx+32)*10,
-                  y=(wz+40)*10 for the new bounds x -32..32,
-                  z -40..30. Every dot/rect was recomputed — the
-                  old (wx+24)*10 / (wz+34)*10 formula is gone. */}
-              {/* Tường bao khuôn viên chùa (Compound enclosure wall: x -32..32, z -33..13) */}
-              <rect x="6" y="70" width="628" height="460" rx="8" fill="#dfd5be" stroke="#8a6842" strokeWidth="4" />
+            <svg viewBox="0 0 736 608" className="mt-3 w-full rounded-2xl bg-[#e8e0cc]">
+              {/* Map formula: x=(wx+46)*8, y=(wz+44)*8 for bounds x -46..46, z -44..32 */}
+              {/* Tường bao khuôn viên chùa (Compound enclosure wall: x -44..44, z -36..13) */}
+              <rect x="16" y="64" width="704" height="392" rx="8" fill="#dfd5be" stroke="#8a6842" strokeWidth="4" />
               {/* Hall */}
-              <rect x="225" y="140" width="190" height="202" fill="#e8d9b8" stroke="#7a5c3a" />
-              <text x="320" y="240" textAnchor="middle" fontSize="13" fill="#7a1f1f">Chính điện</text>
+              <rect x="292" y="144" width="152" height="162" fill="#e8d9b8" stroke="#7a5c3a" />
+              <text x="368" y="228" textAnchor="middle" fontSize="13" fill="#7a1f1f">Chính điện</text>
               {/* Tam quan + courtyard */}
-              <rect x="270" y="520" width="100" height="20" fill="#a8432a" />
-              <text x="320" y="555" textAnchor="middle" fontSize="11">Cổng tam quan</text>
-              {/* Pond */}
-              <circle cx="235" cy="415" r="36" fill="#7aa8c8" />
-              <text x="235" y="418" textAnchor="middle" fontSize="11" fill="#fff">Hồ sen</text>
-              {/* Banyan, garden, tea, bell */}
-              <circle cx="480" cy="500" r="26" fill="#3f7a2e" />
-              <text x="480" y="504" textAnchor="middle" fontSize="11" fill="#fff">Sân đa</text>
-              <rect x="494" y="150" width="136" height="152" fill="#7a9a5a" />
-              <text x="530" y="225" textAnchor="middle" fontSize="11">Vườn sau</text>
-              <rect x="560" y="182" width="70" height="65" fill="#e8d9b8" stroke="#7a5c3a" />
-              <text x="595" y="215" textAnchor="middle" fontSize="10">Nhà trà</text>
-              <circle cx="180" cy="315" r="14" fill="#c9a227" />
-              <text x="180" y="337" textAnchor="middle" fontSize="10">Gác chuông</text>
-              {/* Lumbini: (-17,-20) -> (150,200), inside the
-                  enlarged courtyard like everything else now. */}
-              <circle cx="150" cy="200" r="16" fill="#c98a9e" stroke="#7a5c3a" />
-              {/* Label EAST of the dot: the old centred white label
-                  sat under the red 'Bạn đang ở đây' marker whenever
-                  the guest stood at Lumbini. */}
-              <text x="172" y="204" textAnchor="start" fontSize="10" fill="#7a5c3a">Lâm Tỳ Ni</text>
+              <rect x="328" y="448" width="80" height="16" fill="#a8432a" />
+              <text x="368" y="482" textAnchor="middle" fontSize="11">Cổng tam quan</text>
+              {/* Tâm Liên Hồ (-16, 3) */}
+              <circle cx="240" cy="376" r="32" fill="#7aa8c8" />
+              <text x="240" y="380" textAnchor="middle" fontSize="10" fill="#fff">Tâm Liên Hồ</text>
+              {/* Cây đa Bách Linh (22, 8) */}
+              <circle cx="544" cy="416" r="26" fill="#3f7a2e" />
+              <text x="544" y="420" textAnchor="middle" fontSize="9.5" fill="#fff">Đa Bách Linh</text>
+              {/* Vườn Lộc Uyển (23.4..31, -25..-11.8) */}
+              <rect x="555" y="152" width="62" height="106" fill="#7a9a5a" />
+              <text x="586" y="206" textAnchor="middle" fontSize="10" fill="#fff">Vườn Lộc Uyển</text>
+              {/* Nhà trà (33..40, -21.75..-15.25) */}
+              <rect x="632" y="178" width="56" height="52" fill="#e8d9b8" stroke="#7a5c3a" />
+              <text x="660" y="208" textAnchor="middle" fontSize="10">Nhà trà</text>
+              {/* Gác chuông (-22, -9) */}
+              <circle cx="192" cy="280" r="14" fill="#c9a227" />
+              <text x="192" y="304" textAnchor="middle" fontSize="10">Gác chuông</text>
+              {/* Vườn Lâm Tỳ Ni (-28, -24) */}
+              <circle cx="144" cy="160" r="18" fill="#c98a9e" stroke="#7a5c3a" />
+              <text x="168" y="164" textAnchor="start" fontSize="10" fill="#7a5c3a">Vườn Lâm Tỳ Ni</text>
               {/* Player marker */}
-              <circle cx={(playerPos.x + 32) * 10} cy={(playerPos.z + 40) * 10} r="10" fill="#dc2626" stroke="#fff" strokeWidth="2" />
-              <text x={(playerPos.x + 32) * 10} y={(playerPos.z + 40) * 10 - 16} textAnchor="middle" fontSize="11" fill="#dc2626">Bạn đang ở đây</text>
+              <circle cx={(playerPos.x + 46) * 8} cy={(playerPos.z + 44) * 8} r="10" fill="#dc2626" stroke="#fff" strokeWidth="2" />
+              <text x={(playerPos.x + 46) * 8} y={(playerPos.z + 44) * 8 - 16} textAnchor="middle" fontSize="11" fill="#dc2626">Bạn đang ở đây</text>
             </svg>
             <div className="mt-3 grid gap-2">
               {([
                 ['hall', '🏯 Chính điện', 'Ngồi (8 đệm) · Quỳ lễ · Ban Thích Ca · Ban Địa Tạng'],
                 ['burner', '🪔 Lư hương', 'Dâng hương'],
                 ['chant', '📿 Khu niệm Phật', 'Niệm Phật · Hồi hướng'],
-                ['pond', '🪷 Hồ sen', 'Phóng sinh (mô phỏng) · Ngồi ngắm hồ'],
-                ['banyan', '🌳 Sân đa', 'Ngồi dưới tán cây · Quét lá'],
-                ['garden', '🥬 Vườn sau', 'Múc nước · Tưới cây'],
+                ['pond', '🪷 Tâm Liên Hồ (Hồ sen)', 'Phóng sinh (mô phỏng) · Ngồi ngắm hồ'],
+                ['banyan', '🌳 Cây đa Bách Linh', 'Ngồi dưới tán đa · Quét lá'],
+                ['garden', '🥬 Vườn Lộc Uyển', 'Múc nước · Tưới cây'],
                 ['tea', '🍵 Nhà trà', 'Ngồi nhà trà · Hiên đọc'],
                 ['bell', '🔔 Gác chuông', 'Thỉnh chuông'],
                 ['lumbini', '🪷 Vườn Lâm Tỳ Ni – Tắm Phật', 'Tắm Phật · Tìm hiểu Phật đản'],

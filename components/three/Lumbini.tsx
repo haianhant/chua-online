@@ -217,11 +217,11 @@ export default function Lumbini({ festivalOn }: { festivalOn: boolean }) {
       ))}
       {/* Stone path (straight L, uniform #b0a894 stone matching the
           rest of the temple): aligned with the pond/bell E-W path at
-          world z -5.0 (local z 15.0) -> north along local x 0 (world
-          x -17) -> landing stone abutting the pavilion south steps. */}
+          world z -5.0 (local z 19.0) -> north along local x 0 (world
+          x -28) -> landing stone abutting the pavilion south steps. */}
       {[
-        [4.5, 15.0], [2.2, 15.0], [0, 15.0],
-        [0, 12.6], [0, 10.2], [0, 7.8], [0, 5.6],
+        [4.4, 19.0], [2.2, 19.0], [0, 19.0],
+        [0, 16.8], [0, 14.6], [0, 12.4], [0, 10.2], [0, 8.0], [0, 5.8],
       ].map(([x, z], i) => (
         <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.042, z]}>
           <planeGeometry args={[1.6, 1.6]} />

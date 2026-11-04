@@ -14,6 +14,7 @@ import CameraRig from './CameraRig';
 import { controls, isInHall, LAYOUT, type MonkId, type PlayerGender } from './controls';
 import Grounds from './Grounds';
 import Lumbini from './Lumbini';
+import RiverAndHSKIsland from './RiverAndHSKIsland';
 
 type Props = {
   name: string;
@@ -44,6 +45,10 @@ type Props = {
   festivalOn: boolean;
   /** Talk with one of the two walking novice monks. */
   onSelectMonk: (id: MonkId) => void;
+  /** Click the boat / pier to sail across Sông Bát Nhã to Đảo HSK. */
+  onClickPierOrBoat: () => void;
+  /** Open the Đảo HSK portal modal (https://hoc-hsk.vercel.app/). */
+  onOpenHSKModal: () => void;
 };
 
 /**
@@ -74,6 +79,8 @@ export default function World({
   bellRingSeq,
   festivalOn,
   onSelectMonk,
+  onClickPierOrBoat,
+  onOpenHSKModal,
 }: Props) {
   return (
     <Canvas
@@ -87,7 +94,7 @@ export default function World({
     >
       {/* Warm afternoon sky + matching fog for depth */}
       <Sky sunPosition={[-30, 18, -20]} turbidity={6} rayleigh={1.2} />
-      <fog attach="fog" args={['#e6d9b8', 28, 72]} />
+      <fog attach="fog" args={['#e6d9b8', 32, 92]} />
 
       <hemisphereLight args={['#cfe8ff', '#7a5c3a', 0.75]} />
       <ambientLight intensity={0.35} />
@@ -128,6 +135,12 @@ export default function World({
       {/* Vườn Lâm Tỳ Ni – Lễ đài Tắm Phật */}
       <Lumbini festivalOn={festivalOn} />
       <LotusPond spawnTick={spawnTick} spawnCount={spawnCount} remoteTick={remoteTick} onFishCount={onFishCount} />
+      {/* Sông Bát Nhã, Bến Thuyền Độ Sinh & Hòn Đảo HSK (https://hoc-hsk.vercel.app/) */}
+      <RiverAndHSKIsland
+        entered={entered}
+        onClickPierOrBoat={onClickPierOrBoat}
+        onOpenHSKModal={onOpenHSKModal}
+      />
 
       {/* Đỉnh đồng Lư hương trước thềm Chính điện */}
       <IncenseBurner stage={burnerStage} insertT={insertT} onInteract={onInteractBurner} />

@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { controls, LAYOUT, isInHall } from './controls';
+import { boatState, controls, LAYOUT, isInHall } from './controls';
 
 /**
  * Third-person camera, smoothed every frame (no snapping):
@@ -101,6 +101,24 @@ export default function CameraRig() {
         LAYOUT.lumbiniBasin.z + Math.cos(th) * 3.6,
       );
       look.set(LAYOUT.lumbiniBasin.x, 1.5, LAYOUT.lumbiniBasin.z);
+    } else if (controls.mode === 'boat') {
+      // Boat ride across Sông Bát Nhã to Hòn Đảo HSK:
+      // Sweeps alongside the wooden boat so both the boat + devotee and
+      // the destination (Đảo HSK when sailing south, or Chùa Hải An when
+      // sailing back north) stay framed cinematically.
+      const bx = boatState.boatX;
+      const bz = boatState.boatZ;
+      if (boatState.phase === 'sailing_back') {
+        target.set(bx - 4.6, 3.2, bz + 5.2);
+        look.set(bx, 1.6, bz - 6.0);
+      } else if (boatState.phase === 'at_hsk') {
+        const sway = Math.sin(t * 0.35) * 1.4;
+        target.set(bx + sway - 3.2, 3.6, bz - 5.8);
+        look.set(0, 2.8, LAYOUT.hskIsland.z);
+      } else {
+        target.set(bx + 4.8, 3.1, bz - 5.2);
+        look.set(bx, 1.8, bz + 7.5);
+      }
     } else {
       const h = Math.cos(controls.pitch) * effDistance;
       target.set(

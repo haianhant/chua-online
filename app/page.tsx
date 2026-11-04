@@ -12,9 +12,13 @@ import {
   waterState,
   releaseState,
   monksState,
+  boatState,
+  wishingRackState,
+  lanternState,
   type Seat,
   type SweepPhase,
   type BathPhase,
+  type BoatPhase,
   type PlayerGender,
   type MonkId,
 } from '@/components/three/controls';
@@ -62,6 +66,52 @@ type Ritual = 'none' | 'choosing' | 'offering' | 'done';
 const PRAYERS_KEY = 'thien-vien-prayers';
 const NAME_KEY = 'thien-vien-name';
 const GENDER_KEY = 'thien-vien-gender';
+const HSK_URL = 'https://hoc-hsk.vercel.app/';
+
+const FORTUNE_STICKS = [
+  {
+    num: 1,
+    rank: 'Thượng Cát · Tâm An Vạn Sự An',
+    verse: 'Trăng sáng soi gương mặt nước trong,\nTâm bình vạn sự tự hanh thông.\nGieo nhân thiện lành nơi hiện tại,\nHoa trái ngọt ngào nở cuối đông.',
+    meaning: 'Khi tâm giữ được sự điềm tĩnh, sáng suốt thì mọi việc học hành, gia đạo và công việc đều tự khắc mở lối thuận lợi.',
+    practice: 'Hôm nay hãy dành 3 phút hít thở sâu và làm một việc nhỏ giúp đỡ người thân.',
+  },
+  {
+    num: 2,
+    rank: 'Đại Cát · Trí Tuệ Đăng Khoa',
+    verse: 'Đèn khuya chăm chỉ rạng trang thư,\nMưa móc thấm nhuần nảy mầm từ.\nChớ ngại đường xa nhiều dốc đá,\nBến bờ trí tuệ đón người xưa.',
+    meaning: 'Quẻ lành về học tập và thi cử (đặc biệt thuận lợi cho người đang ôn luyện ngoại ngữ, HSK, nâng cao tri thức). Sự kiên trì mỗi ngày sẽ mang lại quả ngọt.',
+    practice: 'Ôn tập thêm 10 từ vựng mới trên Đảo HSK (hoc-hsk.vercel.app) với tâm thế vui vẻ, không áp lực.',
+  },
+  {
+    num: 3,
+    rank: 'Thượng Cát · Hiếu Đạo Sinh Phước',
+    verse: 'Hai đấng sinh thành tựa Phật tiền,\nChăm lo hiếu kính phước vô biên.\nGia đình hòa thuận xuân常 ở,\nChẳng phải tìm đâu chốn cảnh tiên.',
+    meaning: 'Phước báu lớn nhất bắt nguồn từ lòng hiếu thảo và sự hòa thuận trong gia đình. Gia đạo êm ấm là nền tảng của mọi thành công.',
+    practice: 'Gửi một lời hỏi thăm ấm áp hoặc giúp cha mẹ, người thân một việc nhà ngay hôm nay.',
+  },
+  {
+    num: 4,
+    rank: 'Thượng Cát · Nhẫn Hòa Kết Duyên Lành',
+    verse: 'Một câu nhịn nhường chín sự lành,\nGió xuân thổi mát rặng tùng xanh.\nMỉm cười buông nhẹ lời hơn thiệt,\nThiện hữu tri thức tự vây quanh.',
+    meaning: 'Lấy sự ôn hòa, lắng nghe để đối đãi với mọi người sẽ hóa giải hiểu lầm và kết thêm nhiều thiện duyên quý giá.',
+    practice: 'Lắng nghe trọn vẹn khi người khác nói và trao đi một nụ cười chân thành.',
+  },
+  {
+    num: 5,
+    rank: 'Đại Cát · Tinh Tấn Vững Bước',
+    verse: 'Nước chảy đá mòn bởi bền lâu,\nTừng bước an nhiên vượt nhịp cầu.\nChẳng sợ mây mù che lối nhỏ,\nNắng mai rực rỡ phía rừng sâu.',
+    meaning: 'Mục tiêu lớn không thành tựu trong một sớm một chiều mà nhờ sự đều đặn, bền bỉ mỗi ngày như dòng nước chảy.',
+    practice: 'Chia nhỏ mục tiêu lớn của bạn thành một việc nhỏ có thể hoàn thành trọn vẹn ngay hôm nay.',
+  },
+  {
+    num: 6,
+    rank: 'Thượng Cát · Từ Bi Hỷ Xả',
+    verse: 'Sen nở trong bùn chẳng nhiễm hương,\nLòng người rộng mở khắp muôn phương.\nBuông đi gánh nặng chuyện năm cũ,\nBước nhẹ thênh thang vạn dặm đường.',
+    meaning: 'Biết tha thứ cho người khác và bao dung với chính mình sẽ giúp tâm hồn nhẹ nhõm, đón nhận năng lượng mới tươi sáng.',
+    practice: 'Buông bỏ một nỗi bận tâm cũ và viết một lời chúc lành vào Sổ cầu an.',
+  },
+] as const;
 
 function loadPrayers(): Prayer[] {
   try {
@@ -140,13 +190,37 @@ export default function Home() {
   const [seatedSeat, setSeatedSeat] = useState<Seat | null>(null);
   const [sitPending, setSitPending] = useState<Seat | null>(null);
   // Context action (nearest object, hysteresis in the poll below).
-  type Ctx = { kind: 'seat' | 'broom' | 'jar' | 'bed' | 'bell' | 'bath' | 'monk'; id: string; label: string };
+  type Ctx = {
+    kind: 'seat' | 'broom' | 'jar' | 'bed' | 'bell' | 'bath' | 'monk' | 'boat' | 'wishingRack' | 'fortune' | 'stupa' | 'lantern';
+    id: string;
+    label: string;
+  };
   const [ctxAction, setCtxAction] = useState<Ctx | null>(null);
   const ctxRef = useRef<Ctx | null>(null);
   // 2 Chú tiểu đi quanh chùa (Novice monks interactive dialogue)
   const [activeMonk, setActiveMonk] = useState<MonkId | null>(null);
   const [monkTopic, setMonkTopic] = useState<'welcome' | 'etiquette' | 'daily' | 'blessing' | 'wayfinding'>('welcome');
   const [monkBlessingIdx, setMonkBlessingIdx] = useState(0);
+  // Boat ride across Sông Bát Nhã to Hòn Đảo HSK (https://hoc-hsk.vercel.app/)
+  const [boatPhase, setBoatPhase] = useState<BoatPhase>('idle');
+  const [boatProgress, setBoatProgress] = useState(0);
+  const [boatPending, setBoatPending] = useState(false);
+  const boatPrevRef = useRef<BoatPhase>('idle');
+  const [hskModalOpen, setHskModalOpen] = useState(false);
+  // Meaningful Buddhist temple activities:
+  // 1) Xin xâm / Gieo quẻ Từ Bi đầu năm (Ống xâm Quán Thế Âm)
+  const [fortuneOpen, setFortuneOpen] = useState(false);
+  const [fortuneShaking, setFortuneShaking] = useState(false);
+  const [fortuneStickIdx, setFortuneStickIdx] = useState<number | null>(null);
+  // 2) Treo thẻ gỗ ước nguyện Bồ Đề cạnh Cây đa Bách Linh
+  const [plaqueOpen, setPlaqueOpen] = useState(false);
+  const [plaqueWish, setPlaqueWish] = useState('');
+  const [plaqueCategory, setPlaqueCategory] = useState('Cầu học tập tinh tấn · Thi đỗ HSK điểm cao');
+  // 3) Thả đèn Hoa Đăng cầu an trên Tâm Liên Hồ & Sông Bát Nhã
+  const [lanternModalOpen, setLanternModalOpen] = useState(false);
+  const [lanternWish, setLanternWish] = useState('Nguyện cầu bình an, trí tuệ sáng suốt cho gia đình và bản thân');
+  // 4) Bảo Tháp Báo Ân 7 tầng & Kinh hành nhiễu tháp
+  const [stupaModalOpen, setStupaModalOpen] = useState(false);
   // Sweep leaves (Request C, 2026-11-04): the timeline lives in
   // Grounds (sweepState); the page mirrors it for UI + movement
   // lock, and owns start / pause / resume / cancel. Leaf positions
@@ -341,6 +415,112 @@ export default function Home() {
     monksState.tamminh.talking = false;
   };
 
+  // --- Boat ride across Sông Bát Nhã to Hòn Đảo HSK (https://hoc-hsk.vercel.app/) ---
+  const startBoatToHSK = () => {
+    setMapOpen(false);
+    setMobileMenuOpen(false);
+    if (boatState.phase === 'at_hsk') {
+      setHskModalOpen(true);
+      return;
+    }
+    if (boatState.phase === 'sailing_to_hsk' || boatState.phase === 'sailing_back') {
+      return;
+    }
+    const px = controls.playerPos.x;
+    const pz = controls.playerPos.z;
+    if (Math.hypot(px - LAYOUT.pier.x, pz - LAYOUT.pier.z) < 2.4) {
+      setBoatPending(false);
+      controls.boatAutoWalk = false;
+      boatState.phase = 'sailing_to_hsk';
+      boatState.progress = 0;
+      boatPrevRef.current = 'sailing_to_hsk';
+      setBoatPhase('sailing_to_hsk');
+      controls.mode = 'boat';
+      touchFlame();
+    } else {
+      setBoatPending(true);
+      controls.boatAutoWalk = true;
+      const insideHall = px > -9.5 && px < 9.5 && pz > -26 && pz < -5.8;
+      controls.waypoints = insideHall ? [{ x: 0, z: -4.2 }, { x: 0, z: 15 }] : [{ x: 0, z: 15 }];
+      controls.moveTarget = { ...LAYOUT.pier };
+      if (controls.mode === 'menu' || controls.mode === 'intro') controls.mode = 'follow';
+      showToast('⛵ Đang bước ra Bến Thuyền Độ Sinh để lên thuyền sang Đảo HSK…');
+    }
+  };
+
+  const sailBackFromHSK = () => {
+    setHskModalOpen(false);
+    boatState.phase = 'sailing_back';
+    boatState.progress = 0;
+    boatPrevRef.current = 'sailing_back';
+    setBoatPhase('sailing_back');
+    controls.mode = 'boat';
+  };
+
+  const cancelBoat = () => {
+    setBoatPending(false);
+    controls.boatAutoWalk = false;
+    controls.moveTarget = null;
+    controls.waypoints = [];
+    boatState.phase = 'idle';
+    boatState.progress = 0;
+    boatPrevRef.current = 'idle';
+    setBoatPhase('idle');
+    setHskModalOpen(false);
+    if (controls.mode === 'boat') controls.mode = 'follow';
+  };
+
+  // --- Meaningful Buddhist Temple Activities ---
+  const drawFortuneStick = () => {
+    if (fortuneShaking) return;
+    setFortuneShaking(true);
+    setFortuneStickIdx(null);
+    touchFlame();
+    setTimeout(() => {
+      const idx = Math.floor(Math.random() * FORTUNE_STICKS.length);
+      setFortuneStickIdx(idx);
+      setFortuneShaking(false);
+    }, 1500);
+  };
+
+  const confirmHangPlaque = () => {
+    const text = (plaqueWish.trim() || plaqueCategory).slice(0, 180);
+    wishingRackState.customCount = Math.min(7, wishingRackState.customCount + 1);
+    wishingRackState.lastHungAt = Date.now();
+    touchFlame();
+    savePrayer('Thẻ gỗ ước nguyện Bồ Đề', text);
+    setPlaqueOpen(false);
+    setPlaqueWish('');
+    showToast('🎋 Đã treo thẻ gỗ ước nguyện lên giá dưới tán Cây đa Bách Linh & lưu vào Sổ cầu an!');
+  };
+
+  const confirmReleaseLantern = () => {
+    const text = (lanternWish.trim() || 'Nguyện cầu bình an, trí tuệ sáng suốt').slice(0, 180);
+    lanternState.pondCount = Math.min(6, lanternState.pondCount + 1);
+    lanternState.riverCount = Math.min(8, lanternState.riverCount + 1);
+    lanternState.lastSpawnAt = Date.now();
+    touchFlame();
+    savePrayer('Thả đèn Hoa Đăng cầu nguyện', text);
+    setLanternModalOpen(false);
+    showToast('🪷 Đã thắp và thả một ngọn đèn Hoa Đăng lung linh trên mặt nước!');
+  };
+
+  const startStupaCircumambulation = () => {
+    setStupaModalOpen(false);
+    touchFlame();
+    // Nhiễu tháp 1 vòng theo chiều kim đồng hồ quanh Bảo Tháp Báo Ân (35.0, -2.5)
+    controls.waypoints = [
+      { x: 31.2, z: -2.5 },
+      { x: 31.2, z: -6.2 },
+      { x: 38.8, z: -6.2 },
+      { x: 38.8, z: 1.2 },
+      { x: 31.2, z: 1.2 },
+    ];
+    controls.moveTarget = { x: 31.2, z: -2.5 };
+    if (controls.mode === 'menu' || controls.mode === 'intro') controls.mode = 'follow';
+    showToast('🙏 Đang đi kinh hành nhiễu Bảo Tháp Báo Ân theo chiều kim đồng hồ…');
+  };
+
   // Camera mode + pose follow the current activity (intro is left alone
   // until CameraRig itself finishes the sweep and switches to follow).
   const canMove =
@@ -351,6 +531,13 @@ export default function Home() {
     !bathPending &&
     !bathBlessingOpen &&
     !vesakOpen &&
+    boatPhase === 'idle' &&
+    !boatPending &&
+    !hskModalOpen &&
+    !fortuneOpen &&
+    !plaqueOpen &&
+    !lanternModalOpen &&
+    !stupaModalOpen &&
     ritual === 'none' &&
     !(chantPlaying && chantMode === 'calm') &&
     !dedicationOpen &&
@@ -370,7 +557,10 @@ export default function Home() {
       controls.mode = 'menu';
       return;
     }
-    if (ritual === 'choosing' || ritual === 'offering') {
+    if (boatPhase !== 'idle') {
+      controls.mode = 'boat';
+      controls.pose = 'stand';
+    } else if (ritual === 'choosing' || ritual === 'offering') {
       controls.mode = 'burner';
       controls.pose = 'pray';
     } else if (chantPlaying && chantMode === 'calm') {
@@ -390,7 +580,7 @@ export default function Home() {
       controls.pose = 'stand';
       if (controls.mode !== 'intro') controls.mode = 'follow';
     }
-  }, [entered, ritual, chantPlaying, chantMode, hallRitual, seatedSeat]);
+  }, [entered, ritual, chantPlaying, chantMode, hallRitual, seatedSeat, boatPhase]);
 
   // Background music vs chanting: two separate streams, never
   // overlapping. When chanting starts, fade the background down
@@ -623,6 +813,31 @@ export default function Home() {
           cancelBath();
         }
       }
+      // Boat ride across Sông Bát Nhã to Hòn Đảo HSK:
+      if (boatPending && Math.hypot(px - LAYOUT.pier.x, pz - LAYOUT.pier.z) < 0.85) {
+        setBoatPending(false);
+        controls.boatAutoWalk = false;
+        boatState.phase = 'sailing_to_hsk';
+        boatState.progress = 0;
+        boatPrevRef.current = 'sailing_to_hsk';
+        setBoatPhase('sailing_to_hsk');
+        controls.mode = 'boat';
+        touchFlame();
+      }
+      {
+        const bph = boatState.phase;
+        if (bph !== boatPrevRef.current) {
+          if (bph === 'at_hsk') {
+            setHskModalOpen(true);
+          } else if (bph === 'idle' && boatPrevRef.current === 'sailing_back') {
+            controls.mode = 'follow';
+            showToast('⛵ Thuyền đã cập Bến Thuyền Độ Sinh — chào mừng bạn trở lại Chùa Hải An.');
+          }
+          boatPrevRef.current = bph;
+          setBoatPhase(bph);
+        }
+        setBoatProgress(boatState.progress);
+      }
       // Context action: nearest object, with hysteresis so the
       // prompt does not flicker when standing between two objects.
       const candidates: Array<Ctx & { d: number }> = [];
@@ -659,6 +874,26 @@ export default function Home() {
         const d = Math.hypot(px - LAYOUT.lumbiniBasin.x, pz - LAYOUT.lumbiniBasin.z);
         if (d < 2.5) candidates.push({ kind: 'bath', id: 'bath', label: 'Tắm Phật', d });
       }
+      // Bến Thuyền Độ Sinh -> Đi thuyền qua Sông Bát Nhã sang Đảo HSK
+      if (boatState.phase === 'idle' && !boatPending) {
+        const d = Math.hypot(px - LAYOUT.pier.x, pz - LAYOUT.pier.z);
+        if (d < 3.8) candidates.push({ kind: 'boat', id: 'boat', label: 'Đi thuyền sang Đảo HSK', d });
+      }
+      // Giá treo thẻ ước nguyện Bồ Đề cạnh Cây đa Bách Linh
+      {
+        const d = Math.hypot(px - LAYOUT.wishingRack.x, pz - LAYOUT.wishingRack.z);
+        if (d < 2.8) candidates.push({ kind: 'wishingRack', id: 'wishingRack', label: 'Treo thẻ gỗ ước nguyện Bồ Đề', d });
+      }
+      // Ống xâm Từ Bi trong Chính điện
+      {
+        const d = Math.hypot(px - LAYOUT.fortuneCylinder.x, pz - LAYOUT.fortuneCylinder.z);
+        if (d < 2.6) candidates.push({ kind: 'fortune', id: 'fortune', label: 'Xin quẻ Từ Bi chỉ lối', d });
+      }
+      // Bảo Tháp Báo Ân 7 tầng
+      {
+        const d = Math.hypot(px - LAYOUT.stupa.x, pz - LAYOUT.stupa.z);
+        if (d < 5.0) candidates.push({ kind: 'stupa', id: 'stupa', label: 'Chiêm bái Bảo Tháp Báo Ân 7 tầng', d });
+      }
       // 2 Chú tiểu đi quanh chùa: khi lại gần (< 3.0m) có thể bắt chuyện hỏi thăm
       if (!activeMonk) {
         for (const mId of ['taman', 'tamminh'] as const) {
@@ -690,7 +925,7 @@ export default function Home() {
     }, 200);
     return () => clearInterval(iv);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entered, sitPending, sweepPending, sweepDone, bathPending, seatedSeat, carryingWater, waterStream, activeMonk]);
+  }, [entered, sitPending, sweepPending, sweepDone, bathPending, boatPending, seatedSeat, carryingWater, waterStream, activeMonk]);
 
   const doCtxAction = () => {
     const a = ctxRef.current;
@@ -700,6 +935,17 @@ export default function Home() {
       if (s) sitAtSeat(s);
     } else if (a.kind === 'monk') {
       openMonkModal(a.id as MonkId);
+    } else if (a.kind === 'boat') {
+      startBoatToHSK();
+    } else if (a.kind === 'wishingRack') {
+      setPlaqueOpen(true);
+    } else if (a.kind === 'fortune') {
+      setFortuneOpen(true);
+      drawFortuneStick();
+    } else if (a.kind === 'stupa') {
+      setStupaModalOpen(true);
+    } else if (a.kind === 'lantern') {
+      setLanternModalOpen(true);
     } else if (a.kind === 'broom') {
       if (Math.hypot(controls.playerPos.x - LAYOUT.sweepSpot.x, controls.playerPos.z - LAYOUT.sweepSpot.z) < 0.45) {
         controls.sweepAutoWalk = false;
@@ -804,18 +1050,26 @@ export default function Home() {
   const goToZone = (zoneId: string) => {
     if (sweepState.phase !== 'idle') cancelSweep();
     if (bathState.phase !== 'idle') cancelBath();
+    if (boatState.phase !== 'idle' || boatPending) cancelBoat();
     setMapOpen(false);
+    if (zoneId === 'hsk') {
+      startBoatToHSK();
+      return;
+    }
     const routes: Record<string, { target: { x: number; z: number }; via: Array<{ x: number; z: number }> }> = {
       hall: { target: LAYOUT.altarSpot, via: [{ x: -2.5, z: 0.5 }, { x: -2.5, z: -4.2 }, { x: 0, z: -4.2 }, { x: 0, z: -9 }] },
       burner: { target: LAYOUT.burnerApproach, via: [] },
       chant: { target: LAYOUT.chantApproach, via: [{ x: -2.5, z: 0.5 }, { x: -2.5, z: -4.2 }, { x: 0, z: -4.2 }] },
       pond: { target: LAYOUT.pondApproach, via: [{ x: 0, z: 10 }, { x: -11.1, z: 10 }] },
       banyan: { target: LAYOUT.banyan, via: [{ x: 0, z: 10 }, { x: 14.5, z: 10 }, { x: 14.5, z: 8 }] },
+      wishing: { target: LAYOUT.wishingSpot, via: [{ x: 0, z: 10 }, { x: 14.5, z: 10 }, { x: 14.5, z: 6.4 }] },
+      stupa: { target: LAYOUT.stupaSpot, via: [{ x: 14.5, z: 2 }, { x: 14.5, z: -2.5 }] },
       garden: { target: LAYOUT.garden, via: [{ x: 14.5, z: 2 }, { x: 14.5, z: -6 }, { x: 14.5, z: -10 }, { x: 20.0, z: -10 }, { x: 26.5, z: -10 }] },
       tea: { target: { x: 38.3, z: -17.7 }, via: [{ x: 14.5, z: 2 }, { x: 14.5, z: -6 }, { x: 14.5, z: -10 }, { x: 20.0, z: -10 }, { x: 26.5, z: -10 }, { x: 36.5, z: -10 }, { x: 36.5, z: -14.0 }, { x: 38.3, z: -14.0 }] },
       bell: { target: { x: -22, z: -6.2 }, via: [{ x: -3.5, z: 1.5 }, { x: -3.5, z: -5 }, { x: -22, z: -5 }] },
       lumbini: { target: { ...LAYOUT.lumbiniSpot }, via: [{ x: -3.5, z: 1.5 }, { x: -3.5, z: -5 }, { x: -28, z: -5 }, { x: -28, z: -20.8 }] },
       gate: { target: { x: 0, z: 15 }, via: [] },
+      pier: { target: { ...LAYOUT.pier }, via: [{ x: 0, z: 15 }] },
     };
     const r = routes[zoneId];
     if (r) {
@@ -1063,6 +1317,8 @@ export default function Home() {
           carryingWater={carryingWater}
           festivalOn={festivalOn}
           onSelectMonk={openMonkModal}
+          onClickPierOrBoat={startBoatToHSK}
+          onOpenHSKModal={() => setHskModalOpen(true)}
         />
         </WorldErrorBoundary>
         ) : (
@@ -1097,6 +1353,13 @@ export default function Home() {
             <p className="text-[11px] text-stone-500">Đi dạo · Dâng hương · Niệm Phật</p>
           </div>
           <div className="pointer-events-auto flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              onClick={startBoatToHSK}
+              className="rounded-full border border-amber-300/70 bg-amber-800 px-3.5 py-2 text-sm font-medium text-white shadow backdrop-blur hover:bg-amber-900"
+            >
+              ⛵ Đi thuyền → Đảo HSK
+            </button>
             <button type="button" onClick={() => setSettingsOpen(true)} className="rounded-full border border-white/50 bg-white/70 px-3 py-2 text-sm shadow backdrop-blur">👤 {name}</button>
             <button type="button" onClick={() => setBookOpen(true)} className="rounded-full border border-white/50 bg-white/70 px-3 py-2 text-sm shadow backdrop-blur">📖 Sổ cầu an</button>
             <button type="button" onClick={() => setHelpOpen(true)} className="rounded-full border border-white/50 bg-white/70 px-3 py-2 text-sm shadow backdrop-blur">❓ Hướng dẫn</button>
@@ -1196,6 +1459,13 @@ export default function Home() {
               {soloMode ? '🧘 Chế độ riêng' : mpStatus === 'online' ? `👥 Phòng chung - ${mpCount}` : mpStatus === 'connecting' ? '👥 Đang kết nối…' : '👥 Ngoại tuyến (solo)'}
             </p>
             <div className="flex flex-col gap-1.5 pb-1">
+              <button
+                type="button"
+                onClick={startBoatToHSK}
+                className="rounded-xl bg-amber-800 px-4 py-3 text-left text-sm font-medium text-white shadow-sm"
+              >
+                ⛵ Đi thuyền qua Sông Bát Nhã → Đảo HSK (hoc-hsk.vercel.app)
+              </button>
               <button type="button" onClick={() => { setMobileMenuOpen(false); setMapOpen(true); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">🗺 Sơ đồ chùa</button>
               <button type="button" onClick={() => { setMobileMenuOpen(false); setSettingsOpen(true); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">👤 {name} — Đổi tên</button>
               <button type="button" onClick={() => { setMobileMenuOpen(false); setBookOpen(true); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">📖 Sổ cầu an</button>
@@ -1242,14 +1512,20 @@ export default function Home() {
               <div className="flex gap-2">
                 <button type="button" onClick={() => startHallRitual('kneel')} className="rounded-full bg-amber-800 px-5 py-3 text-sm font-medium text-white shadow-xl">🧎 Quỳ lễ</button>
                 <button type="button" onClick={() => startHallRitual('sit')} className="rounded-full bg-amber-800 px-5 py-3 text-sm font-medium text-white shadow-xl">🧘 Ngồi tĩnh tâm</button>
+                <button type="button" onClick={() => { setFortuneOpen(true); drawFortuneStick(); }} className="rounded-full bg-white/90 px-5 py-3 text-sm font-medium text-amber-900 shadow-xl ring-1 ring-amber-800/30">🎋 Xin quẻ Từ Bi</button>
+              </div>
+            ) : zone === 'pond' ? (
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setReleaseOpen(true)} className="rounded-full bg-amber-800 px-5 py-3 text-sm font-medium text-white shadow-xl">🐟 Phóng sinh cá chép</button>
+                <button type="button" onClick={() => setLanternModalOpen(true)} className="rounded-full bg-white/90 px-5 py-3 text-sm font-medium text-amber-900 shadow-xl ring-1 ring-amber-800/30">🪷 Thả đèn Hoa Đăng</button>
               </div>
             ) : (
               <button
                 type="button"
-                onClick={() => (zone === 'burner' ? startRitual() : zone === 'pond' ? setReleaseOpen(true) : setChantOpen(true))}
+                onClick={() => (zone === 'burner' ? startRitual() : setChantOpen(true))}
                 className="rounded-full bg-amber-800 px-5 py-3 text-sm font-medium text-white shadow-xl"
               >
-                {zone === 'burner' ? '🪔 Nhấn E hoặc chạm để dâng hương' : zone === 'pond' ? '🪷 Nhấn E để phóng sinh' : '📿 Nhấn E để niệm Phật'}
+                {zone === 'burner' ? '🪔 Nhấn E hoặc chạm để dâng hương' : '📿 Nhấn E để niệm Phật'}
               </button>
             )}
           </div>
@@ -1261,14 +1537,20 @@ export default function Home() {
               <>
                 <button type="button" onClick={() => startHallRitual('kneel')} className="max-w-[42vw] rounded-full bg-amber-800 px-4 py-3 text-center text-sm font-medium text-white shadow-xl">🧎 Quỳ lễ</button>
                 <button type="button" onClick={() => startHallRitual('sit')} className="max-w-[42vw] rounded-full bg-amber-800 px-4 py-3 text-center text-sm font-medium text-white shadow-xl">🧘 Ngồi tĩnh tâm</button>
+                <button type="button" onClick={() => { setFortuneOpen(true); drawFortuneStick(); }} className="max-w-[42vw] rounded-full bg-white/90 px-4 py-3 text-center text-sm font-medium text-amber-900 shadow-xl">🎋 Xin quẻ Từ Bi</button>
+              </>
+            ) : zone === 'pond' ? (
+              <>
+                <button type="button" onClick={() => setReleaseOpen(true)} className="max-w-[42vw] rounded-full bg-amber-800 px-4 py-3 text-center text-sm font-medium text-white shadow-xl">🐟 Phóng sinh</button>
+                <button type="button" onClick={() => setLanternModalOpen(true)} className="max-w-[42vw] rounded-full bg-white/90 px-4 py-3 text-center text-sm font-medium text-amber-900 shadow-xl">🪷 Thả Hoa Đăng</button>
               </>
             ) : (
               <button
                 type="button"
-                onClick={() => (zone === 'burner' ? startRitual() : zone === 'pond' ? setReleaseOpen(true) : setChantOpen(true))}
+                onClick={() => (zone === 'burner' ? startRitual() : setChantOpen(true))}
                 className="max-w-[42vw] rounded-full bg-amber-800 px-4 py-3 text-center text-sm font-medium text-white shadow-xl"
               >
-                {zone === 'burner' ? '🪔 Dâng hương' : zone === 'pond' ? '🪷 Phóng sinh' : '📿 Niệm Phật'}
+                {zone === 'burner' ? '🪔 Dâng hương' : '📿 Niệm Phật'}
               </button>
             )}
           </div>
@@ -1824,9 +2106,33 @@ export default function Home() {
                 <button type="button" onClick={doCtxAction} className="rounded-full bg-amber-800 px-5 py-3 text-sm font-medium text-white shadow-xl">🪷 Tắm Phật</button>
                 <button type="button" onClick={() => setVesakOpen(true)} className="rounded-full bg-white/85 px-5 py-3 text-sm font-medium text-amber-900 shadow-xl">📖 Tìm hiểu Phật đản</button>
               </div>
+            ) : ctxAction.kind === 'boat' ? (
+              <div className="flex gap-2">
+                <button type="button" onClick={doCtxAction} className="rounded-full bg-amber-800 px-5 py-3 text-sm font-medium text-white shadow-xl">⛵ Đi thuyền sang Đảo HSK</button>
+                <button type="button" onClick={() => setLanternModalOpen(true)} className="rounded-full bg-white/90 px-4 py-3 text-sm font-medium text-amber-900 shadow-xl">🪷 Thả Hoa Đăng</button>
+                <a href={HSK_URL} target="_blank" rel="noopener noreferrer" className="rounded-full bg-white/90 px-4 py-3 text-sm font-medium text-amber-900 shadow-xl">🌐 Mở hoc-hsk.vercel.app</a>
+              </div>
             ) : (
               <button type="button" onClick={doCtxAction} className="rounded-full bg-amber-800 px-5 py-3 text-sm font-medium text-white shadow-xl">
-                {ctxAction.kind === 'seat' ? '🪑 ' : ctxAction.kind === 'broom' ? '🧹 ' : ctxAction.kind === 'jar' ? '🪣 ' : ctxAction.kind === 'bed' ? '💧 ' : ctxAction.kind === 'bell' ? '🔔 ' : ctxAction.kind === 'monk' ? '🙏 ' : '📖 '}
+                {ctxAction.kind === 'seat'
+                  ? '🪑 '
+                  : ctxAction.kind === 'broom'
+                    ? '🧹 '
+                    : ctxAction.kind === 'jar'
+                      ? '🪣 '
+                      : ctxAction.kind === 'bed'
+                        ? '💧 '
+                        : ctxAction.kind === 'bell'
+                          ? '🔔 '
+                          : ctxAction.kind === 'monk'
+                            ? '🙏 '
+                            : ctxAction.kind === 'wishingRack'
+                              ? '🎋 '
+                              : ctxAction.kind === 'fortune'
+                                ? '🎋 '
+                                : ctxAction.kind === 'stupa'
+                                  ? '🏯 '
+                                  : '📖 '}
                 {ctxAction.label}
               </button>
             )}
@@ -1836,6 +2142,11 @@ export default function Home() {
               <>
                 <button type="button" onClick={doCtxAction} className="max-w-[42vw] rounded-full bg-amber-800 px-4 py-3 text-center text-sm font-medium text-white shadow-xl">🪷 Tắm Phật</button>
                 <button type="button" onClick={() => setVesakOpen(true)} className="max-w-[42vw] rounded-full bg-white/85 px-4 py-3 text-center text-sm font-medium text-amber-900 shadow-xl">📖 Tìm hiểu Phật đản</button>
+              </>
+            ) : ctxAction.kind === 'boat' ? (
+              <>
+                <button type="button" onClick={doCtxAction} className="max-w-[46vw] rounded-full bg-amber-800 px-4 py-3 text-center text-sm font-medium text-white shadow-xl">⛵ Đi thuyền → Đảo HSK</button>
+                <a href={HSK_URL} target="_blank" rel="noopener noreferrer" className="max-w-[46vw] rounded-full bg-white/90 px-4 py-2.5 text-center text-xs font-medium text-amber-900 shadow-xl">🌐 hoc-hsk.vercel.app</a>
               </>
             ) : (
               <button type="button" onClick={doCtxAction} className="max-w-[42vw] rounded-full bg-amber-800 px-4 py-3 text-center text-sm font-medium text-white shadow-xl">
@@ -2155,12 +2466,15 @@ export default function Home() {
                     {([
                       ['burner', '🪔 Lư hương đồng'],
                       ['hall', '🏯 Vào Chính điện'],
+                      ['stupa', '🏯 Bảo Tháp Báo Ân 7 tầng'],
+                      ['wishing', '🎋 Thẻ ước nguyện Bồ Đề'],
                       ['pond', '🪷 Tâm Liên Hồ'],
                       ['lumbini', '🙏 Vườn Lâm Tỳ Ni'],
                       ['banyan', '🌳 Cây đa Bách Linh'],
                       ['garden', '🥬 Vườn Lộc Uyển'],
                       ['bell', '🔔 Gác Chuông'],
                       ['tea', '🍵 Nhà Trà · Hiên đọc'],
+                      ['hsk', '⛵ Đi thuyền → Đảo HSK'],
                     ] as const).map(([zId, zLabel]) => (
                       <button
                         key={zId}
@@ -2245,6 +2559,435 @@ export default function Home() {
         </div>
       )}
 
+      {/* =====================================================================
+          BOAT RIDE OVER SÔNG BÁT NHÃ & ĐẢO HSK PORTAL (https://hoc-hsk.vercel.app/)
+         ===================================================================== */}
+      {entered && (boatPhase === 'sailing_to_hsk' || boatPhase === 'sailing_back') && (
+        <div className="absolute bottom-28 left-1/2 z-30 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-3xl border border-amber-900/20 bg-[#fdf8ec]/95 p-4 text-center shadow-2xl sm:bottom-24">
+          <p className="font-serif text-base font-semibold text-amber-900">
+            {boatPhase === 'sailing_to_hsk'
+              ? '⛵ Đang chèo thuyền qua Sông Bát Nhã sang Hòn Đảo HSK…'
+              : '⛵ Đang chèo thuyền từ Đảo HSK trở về Bến Thuyền Chùa Hải An…'}
+          </p>
+          <p className="mt-1 text-xs text-stone-600">
+            {boatPhase === 'sailing_to_hsk'
+              ? 'Thuyền gỗ lướt nhẹ giữa làn nước ngọc và những đóa hoa đăng, hướng về Lầu Văn Hiến Đảo HSK.'
+              : 'Ngắm nhìn Đại Hùng Bảo Điện 3 tầng, Cổng Tam Quan Gác và Bảo Tháp 7 tầng từ giữa dòng sông.'}
+          </p>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-stone-200">
+            <div
+              className="h-full rounded-full bg-amber-800 transition-all duration-100"
+              style={{ width: `${Math.round(boatProgress * 100)}%` }}
+            />
+          </div>
+          <div className="mt-3 flex gap-2">
+            <a
+              href={HSK_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 rounded-full bg-amber-800 py-2.5 text-xs font-medium text-white shadow hover:bg-amber-900"
+            >
+              🌐 Mở ngay Học HSK (hoc-hsk.vercel.app)
+            </a>
+            <button
+              type="button"
+              onClick={cancelBoat}
+              className="rounded-full bg-stone-200 px-4 py-2.5 text-xs font-medium text-stone-700"
+            >
+              Về bến ngay
+            </button>
+          </div>
+        </div>
+      )}
+
+      {entered && boatPhase === 'at_hsk' && !hskModalOpen && (
+        <div className="absolute bottom-28 left-1/2 z-20 flex -translate-x-1/2 flex-wrap justify-center gap-2 sm:bottom-24">
+          <button
+            type="button"
+            onClick={() => setHskModalOpen(true)}
+            className="rounded-full bg-amber-800 px-5 py-3 text-sm font-medium text-white shadow-xl"
+          >
+            🏝️ Mở cổng Học Viện Đảo HSK
+          </button>
+          <a
+            href={HSK_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full bg-emerald-800 px-5 py-3 text-sm font-medium text-white shadow-xl"
+          >
+            🌐 Vào hoc-hsk.vercel.app
+          </a>
+          <button
+            type="button"
+            onClick={sailBackFromHSK}
+            className="rounded-full bg-white/90 px-5 py-3 text-sm font-medium text-amber-900 shadow-xl"
+          >
+            ⛵ Chèo thuyền về lại Bến Chùa
+          </button>
+        </div>
+      )}
+
+      {hskModalOpen && (
+        <div className="absolute inset-0 z-40 flex items-end justify-center bg-black/40 p-4 sm:items-center">
+          <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-3xl border border-amber-900/20 bg-[#fdf8ec] p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+                  🏝️ Bến Trí Tuệ · Sông Bát Nhã
+                </p>
+                <h2 className="font-serif text-2xl font-semibold text-amber-900">
+                  Hòn Đảo HSK · Học Viện Hán Ngữ
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setHskModalOpen(false)}
+                className="rounded-full bg-stone-200 px-3 py-1 text-sm"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-stone-700">
+              Chào mừng <b>{name || 'Phật tử'}</b> đã qua dòng <b>Sông Bát Nhã</b> đặt chân tới <b>Hòn Đảo HSK</b>!
+              Giữa rừng hoa đào nở rộ và Lầu Văn Hiến 2 tầng, đây là không gian kết nối tinh thần hiếu học,
+              rèn luyện Hán ngữ và ôn thi HSK mỗi ngày với tâm thế an nhiên, bền bỉ.
+            </p>
+            <div className="mt-3 rounded-2xl border border-amber-800/20 bg-amber-50/90 p-3.5 text-xs leading-relaxed text-amber-950">
+              <p className="font-semibold">✨ Cổng học tập trực tuyến:</p>
+              <p className="mt-1 break-all font-mono text-amber-800 underline">{HSK_URL}</p>
+              <p className="mt-1 text-stone-600">
+                Luyện từ vựng, ngữ pháp, đề thi HSK các cấp với giao diện trực quan, dễ nhớ.
+              </p>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-2.5">
+              <a
+                href={HSK_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-amber-800 py-3.5 text-center text-sm font-semibold text-white shadow-lg transition hover:bg-amber-900"
+              >
+                🌐 Truy cập ngay Học HSK (hoc-hsk.vercel.app) ↗
+              </a>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHskModalOpen(false);
+                    setLanternWish('Cầu học tập tinh tấn, trí tuệ sáng suốt, thi đỗ HSK điểm cao');
+                    setLanternModalOpen(true);
+                  }}
+                  className="rounded-full bg-amber-100 py-2.5 text-xs font-medium text-amber-900 hover:bg-amber-200"
+                >
+                  🪷 Thả Hoa Đăng cầu thi đỗ
+                </button>
+                {boatPhase === 'at_hsk' ? (
+                  <button
+                    type="button"
+                    onClick={sailBackFromHSK}
+                    className="rounded-full bg-stone-200 py-2.5 text-xs font-medium text-stone-800 hover:bg-stone-300"
+                  >
+                    ⛵ Đi thuyền về Chùa
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHskModalOpen(false);
+                      startBoatToHSK();
+                    }}
+                    className="rounded-full bg-stone-200 py-2.5 text-xs font-medium text-stone-800 hover:bg-stone-300"
+                  >
+                    ⛵ Lên thuyền chèo ra Đảo
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          1. XIN XÂM / GIEO QUẺ TỪ BI ĐẦU NĂM (Ống xâm Quán Thế Âm)
+         ===================================================================== */}
+      {fortuneOpen && (
+        <div className="absolute inset-0 z-40 flex items-end justify-center bg-black/35 p-4 sm:items-center">
+          <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-3xl border border-amber-900/20 bg-[#fdf8ec] p-5 shadow-2xl">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-amber-800">
+                  🎋 Nét đẹp văn hóa chùa Việt
+                </p>
+                <h2 className="font-serif text-xl font-semibold text-amber-900">
+                  Gieo Quẻ Từ Bi · Pháp Ngữ Đầu Năm
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFortuneOpen(false)}
+                className="rounded-full bg-stone-200 px-3 py-1 text-sm"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="mt-1.5 text-xs leading-relaxed text-stone-600">
+              Khác với bói toán mê tín, gieo quẻ Từ Bi tại chùa là dịp lắng tâm đón nhận một lời kệ nhắc nhở mình sống thiện lành, hiếu thảo và nỗ lực trong học tập, công việc.
+            </p>
+
+            {fortuneShaking || fortuneStickIdx === null ? (
+              <div className="my-6 flex flex-col items-center justify-center rounded-2xl border border-amber-800/20 bg-white p-6 text-center">
+                <p className="animate-bounce text-4xl">🎋</p>
+                <p className="mt-2 font-serif text-base font-medium text-amber-900">
+                  Đang thành tâm lắc ống xâm tre trước Phật đài…
+                </p>
+                <p className="mt-1 text-xs text-stone-500">
+                  Hãy hít thở nhẹ nhàng và khởi một niệm lành.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-3 rounded-2xl border border-amber-800/25 bg-white p-4 shadow-inner">
+                <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">
+                  Quẻ số {FORTUNE_STICKS[fortuneStickIdx].num}
+                </p>
+                <h3 className="mt-0.5 font-serif text-lg font-bold text-amber-900">
+                  {FORTUNE_STICKS[fortuneStickIdx].rank}
+                </h3>
+                <pre className="mt-2.5 whitespace-pre-wrap rounded-xl bg-amber-50/90 p-3 font-serif text-sm italic leading-relaxed text-amber-950">
+                  {FORTUNE_STICKS[fortuneStickIdx].verse}
+                </pre>
+                <p className="mt-3 text-xs leading-relaxed text-stone-700">
+                  <b>Ý nghĩa lời kệ:</b> {FORTUNE_STICKS[fortuneStickIdx].meaning}
+                </p>
+                <p className="mt-2 text-xs leading-relaxed text-emerald-900">
+                  <b>🌱 Thực tập hôm nay:</b> {FORTUNE_STICKS[fortuneStickIdx].practice}
+                </p>
+              </div>
+            )}
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={drawFortuneStick}
+                disabled={fortuneShaking}
+                className="rounded-full bg-amber-100 px-4 py-2.5 text-xs font-medium text-amber-900 hover:bg-amber-200 disabled:opacity-50"
+              >
+                🔄 Gieo lại quẻ khác
+              </button>
+              {fortuneStickIdx !== null && !fortuneShaking && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const st = FORTUNE_STICKS[fortuneStickIdx];
+                    savePrayer(`Quẻ Từ Bi số ${st.num} (${st.rank})`, `${st.verse.replace(/\n/g, ' / ')} — ${st.meaning}`);
+                    showToast('📖 Đã lưu Quẻ lành Từ Bi vào Sổ cầu an!');
+                    setFortuneOpen(false);
+                  }}
+                  className="flex-1 rounded-full bg-amber-800 py-2.5 text-xs font-medium text-white shadow hover:bg-amber-900"
+                >
+                  📖 Lưu quẻ vào Sổ cầu an
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setFortuneOpen(false)}
+                className="rounded-full bg-stone-200 px-4 py-2.5 text-xs font-medium text-stone-700"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          2. TREO THẺ GỖ ƯỚC NGUYỆN BỒ ĐỀ (Cạnh Cây đa Bách Linh)
+         ===================================================================== */}
+      {plaqueOpen && (
+        <div className="absolute inset-0 z-40 flex items-end justify-center bg-black/35 p-4 sm:items-center">
+          <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-3xl border border-amber-900/20 bg-[#fdf8ec] p-5 shadow-2xl">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-amber-800">
+                  🌳 Dưới bóng Cây đa Bách Linh
+                </p>
+                <h2 className="font-serif text-xl font-semibold text-amber-900">
+                  Treo Thẻ Gỗ Ước Nguyện Bồ Đề
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPlaqueOpen(false)}
+                className="rounded-full bg-stone-200 px-3 py-1 text-sm"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="mt-1.5 text-xs leading-relaxed text-stone-600">
+              Tại nhiều ngôi chùa Việt Nam, Phật tử và sĩ tử thường ghi lời cầu bình an cho cha mẹ hoặc ước nguyện học tập, thi cử đỗ đạt lên thẻ gỗ đỏ thếp vàng treo dưới cội đa / cội Bồ Đề.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {[
+                'Cầu học tập tinh tấn · Thi đỗ HSK điểm cao',
+                'Cầu cha mẹ và gia đình bình an, mạnh khỏe',
+                'Cầu tâm bình khí hòa, công việc hanh thông',
+                'Cầu thiện duyên hội tụ, vạn sự cát tường',
+              ].map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => {
+                    setPlaqueCategory(cat);
+                    setPlaqueWish(cat);
+                  }}
+                  className={`rounded-xl px-3 py-2 text-left text-xs transition ${
+                    plaqueCategory === cat ? 'bg-amber-800 text-white' : 'bg-amber-100 text-amber-900'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+            <label className="mt-3 block text-xs font-medium text-stone-700" htmlFor="plaque-wish">
+              Viết lời ước nguyện lên thẻ gỗ Bồ Đề
+            </label>
+            <textarea
+              id="plaque-wish"
+              value={plaqueWish}
+              maxLength={180}
+              rows={3}
+              onChange={(e) => setPlaqueWish(e.target.value)}
+              placeholder="Ví dụ: Nguyện cầu cha mẹ mạnh khỏe, kỳ thi HSK sắp tới đạt kết quả tốt…"
+              className="mt-1 w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-700"
+            />
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={confirmHangPlaque}
+                className="flex-1 rounded-full bg-amber-800 py-3 text-sm font-medium text-white shadow hover:bg-amber-900"
+              >
+                🎋 Treo thẻ lên giá gỗ
+              </button>
+              <button
+                type="button"
+                onClick={() => setPlaqueOpen(false)}
+                className="rounded-full bg-stone-200 px-5 py-3 text-sm"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          3. THẢ ĐÈN HOA ĐĂNG CẦU AN (Tâm Liên Hồ & Sông Bát Nhã)
+         ===================================================================== */}
+      {lanternModalOpen && (
+        <div className="absolute inset-0 z-40 flex items-end justify-center bg-black/35 p-4 sm:items-center">
+          <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-3xl border border-amber-900/20 bg-[#fdf8ec] p-5 shadow-2xl">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-amber-800">
+                  🪷 Ánh sáng Từ Bi & Trí Tuệ
+                </p>
+                <h2 className="font-serif text-xl font-semibold text-amber-900">
+                  Thắp Đèn Hoa Đăng Cầu Nguyện
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setLanternModalOpen(false)}
+                className="rounded-full bg-stone-200 px-3 py-1 text-sm"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="mt-1.5 text-xs leading-relaxed text-stone-600">
+              Trong văn hóa Phật giáo Việt Nam, mỗi ngọn đèn Hoa Đăng được thắp lên và thả xuống dòng nước tượng trưng cho ánh sáng trí tuệ soi tỏ vô minh, gửi gắm tâm niệm bình an và hiếu kính.
+            </p>
+            <textarea
+              value={lanternWish}
+              maxLength={180}
+              rows={3}
+              onChange={(e) => setLanternWish(e.target.value)}
+              placeholder="Gửi lời nguyện theo ngọn đèn Hoa Đăng…"
+              className="mt-3 w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-700"
+            />
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={confirmReleaseLantern}
+                className="flex-1 rounded-full bg-amber-800 py-3 text-sm font-medium text-white shadow hover:bg-amber-900"
+              >
+                🪷 Thả đèn Hoa Đăng xuống nước
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanternModalOpen(false)}
+                className="rounded-full bg-stone-200 px-5 py-3 text-sm"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          4. BẢO THÁP BÁO ÂN 7 TẦNG & KINH HÀNH NHIỄU THÁP
+         ===================================================================== */}
+      {stupaModalOpen && (
+        <div className="absolute inset-0 z-40 flex items-end justify-center bg-black/35 p-4 sm:items-center">
+          <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-3xl border border-amber-900/20 bg-[#fdf8ec] p-5 shadow-2xl">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-amber-800">
+                  🏯 Kiến trúc Phật giáo truyền thống
+                </p>
+                <h2 className="font-serif text-xl font-semibold text-amber-900">
+                  Bảo Tháp Báo Ân 7 Tầng · Tứ Trọng Ân
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setStupaModalOpen(false)}
+                className="rounded-full bg-stone-200 px-3 py-1 text-sm"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-stone-700">
+              <b>Bảo Tháp Báo Ân</b> cao 7 tầng mái đao bát giác biểu trưng cho <b>Thất Giác Chi</b> (7 yếu tố đưa đến giác ngộ: Niệm, Trạch pháp, Tinh tấn, Hỷ, Khinh an, Định, Xả) và nhắc nhở người con Phật ghi nhớ <b>Tứ Trọng Ân</b> (4 ân lớn trong đời):
+            </p>
+            <ul className="mt-2 list-disc space-y-1.5 pl-5 text-xs leading-relaxed text-stone-700 sm:text-sm">
+              <li><b>Ân Cha Mẹ sinh thành dưỡng dục:</b> Công ơn nuôi nấng, dạy dỗ từ thuở ấu thơ.</li>
+              <li><b>Ân Thầy Tổ dạy dỗ:</b> Những người truyền trao tri thức, đạo lý làm người.</li>
+              <li><b>Ân Quốc gia & Xã hội:</b> Sự bình yên của đất nước và công sức của biết bao người xung quanh.</li>
+              <li><b>Ân Tam Bảo & Chúng sinh:</b> Ánh sáng từ bi dẫn đường cho tâm hồn hướng thiện.</li>
+            </ul>
+            <p className="mt-2.5 text-xs leading-relaxed text-stone-600">
+              Tại chùa thật, Phật tử thường chắp tay đi kinh hành chậm rãi quanh chân tháp theo chiều kim đồng hồ (<b>Nhiễu tháp</b>) để lắng tâm và hồi hướng công đức cho cha mẹ, gia đình.
+            </p>
+            <div className="mt-4 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={startStupaCircumambulation}
+                className="w-full rounded-full bg-amber-800 py-3 text-sm font-medium text-white shadow hover:bg-amber-900"
+              >
+                🚶 Đi kinh hành nhiễu Bảo Tháp 1 vòng (theo chiều kim đồng hồ)
+              </button>
+              <button
+                type="button"
+                onClick={() => setStupaModalOpen(false)}
+                className="w-full rounded-full bg-stone-200 py-2.5 text-sm text-stone-700"
+              >
+                Đã hiểu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <audio ref={bellRef} src="/audio/bell.mp3" preload="auto" onEnded={() => setBellPlaying(false)} />
 
       {/* Reading porch (tea house) — three short introductions, no
@@ -2312,6 +3055,9 @@ export default function Home() {
               {/* Cây đa Bách Linh (22, 8) */}
               <circle cx="544" cy="416" r="26" fill="#3f7a2e" />
               <text x="544" y="420" textAnchor="middle" fontSize="9.5" fill="#fff">Đa Bách Linh</text>
+              {/* Bảo Tháp Báo Ân 7 tầng (35, -2.5) */}
+              <circle cx="648" cy="332" r="20" fill="#a83b24" stroke="#d4af37" strokeWidth="2.5" />
+              <text x="648" y="335" textAnchor="middle" fontSize="9" fill="#fff">Bảo Tháp 7T</text>
               {/* Vườn Lộc Uyển (23.4..31, -25..-11.8) */}
               <rect x="555" y="152" width="62" height="106" fill="#7a9a5a" />
               <text x="586" y="206" textAnchor="middle" fontSize="10" fill="#fff">Vườn Lộc Uyển</text>
@@ -2324,22 +3070,31 @@ export default function Home() {
               {/* Vườn Lâm Tỳ Ni (-28, -24) */}
               <circle cx="144" cy="160" r="18" fill="#c98a9e" stroke="#7a5c3a" />
               <text x="168" y="164" textAnchor="start" fontSize="10" fill="#7a5c3a">Vườn Lâm Tỳ Ni</text>
+              {/* Sông Bát Nhã, Bến Thuyền & Đảo HSK ở phía Nam (y 518..604) */}
+              <rect x="16" y="528" width="704" height="44" rx="6" fill="#468faf" />
+              <text x="210" y="554" textAnchor="middle" fontSize="11" fill="#fff">Sông Bát Nhã · Bến Thuyền Độ Sinh</text>
+              <rect x="348" y="510" width="40" height="24" rx="4" fill="#7a4b2a" />
+              <ellipse cx="368" cy="586" rx="96" ry="18" fill="#5f8d4e" stroke="#d4af37" strokeWidth="2" />
+              <text x="368" y="590" textAnchor="middle" fontSize="10.5" fontWeight="bold" fill="#fff">🏝️ Đảo HSK (hoc-hsk.vercel.app)</text>
               {/* Player marker */}
-              <circle cx={(playerPos.x + 46) * 8} cy={(playerPos.z + 44) * 8} r="10" fill="#dc2626" stroke="#fff" strokeWidth="2" />
-              <text x={(playerPos.x + 46) * 8} y={(playerPos.z + 44) * 8 - 16} textAnchor="middle" fontSize="11" fill="#dc2626">Bạn đang ở đây</text>
+              <circle cx={Math.max(24, Math.min(712, (playerPos.x + 46) * 8))} cy={Math.max(24, Math.min(592, (playerPos.z + 44) * 8))} r="10" fill="#dc2626" stroke="#fff" strokeWidth="2" />
+              <text x={Math.max(60, Math.min(676, (playerPos.x + 46) * 8))} y={Math.max(18, Math.min(574, (playerPos.z + 44) * 8 - 16))} textAnchor="middle" fontSize="11" fill="#dc2626">Bạn đang ở đây</text>
             </svg>
             <div className="mt-3 grid gap-2">
               {([
-                ['hall', '🏯 Chính điện', 'Ngồi (8 đệm) · Quỳ lễ · Ban Thích Ca · Ban Địa Tạng'],
-                ['burner', '🪔 Lư hương', 'Dâng hương'],
+                ['hsk', '⛵ Đi thuyền qua Sông Bát Nhã → Đảo HSK', 'Lên thuyền gỗ · Sang Đảo HSK · Mở hoc-hsk.vercel.app'],
+                ['hall', '🏯 Đại Hùng Bảo Điện (Chính điện 3 tầng)', 'Quỳ lễ · Ngồi tĩnh tâm · Xin quẻ Từ Bi đầu năm · Ban Thích Ca & Địa Tạng'],
+                ['stupa', '🏯 Bảo Tháp Báo Ân 7 tầng', 'Chiêm bái tháp bát giác 7 tầng · Kinh hành nhiễu tháp · Tứ Trọng Ân'],
+                ['wishing', '🎋 Giá treo thẻ ước nguyện Bồ Đề', 'Viết & treo thẻ gỗ cầu an, cầu thi đỗ HSK dưới tán đa'],
+                ['burner', '🪔 Đỉnh đồng Lư hương', 'Dâng hương cầu nguyện'],
                 ['chant', '📿 Khu niệm Phật', 'Niệm Phật · Hồi hướng'],
-                ['pond', '🪷 Tâm Liên Hồ (Hồ sen)', 'Phóng sinh (mô phỏng) · Ngồi ngắm hồ'],
-                ['banyan', '🌳 Cây đa Bách Linh', 'Ngồi dưới tán đa · Quét lá'],
-                ['garden', '🥬 Vườn Lộc Uyển', 'Múc nước · Tưới cây'],
+                ['pond', '🪷 Tâm Liên Hồ (Hồ sen)', 'Phóng sinh cá chép · Thả đèn Hoa Đăng · Ngồi ngắm hồ'],
+                ['banyan', '🌳 Cây đa Bách Linh', 'Ngồi dưới tán đa · Quét lá đa'],
+                ['garden', '🥬 Vườn Lộc Uyển', 'Múc nước vào gáo · Cầm gáo tưới rau'],
                 ['tea', '🍵 Nhà trà', 'Ngồi nhà trà · Hiên đọc'],
-                ['bell', '🔔 Gác chuông', 'Thỉnh chuông'],
-                ['lumbini', '🪷 Vườn Lâm Tỳ Ni – Tắm Phật', 'Tắm Phật · Tìm hiểu Phật đản'],
-                ['gate', '⛩ Cổng tam quan', 'Biển tên Chùa Hải An'],
+                ['bell', '🔔 Gác chuông', 'Thỉnh đại hồng chung'],
+                ['lumbini', '🪷 Vườn Lâm Tỳ Ni – Tắm Phật', 'Tắm Phật Thái tử đản sinh · Tìm hiểu lễ Phật đản'],
+                ['gate', '⛩ Cổng Tam Quan Gác 2 tầng', 'Biển tên Chùa Hải An'],
               ] as const).map(([id, label, acts]) => (
                 <div key={id} className={`rounded-2xl border p-3 ${mapZone === id ? 'border-amber-700 bg-amber-50' : 'border-stone-200 bg-white'}`}>
                   <button type="button" onClick={() => setMapZone(id)} className="w-full text-left">

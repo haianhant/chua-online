@@ -4,8 +4,34 @@
  * Kept outside React state on purpose: it changes every frame.
  */
 
-export type CameraMode = 'menu' | 'intro' | 'follow' | 'burner' | 'chant' | 'sweep' | 'bath';
+export type CameraMode = 'menu' | 'intro' | 'follow' | 'burner' | 'chant' | 'sweep' | 'bath' | 'boat';
 export type PlayerGender = 'female' | 'male';
+
+/** Boat ride across Sông Bát Nhã to Hòn Đảo HSK (https://hoc-hsk.vercel.app/). */
+export type BoatPhase = 'idle' | 'sailing_to_hsk' | 'at_hsk' | 'sailing_back';
+export const boatState = {
+  phase: 'idle' as BoatPhase,
+  /** 0..1 across sailing_to_hsk or sailing_back. */
+  progress: 0,
+  /** Current boat world position. */
+  boatX: 0,
+  boatZ: 25.0,
+  /** Current oar stroke phase. */
+  oarPhase: 0,
+};
+
+/** Wishing Plaque Rack (Giá treo thẻ ước nguyện Bồ Đề cạnh Cây đa Bách Linh). */
+export const wishingRackState = {
+  customCount: 0,
+  lastHungAt: 0,
+};
+
+/** Floating Lotus Lanterns (Thả đèn Hoa Đăng trên Tâm Liên Hồ & Sông Bát Nhã). */
+export const lanternState = {
+  pondCount: 3,
+  riverCount: 5,
+  lastSpawnAt: 0,
+};
 
 /** Watering ritual (MÚC NƯỚC & TƯỚI CÂY, Vườn Lộc Uyển) shared state. */
 export type WaterPhase = 'idle' | 'scooping' | 'carrying' | 'watering';
@@ -103,6 +129,9 @@ export const controls = {
       (pending). Same rule as sweepAutoWalk: Player allows ONLY
       auto-walk then, never clears moveTarget. */
   bathAutoWalk: false,
+  /** True while page auto-walks to the Bến Thuyền pier (0, 22.8)
+      before boarding the boat to Đảo HSK. */
+  boatAutoWalk: false,
   /** Optional waypoints for auto-move: walked in order before moveTarget.
       Used for the pond, whose direct diagonal from the spawn runs
       head-on into a tam quan pillar and stalls the auto-walk. */
@@ -185,6 +214,19 @@ export const LAYOUT = {
   lumbiniBasin: { x: -28, z: -23.5 },
   lumbiniSpot: { x: -28, z: -22.4 },
   lumbiniLadleRest: { x: -27.2, z: -23.5 },
+  /** Bảo Tháp Báo Ân 7 Tầng (Seven-Story Octagonal Lotus Stupa) in the east courtyard. */
+  stupa: { x: 35.0, z: -2.5 },
+  stupaSpot: { x: 31.2, z: -2.5 },
+  /** Giá treo thẻ ước nguyện Bồ Đề (Wishing Plaque Rack) near Cây đa Bách Linh. */
+  wishingRack: { x: 18.5, z: 5.2 },
+  wishingSpot: { x: 18.5, z: 6.4 },
+  /** Ống xâm Từ Bi (Compassionate Fortune Cylinder) beside the Main Hall altar. */
+  fortuneCylinder: { x: 2.2, z: -19.8 },
+  /** Bến Thuyền Độ Sinh & Sông Bát Nhã -> Hòn Đảo HSK (https://hoc-hsk.vercel.app/). */
+  pier: { x: 0, z: 22.8 },
+  boatDock: { x: 0, z: 25.0 },
+  hskDock: { x: 0, z: 45.5 },
+  hskIsland: { x: 0, z: 56.0 },
   bounds: { minX: -46, maxX: 46, minZ: -44, maxZ: 32 },
 };
 
@@ -388,6 +430,8 @@ export const COLLIDERS: Collider[] = [
   { kind: 'circle', x: -32.0, z: -20.8, r: 0.5 },
   { kind: 'circle', x: -25.6, z: -18.2, r: 0.15 },
   { kind: 'circle', x: -11.7, z: 1.7, r: 0.4 }, // lake bank stone at Tâm Liên Hồ
+  { kind: 'circle', x: 35.0, z: -2.5, r: 2.6 }, // Bảo Tháp Báo Ân 7 tầng at (35, -2.5)
+  { kind: 'circle', x: 18.5, z: 5.2, r: 0.45 }, // Giá treo thẻ ước nguyện Bồ Đề
 ];
 
 export function collides(x: number, z: number): boolean {

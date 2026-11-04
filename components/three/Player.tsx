@@ -14,6 +14,7 @@ import {
   bathState,
   waterState,
   releaseState,
+  boatState,
   type PlayerGender,
 } from './controls';
 
@@ -73,6 +74,7 @@ export default function Player({
   const bathBlend = useRef(0); // 0 = normal, 1 = scooping/pouring (right arm raised)
   const waterPourBlend = useRef(0); // 0 = normal, 1 = pouring water on vegetables
   const releaseBlend = useRef(0); // 0 = normal, 1 = releasing fish at pond
+  const wasOnBoat = useRef(false);
 
   useFrame(({ clock }, delta) => {
     const dt = Math.min(delta, 0.05);
@@ -89,13 +91,16 @@ export default function Player({
     const bathingNow = bathState.phase !== 'idle' && bathState.phase !== 'done';
     const releasingNow = releaseState.phase === 'releasing';
     const wateringNow = waterStream || waterState.phase === 'watering';
+    const onBoatNow = boatState.phase !== 'idle';
     const sweepWalkOnly = controls.sweepAutoWalk && visible && !sweepingNow;
     const bathWalkOnly = controls.bathAutoWalk && visible && !bathingNow;
+    const boatWalkOnly = controls.boatAutoWalk && visible && !onBoatNow;
 
     if (
-      (canMove && visible && !sweepingNow && !bathingNow && !releasingNow && !wateringNow) ||
+      (canMove && visible && !sweepingNow && !bathingNow && !releasingNow && !wateringNow && !onBoatNow) ||
       sweepWalkOnly ||
-      bathWalkOnly
+      bathWalkOnly ||
+      boatWalkOnly
     ) {
       const k = controls.keys;
       const fwd = k.has('w') || k.has('arrowup') ? 1 : 0;
@@ -112,7 +117,7 @@ export default function Player({
       // Joystick (screen y down = forward)
       mx += rx * controls.joystick.x + fx * -controls.joystick.y;
       mz += rz * controls.joystick.x + fz * -controls.joystick.y;
-      if (sweepWalkOnly || bathWalkOnly) {
+      if (sweepWalkOnly || bathWalkOnly || boatWalkOnly) {
         mx = 0;
         mz = 0;
       }
@@ -158,6 +163,7 @@ export default function Player({
       const manual =
         !sweepWalkOnly &&
         !bathWalkOnly &&
+        !boatWalkOnly &&
         (fwd ||
           back ||
           left ||
@@ -227,10 +233,24 @@ export default function Player({
     poseBlend.current += (poseTarget - poseBlend.current) * (1 - Math.exp(-6 * dt));
     const blend = poseBlend.current;
 
-    // Floor height lerp
-    const targetFloor = floorYAt(pos.current.x, pos.current.z);
-    floorY.current += (targetFloor - floorY.current) * (1 - Math.exp(-7 * dt));
-    if (Math.abs(targetFloor - floorY.current) < 0.01) floorY.current = targetFloor;
+    // Floor height lerp & Boat deck positioning
+    if (onBoatNow) {
+      wasOnBoat.current = true;
+      pos.current.x = boatState.boatX;
+      pos.current.z = boatState.boatZ + (boatState.phase === 'sailing_back' ? -0.35 : 0.35);
+      floorY.current = 0.36 + Math.sin(clock.getElapsedTime() * 2.1) * 0.025;
+      lerpFacing(boatState.phase === 'sailing_back' ? Math.PI : 0);
+    } else {
+      if (wasOnBoat.current) {
+        wasOnBoat.current = false;
+        pos.current.x = LAYOUT.pier.x;
+        pos.current.z = LAYOUT.pier.z;
+        facing.current = Math.PI;
+      }
+      const targetFloor = floorYAt(pos.current.x, pos.current.z);
+      floorY.current += (targetFloor - floorY.current) * (1 - Math.exp(-7 * dt));
+      if (Math.abs(targetFloor - floorY.current) < 0.01) floorY.current = targetFloor;
+    }
 
     const kneel = controls.pose === 'kneel';
     const inHall = isInHall(pos.current.x, pos.current.z);

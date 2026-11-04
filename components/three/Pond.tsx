@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { LAYOUT, releaseState } from './controls';
+import { lanternState, LAYOUT, releaseState } from './controls';
 
 /**
  * Lotus pond + koi release.
@@ -532,6 +532,70 @@ export default function LotusPond({ spawnTick, spawnCount, remoteTick, onFishCou
       ))}
       {/* Parabolic release arc when the devotee releases 1..3 Koi into Tâm Liên Hồ */}
       <ReleasingFishArc />
+      {/* Đèn Hoa Đăng trôi nhẹ trên mặt Tâm Liên Hồ */}
+      <PondFloatingLanterns />
+    </group>
+  );
+}
+
+const POND_LANTERN_SPOTS: Array<{ x: number; z: number; phase: number; color: string }> = [
+  { x: -0.6, z: -0.8, phase: 0.3, color: '#ff8da1' },
+  { x: 1.1, z: -0.2, phase: 1.7, color: '#ffd166' },
+  { x: -1.4, z: 0.5, phase: 3.1, color: '#ffb3c6' },
+  { x: 0.4, z: 0.7, phase: 4.5, color: '#ff8da1' },
+  { x: -0.2, z: 0.1, phase: 2.2, color: '#ffd166' },
+  { x: 1.5, z: 0.6, phase: 5.4, color: '#ffb3c6' },
+];
+
+function PondFloatingLanterns() {
+  const refs = useRef<Array<THREE.Group | null>>([]);
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    for (let i = 0; i < POND_LANTERN_SPOTS.length; i++) {
+      const g = refs.current[i];
+      if (!g) continue;
+      const visible = i < lanternState.pondCount;
+      g.visible = visible;
+      if (!visible) continue;
+      const cfg = POND_LANTERN_SPOTS[i];
+      const dx = Math.sin(t * 0.35 + cfg.phase) * 0.32;
+      const dz = Math.cos(t * 0.28 + cfg.phase) * 0.26;
+      g.position.set(
+        POND_CENTER.x + cfg.x + dx,
+        0.095 + Math.sin(t * 2.1 + cfg.phase) * 0.008,
+        POND_CENTER.z + cfg.z + dz,
+      );
+      g.rotation.y = t * 0.22 + cfg.phase;
+    }
+  });
+
+  return (
+    <group>
+      {POND_LANTERN_SPOTS.map((cfg, idx) => (
+        <group
+          key={`pond-lan-${idx}`}
+          ref={(el) => { refs.current[idx] = el; }}
+          position={[POND_CENTER.x + cfg.x, 0.095, POND_CENTER.z + cfg.z]}
+        >
+          <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[0.18, 12]} />
+            <meshStandardMaterial color="#386641" roughness={0.8} />
+          </mesh>
+          {[0, 1, 2, 3, 4, 5].map((p) => {
+            const a = (p / 6) * Math.PI * 2;
+            return (
+              <mesh key={p} position={[Math.cos(a) * 0.085, 0.045, Math.sin(a) * 0.085]} rotation={[0.45, 0, a]}>
+                <sphereGeometry args={[0.068, 8, 8]} />
+                <meshStandardMaterial color={cfg.color} emissive={cfg.color} emissiveIntensity={0.35} roughness={0.5} />
+              </mesh>
+            );
+          })}
+          <mesh position={[0, 0.085, 0]}>
+            <sphereGeometry args={[0.042, 8, 8]} />
+            <meshStandardMaterial color="#fff3b0" emissive="#ff9f1c" emissiveIntensity={1.5} />
+          </mesh>
+        </group>
+      ))}
     </group>
   );
 }

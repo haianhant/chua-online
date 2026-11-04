@@ -3,7 +3,7 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { controls, LAYOUT, sweepState } from './controls';
+import { controls, LAYOUT, sweepState, wishingRackState } from './controls';
 import BellTower from './BellTower';
 import { Roof } from './Temple';
 import TextSign from './TextSign';
@@ -994,6 +994,128 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         <boxGeometry args={[0.4, 0.2, 1.0]} />
         <meshStandardMaterial color="#a39e92" roughness={0.95} />
       </mesh>
+
+      {/* Biển hiệu "Bảo Tháp Báo Ân" trước Bảo Tháp 7 tầng */}
+      <TempleSignboard text="Bảo Tháp Báo Ân" position={[31.2, 0, -0.2]} rotationY={-0.65} width={2.05} />
+
+      {/* Giá treo thẻ ước nguyện Bồ Đề cạnh Cây đa Bách Linh tại (18.5, 0, 5.2) */}
+      <WishingPlaqueRack />
+    </group>
+  );
+}
+
+/**
+ * Giá Treo Thẻ Ước Nguyện Bồ Đề (Wooden Wishing Plaque Rack) tại (18.5, 0, 5.2):
+ * Hoạt động truyền thống tại các ngôi chùa Việt Nam — Phật tử viết lời cầu bình an,
+ * cầu sức khỏe cha mẹ hoặc cầu học hành / thi đỗ HSK lên thẻ gỗ đỏ thếp vàng và treo
+ * lên giá gỗ dưới bóng cây đa Bách Linh.
+ */
+function WishingPlaqueRack() {
+  const plaquesGroup = useRef<THREE.Group>(null);
+  const customGroup = useRef<THREE.Group>(null);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    if (plaquesGroup.current) {
+      plaquesGroup.current.children.forEach((child, idx) => {
+        child.rotation.x = Math.sin(t * 1.9 + idx * 0.7) * 0.08;
+        child.rotation.z = Math.cos(t * 1.4 + idx * 0.5) * 0.04;
+      });
+    }
+    if (customGroup.current) {
+      customGroup.current.children.forEach((child, idx) => {
+        child.visible = idx < wishingRackState.customCount;
+        if (child.visible) {
+          child.rotation.x = Math.sin(t * 2.3 + idx) * 0.12;
+        }
+      });
+    }
+  });
+
+  return (
+    <group position={[LAYOUT.wishingRack.x, 0, LAYOUT.wishingRack.z]} rotation={[0, -0.25, 0]}>
+      {/* 2 trụ gỗ lim trên chân tảng đá xanh */}
+      {[-1.15, 1.15].map((px, i) => (
+        <group key={`wr-post-${i}`} position={[px, 0, 0]}>
+          <mesh receiveShadow castShadow position={[0, 0.12, 0]}>
+            <boxGeometry args={[0.28, 0.24, 0.28]} />
+            <meshStandardMaterial color="#8d8a82" roughness={0.95} />
+          </mesh>
+          <mesh castShadow position={[0, 1.18, 0]}>
+            <cylinderGeometry args={[0.075, 0.085, 2.15, 12]} />
+            <meshStandardMaterial color="#5c2818" roughness={0.78} />
+          </mesh>
+        </group>
+      ))}
+      {/* Mái ngói đỏ che mưa nắng trên đỉnh giá treo */}
+      <mesh castShadow position={[0, 2.22, 0]}>
+        <boxGeometry args={[2.75, 0.12, 0.36]} />
+        <meshStandardMaterial color="#4a2615" roughness={0.8} />
+      </mesh>
+      <mesh castShadow position={[0, 2.34, 0]}>
+        <boxGeometry args={[2.95, 0.10, 0.52]} />
+        <meshStandardMaterial color="#a83b24" roughness={0.78} />
+      </mesh>
+      {/* Biển nhỏ trên nóc giá: THẺ NGUYỆN ƯỚC */}
+      <TextSign text="Thẻ Nguyện Ước" width={1.65} height={0.32} position={[0, 2.02, 0.06]} />
+
+      {/* 3 thanh xà ngang treo thẻ gỗ */}
+      {[1.68, 1.32, 0.96].map((ry, ri) => (
+        <mesh key={`wr-bar-${ri}`} castShadow position={[0, ry, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.022, 0.022, 2.25, 8]} />
+          <meshStandardMaterial color="#c9a227" metalness={0.55} roughness={0.4} />
+        </mesh>
+      ))}
+
+      {/* Các thẻ gỗ cầu an đỏ-vàng đung đưa trong gió */}
+      <group ref={plaquesGroup}>
+        {[1.68, 1.32, 0.96].flatMap((ry, rowIdx) =>
+          [-0.88, -0.62, -0.36, -0.10, 0.16, 0.42, 0.68, 0.92].map((rx, colIdx) => {
+            const isGold = (rowIdx + colIdx) % 3 === 0;
+            return (
+              <group key={`plaque-${rowIdx}-${colIdx}`} position={[rx, ry - 0.02, 0]}>
+                {/* Dây treo đỏ */}
+                <mesh position={[0, -0.04, 0]}>
+                  <cylinderGeometry args={[0.005, 0.005, 0.08, 6]} />
+                  <meshStandardMaterial color="#d62828" />
+                </mesh>
+                {/* Thân thẻ gỗ */}
+                <mesh castShadow position={[0, -0.14, 0]}>
+                  <boxGeometry args={[0.14, 0.21, 0.018]} />
+                  <meshStandardMaterial
+                    color={isGold ? '#e9c46a' : '#b82921'}
+                    roughness={0.55}
+                    metalness={isGold ? 0.35 : 0.1}
+                  />
+                </mesh>
+                {/* Viền vàng & tua rua dưới đáy thẻ */}
+                <mesh position={[0, -0.14, 0.011]}>
+                  <planeGeometry args={[0.09, 0.15]} />
+                  <meshStandardMaterial color="#ffd166" metalness={0.5} roughness={0.35} />
+                </mesh>
+              </group>
+            );
+          }),
+        )}
+      </group>
+
+      {/* Thẻ gỗ vàng phát sáng mới khi chính người chơi vừa treo thẻ ước nguyện */}
+      <group ref={customGroup}>
+        {[-0.75, -0.48, -0.22, 0.04, 0.30, 0.56, 0.80].map((rx, idx) => (
+          <group key={`custom-plaque-${idx}`} position={[rx, 1.66, 0.035]} visible={false}>
+            <mesh castShadow position={[0, -0.14, 0]}>
+              <boxGeometry args={[0.16, 0.23, 0.022]} />
+              <meshStandardMaterial
+                color="#ffd75e"
+                emissive="#ff9f1c"
+                emissiveIntensity={0.55}
+                metalness={0.75}
+                roughness={0.25}
+              />
+            </mesh>
+          </group>
+        ))}
+      </group>
     </group>
   );
 }

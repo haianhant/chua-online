@@ -56,29 +56,61 @@ export function Roof({
         <boxGeometry args={[width + 1.4, 0.28, 0.4]} />
         <meshStandardMaterial color="#7a2d1e" roughness={0.8} />
       </mesh>
-      {/* Upturned corners (đầu đao): small angled tips at the four eaves */}
+      {/* Upturned corners (đầu đao cong vút truyền thống) + chuông gió đồng */}
       {[
         [-1, -1],
         [1, -1],
         [-1, 1],
         [1, 1],
       ].map(([sx, sz]) => (
-        <mesh
+        <group
           key={`${sx}${sz}`}
-          castShadow
           position={[(sx * width) / 2, 0.35, (sz * depth) / 2 + sz * 0.3]}
-          rotation={[sz * 0.55, 0, -sx * 0.45]}
         >
-          <boxGeometry args={[0.9, 0.16, 0.9]} />
-          <meshStandardMaterial color="#a8432a" roughness={0.85} />
-        </mesh>
+          {/* Phần bệ đầu đao */}
+          <mesh
+            castShadow
+            rotation={[sz * 0.55, 0, -sx * 0.45]}
+          >
+            <boxGeometry args={[1.05, 0.18, 1.05]} />
+            <meshStandardMaterial color="#a8432a" roughness={0.82} />
+          </mesh>
+          {/* Mũi đao uốn cong vút lên trời */}
+          <mesh
+            castShadow
+            position={[sx * 0.42, 0.36, sz * 0.38]}
+            rotation={[sz * 0.85, 0, -sx * 0.78]}
+          >
+            <coneGeometry args={[0.18, 0.95, 6]} />
+            <meshStandardMaterial color="#b84a2c" roughness={0.75} />
+          </mesh>
+          {/* Viền vàng trang trí đầu đao */}
+          <mesh
+            position={[sx * 0.28, 0.22, sz * 0.24]}
+            rotation={[sz * 0.72, 0, -sx * 0.65]}
+          >
+            <boxGeometry args={[0.14, 0.48, 0.14]} />
+            <meshStandardMaterial color="#d4af37" metalness={0.55} roughness={0.38} />
+          </mesh>
+          {/* Chuông gió đồng treo dưới đầu đao (Phong linh) */}
+          <mesh position={[sx * 0.35, -0.22, sz * 0.32]}>
+            <cylinderGeometry args={[0.06, 0.10, 0.18, 8]} />
+            <meshStandardMaterial color="#c9a227" metalness={0.68} roughness={0.32} />
+          </mesh>
+        </group>
       ))}
-      {/* Golden finials at the ridge ends */}
+      {/* Golden finials at the ridge ends (Kìm nóc mạ vàng) */}
       {[-1, 1].map((s) => (
-        <mesh key={s} position={[(s * width) / 2 + s * 0.4, rise + 0.45, 0]}>
-          <coneGeometry args={[0.22, 0.6, 8]} />
-          <meshStandardMaterial color="#c9a227" metalness={0.7} roughness={0.35} />
-        </mesh>
+        <group key={s} position={[(s * width) / 2 + s * 0.4, rise + 0.45, 0]}>
+          <mesh>
+            <coneGeometry args={[0.24, 0.68, 8]} />
+            <meshStandardMaterial color="#d4af37" metalness={0.72} roughness={0.32} />
+          </mesh>
+          <mesh position={[0, 0.38, 0]}>
+            <sphereGeometry args={[0.11, 10, 10]} />
+            <meshStandardMaterial color="#ffd75e" metalness={0.8} roughness={0.25} />
+          </mesh>
+        </group>
       ))}
     </group>
   );
@@ -448,20 +480,277 @@ export function MainHall({ entered }: { entered: boolean }) {
           statue (world z -23.5), so the gold reads with depth */}
       <pointLight position={[0, 5.2, -13.5]} intensity={24} distance={12} decay={2} color="#ffd9a0" />
       <pointLight position={[0, 2.8, -12.8]} intensity={9} distance={8} decay={2} color="#ffe8c0" />
-      {/* Lower + upper roofs. Lower roof extended north 2026-11-03
-          evening at the user's order (top-down photo showed the altar
-          platform uncovered): depth 20 -> 26 and centre shifted north
-          3m (local z -3), so the north eave reaches local -16.7
-          (world -26.7, 0.7m beyond the back wall at -16) while the
-          south eave stays at local +10.7 (world +0.7, unchanged).
-          Upper tier (wall box + upper roof) shifted north by the same
-          3m so it stays centred on the lower ridge. */}
-      <Roof width={20} depth={26} rise={2.5} y={6.8} z={-3} tile={roofTile} />
-      <mesh castShadow position={[0, 8.3, -3]}>
-        <boxGeometry args={[11, 1.2, 7]} />
-        <meshStandardMaterial color="#e8d9b8" roughness={0.9} />
-      </mesh>
-      <Roof width={12} depth={8} rise={1.8} y={9.0} z={-3} tile={roofTile} />
+
+      {/* 🎋 Ống xâm Từ Bi (Compassionate Bamboo Fortune Cylinder) trên đôn gỗ cạnh bàn thờ (world x 2.2, z -19.8) */}
+      <group position={[2.2, 0.98, -9.8]}>
+        {/* Đôn gỗ chạm khắc đặt ống xâm */}
+        <mesh castShadow position={[0, 0.32, 0]}>
+          <cylinderGeometry args={[0.32, 0.28, 0.64, 14]} />
+          <meshStandardMaterial color="#4a2816" roughness={0.75} />
+        </mesh>
+        <mesh position={[0, 0.65, 0]}>
+          <cylinderGeometry args={[0.35, 0.35, 0.04, 16]} />
+          <meshStandardMaterial color="#c9a227" metalness={0.55} roughness={0.38} />
+        </mesh>
+        {/* Ống xâm tre sơn đỏ đai đồng */}
+        <mesh castShadow position={[0, 0.84, 0]}>
+          <cylinderGeometry args={[0.13, 0.115, 0.34, 16]} />
+          <meshStandardMaterial color="#8f241e" roughness={0.55} />
+        </mesh>
+        <mesh position={[0, 0.96, 0]}>
+          <torusGeometry args={[0.128, 0.014, 8, 18]} />
+          <meshStandardMaterial color="#d4af37" metalness={0.7} roughness={0.3} />
+        </mesh>
+        {/* Các thẻ xâm tre đầu sơn đỏ nhô lên trong ống */}
+        {[-0.05, -0.02, 0.01, 0.04, 0, -0.03, 0.03].map((ox, idx) => (
+          <group
+            key={`stick-${idx}`}
+            position={[ox, 1.05, ((idx % 3) - 1) * 0.035]}
+            rotation={[(idx - 3) * 0.06, idx * 0.5, (idx - 3) * 0.08]}
+          >
+            <mesh>
+              <boxGeometry args={[0.022, 0.22, 0.008]} />
+              <meshStandardMaterial color="#dfb87b" roughness={0.75} />
+            </mesh>
+            <mesh position={[0, 0.095, 0]}>
+              <boxGeometry args={[0.024, 0.045, 0.01]} />
+              <meshStandardMaterial color="#b82921" roughness={0.6} />
+            </mesh>
+          </group>
+        ))}
+      </group>
+
+      {/* Thềm rồng đá xanh chạm mây (Dragon-carved stone balustrades flanking the front steps) */}
+      {[-9.3, -3.1, 3.1, 9.3].map((bx, idx) => (
+        <group key={`dragon-step-${idx}`} position={[bx, 0, 5.5]}>
+          {/* Thân thành bậc đá xanh nghiêng theo bậc tam cấp */}
+          <mesh castShadow position={[0, 0.52, 0]} rotation={[0.42, 0, 0]}>
+            <boxGeometry args={[0.34, 0.42, 2.15]} />
+            <meshStandardMaterial color="#6d726e" roughness={0.88} />
+          </mesh>
+          {/* Đường vân mây rồng uốn lượn dọc thành bậc */}
+          {[0.35, 0, -0.35].map((oz, wi) => (
+            <mesh key={wi} castShadow position={[0, 0.68 - wi * 0.14, oz]} scale={[0.9, 0.7, 1.2]}>
+              <sphereGeometry args={[0.19, 10, 10]} />
+              <meshStandardMaterial color="#7c827d" roughness={0.84} />
+            </mesh>
+          ))}
+          {/* Đầu rồng đá chầu ở chân bậc tam cấp (z = 6.45) */}
+          <group position={[0, 0.38, 0.95]}>
+            <mesh castShadow>
+              <boxGeometry args={[0.42, 0.44, 0.46]} />
+              <meshStandardMaterial color="#646a66" roughness={0.86} />
+            </mesh>
+            <mesh position={[0, 0.22, 0.08]}>
+              <sphereGeometry args={[0.18, 10, 10]} />
+              <meshStandardMaterial color="#757b77" roughness={0.84} />
+            </mesh>
+            <mesh position={[0, 0.08, 0.26]}>
+              <sphereGeometry args={[0.09, 10, 10]} />
+              <meshStandardMaterial color="#c9a227" metalness={0.5} roughness={0.45} />
+            </mesh>
+          </group>
+        </group>
+      ))}
+
+      {/* Câu đối sơn son thếp vàng & đèn lồng đỏ treo mặt tiền tầng 1 */}
+      {[-7.5, -4.5, -1.9, 1.9, 4.5, 7.5].map((cx, idx) => (
+        <group key={`couplet-${idx}`} position={[cx, 3.85, 4.52]}>
+          <mesh castShadow>
+            <boxGeometry args={[0.34, 3.8, 0.05]} />
+            <meshStandardMaterial color="#7a1b18" roughness={0.62} />
+          </mesh>
+          <mesh position={[0, 0, 0.028]}>
+            <boxGeometry args={[0.26, 3.55, 0.01]} />
+            <meshStandardMaterial color="#d4af37" metalness={0.65} roughness={0.35} />
+          </mesh>
+          <mesh position={[0, 0, 0.036]}>
+            <boxGeometry args={[0.20, 3.35, 0.01]} />
+            <meshStandardMaterial color="#8a1f1b" roughness={0.65} />
+          </mesh>
+          {/* Họa tiết chữ vàng dọc câu đối */}
+          {[-1.2, -0.72, -0.24, 0.24, 0.72, 1.2].map((cy, ci) => (
+            <mesh key={ci} position={[0, cy, 0.044]}>
+              <circleGeometry args={[0.068, 8]} />
+              <meshStandardMaterial color="#ffd86b" metalness={0.72} roughness={0.28} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+      {[-6.0, -3.2, 3.2, 6.0].map((lx, idx) => (
+        <group key={`front-lantern-${idx}`} position={[lx, 6.25, 5.2]}>
+          <mesh position={[0, 0.25, 0]}>
+            <cylinderGeometry args={[0.018, 0.018, 0.5, 8]} />
+            <meshStandardMaterial color="#2a1a12" />
+          </mesh>
+          <mesh castShadow>
+            <sphereGeometry args={[0.28, 14, 14]} />
+            <meshStandardMaterial color="#d93829" emissive="#ff6b2b" emissiveIntensity={0.45} roughness={0.6} />
+          </mesh>
+          <mesh position={[0, -0.34, 0]}>
+            <cylinderGeometry args={[0.04, 0.08, 0.22, 8]} />
+            <meshStandardMaterial color="#d4af37" metalness={0.6} roughness={0.35} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* =====================================================================
+          KIẾN TRÚC ĐẠI HÙNG BẢO ĐIỆN 3 TẦNG CHỒNG DIÊM 12 MÁI ĐAO ĐỒ SỘ
+         ===================================================================== */}
+      {/* TẦNG 1: Mái hạ điện rộng uy nghi (Lower roof tier 1) */}
+      <Roof width={21.4} depth={26.6} rise={2.35} y={6.75} z={-3} tile={roofTile} />
+
+      {/* TẦNG 2: Lầu Tàng Kinh / Cổ diêm tầng 2 (y = 7.6 .. 10.5, z = -3) */}
+      <group position={[0, 7.6, -3]}>
+        {/* Sàn hành lang gỗ & Lan can con tiện bao quanh tầng 2 */}
+        <mesh castShadow receiveShadow position={[0, 0.15, 0]}>
+          <boxGeometry args={[16.8, 0.3, 18.8]} />
+          <meshStandardMaterial map={wood} roughness={0.75} />
+        </mesh>
+        {/* Lan can gỗ sơn đỏ viền vàng mặt trước & mặt sau tầng 2 */}
+        {[-9.2, 9.2].map((rz, ri) => (
+          <group key={`rail-fb-${ri}`} position={[0, 0.62, rz]}>
+            <mesh castShadow position={[0, 0.26, 0]}>
+              <boxGeometry args={[16.6, 0.09, 0.12]} />
+              <meshStandardMaterial color="#7a241b" roughness={0.7} />
+            </mesh>
+            <mesh position={[0, -0.05, 0]}>
+              <boxGeometry args={[16.4, 0.42, 0.06]} />
+              <meshStandardMaterial color="#c9a227" metalness={0.45} roughness={0.45} />
+            </mesh>
+          </group>
+        ))}
+        {/* Lan can gỗ mặt Đông & Tây tầng 2 */}
+        {[-8.2, 8.2].map((rx, ri) => (
+          <group key={`rail-ew-${ri}`} position={[rx, 0.62, 0]}>
+            <mesh castShadow position={[0, 0.26, 0]}>
+              <boxGeometry args={[0.12, 0.09, 18.6]} />
+              <meshStandardMaterial color="#7a241b" roughness={0.7} />
+            </mesh>
+            <mesh position={[0, -0.05, 0]}>
+              <boxGeometry args={[0.06, 0.42, 18.4]} />
+              <meshStandardMaterial color="#c9a227" metalness={0.45} roughness={0.45} />
+            </mesh>
+          </group>
+        ))}
+        {/* Thân lầu tầng 2 (Second-story timber & gold-trimmed walls) */}
+        <mesh castShadow position={[0, 1.55, 0]}>
+          <boxGeometry args={[14.8, 2.7, 16.6]} />
+          <meshStandardMaterial color="#e8d9b8" roughness={0.86} />
+        </mesh>
+        {/* Hàng cột gỗ đỏ bao quanh tầng 2 */}
+        {[
+          [-7.2, 8.1], [-3.8, 8.1], [0, 8.1], [3.8, 8.1], [7.2, 8.1],
+          [-7.2, -8.1], [-3.8, -8.1], [0, -8.1], [3.8, -8.1], [7.2, -8.1],
+          [-7.2, -2.7], [7.2, -2.7], [-7.2, 2.7], [7.2, 2.7],
+        ].map(([cx, cz], ci) => (
+          <mesh key={`t2-col-${ci}`} castShadow position={[cx, 1.55, cz]}>
+            <cylinderGeometry args={[0.20, 0.22, 2.7, 12]} />
+            <meshStandardMaterial map={wood} roughness={0.7} />
+          </mesh>
+        ))}
+        {/* Các ô cửa bức bàn & cửa sổ chữ Thọ thếp vàng mặt trước tầng 2 */}
+        {[-5.4, -1.9, 1.9, 5.4].map((wx, wi) => (
+          <group key={`t2-win-${wi}`} position={[wx, 1.48, 8.32]}>
+            <mesh>
+              <boxGeometry args={[2.1, 1.85, 0.08]} />
+              <meshStandardMaterial color="#5c2818" roughness={0.7} />
+            </mesh>
+            <mesh position={[0, 0, 0.045]}>
+              <ringGeometry args={[0.32, 0.48, 16]} />
+              <meshStandardMaterial color="#d4af37" metalness={0.65} roughness={0.35} />
+            </mesh>
+          </group>
+        ))}
+        {/* Bức hoành phi lớn tầng 2: ĐẠI HÙNG BẢO ĐIỆN */}
+        <TextSign text="ĐẠI HÙNG BẢO ĐIỆN" width={4.2} height={0.62} position={[0, 2.32, 8.38]} />
+      </group>
+      {/* Mái đao tầng 2 (Second-tier curved roof) */}
+      <Roof width={17.2} depth={19.6} rise={2.15} y={10.35} z={-3} tile={roofTile} />
+
+      {/* TẦNG 3: Thượng Điện Cửu Trùng & Đỉnh Lưỡng Long Chầu Pháp Luân (y = 11.4 .. 16.2, z = -3) */}
+      <group position={[0, 11.35, -3]}>
+        {/* Đế lầu & lan can chạm sen vàng tầng 3 */}
+        <mesh castShadow position={[0, 0.16, 0]}>
+          <boxGeometry args={[12.0, 0.32, 12.8]} />
+          <meshStandardMaterial map={wood} roughness={0.75} />
+        </mesh>
+        {/* Thân lầu tầng 3 */}
+        <mesh castShadow position={[0, 1.25, 0]}>
+          <boxGeometry args={[10.4, 2.1, 11.2]} />
+          <meshStandardMaterial color="#8a241b" roughness={0.75} />
+        </mesh>
+        {/* Phù điêu hoa sen & Bánh xe Pháp luân vàng 4 mặt tầng 3 */}
+        {[-3.2, 0, 3.2].map((fx, fi) => (
+          <group key={`t3-frieze-${fi}`} position={[fx, 1.25, 5.64]}>
+            <mesh>
+              <boxGeometry args={[2.2, 1.35, 0.06]} />
+              <meshStandardMaterial color="#d4af37" metalness={0.65} roughness={0.32} />
+            </mesh>
+            <mesh position={[0, 0, 0.04]}>
+              <ringGeometry args={[0.24, 0.42, 16]} />
+              <meshStandardMaterial color="#fff1a8" metalness={0.8} roughness={0.22} />
+            </mesh>
+          </group>
+        ))}
+        {/* Cột góc tầng 3 */}
+        {[
+          [-5.1, 5.5], [5.1, 5.5], [-5.1, -5.5], [5.1, -5.5],
+          [-1.8, 5.5], [1.8, 5.5],
+        ].map(([cx, cz], ci) => (
+          <mesh key={`t3-col-${ci}`} castShadow position={[cx, 1.25, cz]}>
+            <cylinderGeometry args={[0.17, 0.19, 2.1, 10]} />
+            <meshStandardMaterial color="#4a2615" roughness={0.7} />
+          </mesh>
+        ))}
+      </group>
+      {/* Mái đao tầng 3 cao vút (Third-tier monumental roof) */}
+      <Roof width={12.8} depth={13.8} rise={2.05} y={13.45} z={-3} tile={roofTile} />
+
+      {/* ĐỈNH MÁI CHÍNH ĐIỆN: Lưỡng Long Chầu Pháp Luân (Golden Dharma Wheel & Twin Dragons at y ≈ 16.0m) */}
+      <group position={[0, 15.85, -3]}>
+        {/* Bệ hoa sen nâng Pháp Luân giữa bờ nóc */}
+        <mesh castShadow position={[0, 0, 0]}>
+          <cylinderGeometry args={[0.42, 0.55, 0.28, 12]} />
+          <meshStandardMaterial color="#d4af37" metalness={0.75} roughness={0.28} />
+        </mesh>
+        {/* Bánh xe Pháp Luân tỏa hào quang vàng (Golden Dharma Wheel) */}
+        <mesh castShadow position={[0, 0.62, 0]}>
+          <torusGeometry args={[0.48, 0.075, 12, 24]} />
+          <meshStandardMaterial color="#ffd75e" metalness={0.85} roughness={0.2} emissive="#c98a18" emissiveIntensity={0.25} />
+        </mesh>
+        <mesh position={[0, 0.62, 0]}>
+          <sphereGeometry args={[0.16, 12, 12]} />
+          <meshStandardMaterial color="#ffe885" metalness={0.88} roughness={0.18} />
+        </mesh>
+        {[0, 1, 2, 3].map((sp) => (
+          <mesh key={sp} position={[0, 0.62, 0]} rotation={[0, 0, (sp * Math.PI) / 4]}>
+            <cylinderGeometry args={[0.032, 0.032, 0.92, 8]} />
+            <meshStandardMaterial color="#ffd75e" metalness={0.82} roughness={0.22} />
+          </mesh>
+        ))}
+        {/* Lưỡng Long (Hai tượng rồng vàng uốn lượn hai bên bờ nóc chầu về Pháp Luân) */}
+        {[-1, 1].map((side) => (
+          <group key={`ridge-dragon-${side}`} position={[side * 2.1, 0.18, 0]}>
+            {[0, 1, 2, 3].map((seg) => (
+              <mesh
+                key={seg}
+                castShadow
+                position={[side * (seg * 0.52 - 0.75), Math.sin(seg * 1.1) * 0.22 + 0.18, 0]}
+                scale={[1.2, 0.85, 0.7]}
+              >
+                <sphereGeometry args={[0.24 - seg * 0.025, 10, 10]} />
+                <meshStandardMaterial color="#d4af37" metalness={0.75} roughness={0.28} />
+              </mesh>
+            ))}
+            {/* Đầu rồng hướng vào Pháp Luân */}
+            <mesh castShadow position={[-side * 1.15, 0.42, 0]}>
+              <sphereGeometry args={[0.26, 12, 12]} />
+              <meshStandardMaterial color="#ffd75e" metalness={0.8} roughness={0.25} />
+            </mesh>
+          </group>
+        ))}
+      </group>
     </group>
   );
 }
@@ -471,9 +760,10 @@ export function TamQuan() {
   const { wood, roofTile, stone } = useTextures();
   return (
     <group position={[0, 0, 13]}>
+      {/* 4 cột trụ chính của Tam Quan (giữ nguyên vị trí collider -3.6, -1.4, 1.4, 3.6) */}
       <Columns
         wood={wood}
-        height={4.2}
+        height={4.5}
         positions={[
           [-3.6, 0],
           [-1.4, 0],
@@ -481,23 +771,100 @@ export function TamQuan() {
           [3.6, 0],
         ]}
       />
-      {/* Low side walls */}
+      {/* 2 trụ biểu đá / cột phụ bên ngoài trên tường bao tạo dáng Tam Quan 3 cửa bề thế */}
+      {[-5.8, 5.8].map((px, idx) => (
+        <group key={`outer-col-${idx}`} position={[px, 2.1, 0]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.24, 0.28, 4.2, 12]} />
+            <meshStandardMaterial map={wood} roughness={0.72} />
+          </mesh>
+          <mesh position={[0, 2.25, 0]}>
+            <sphereGeometry args={[0.22, 10, 10]} />
+            <meshStandardMaterial color="#d4af37" metalness={0.65} roughness={0.32} />
+          </mesh>
+        </group>
+      ))}
+      {/* Tường đá xanh hai bên nối với tường bao */}
       {[-1, 1].map((s) => (
-        <mesh key={s} castShadow position={[s * 5.2, 0.8, 0]}>
-          <boxGeometry args={[3.2, 1.6, 0.5]} />
+        <mesh key={s} castShadow position={[s * 5.2, 0.9, 0]}>
+          <boxGeometry args={[3.2, 1.8, 0.55]} />
           <meshStandardMaterial map={stone} roughness={0.95} />
         </mesh>
       ))}
-      {/* Beams + the institute's real name sign. The beam is made
-          taller (0.9m) so the sign sits fully on its south face,
-          below the tiled roof: exactly one line, CHÙA HẢI AN,
-          dark brown wood, warm yellow letters, thin gold border. */}
+      {/* Câu đối sơn son thếp vàng trên 4 cột cổng Tam Quan */}
+      {[-3.6, -1.4, 1.4, 3.6].map((cx, idx) => (
+        <group key={`tq-couplet-${idx}`} position={[cx, 2.35, 0.31]}>
+          <mesh>
+            <boxGeometry args={[0.26, 2.7, 0.04]} />
+            <meshStandardMaterial color="#7a1b18" roughness={0.65} />
+          </mesh>
+          <mesh position={[0, 0, 0.025]}>
+            <boxGeometry args={[0.18, 2.48, 0.01]} />
+            <meshStandardMaterial color="#d4af37" metalness={0.65} roughness={0.32} />
+          </mesh>
+        </group>
+      ))}
+      {/* Xà ngang & Bảng tên chính CHÙA HẢI AN tầng 1 */}
       <mesh castShadow position={[0, 4.35, 0]}>
-        <boxGeometry args={[8.6, 0.9, 0.5]} />
+        <boxGeometry args={[12.4, 0.9, 0.55]} />
         <meshStandardMaterial map={wood} roughness={0.7} />
       </mesh>
-      <TextSign text="CHÙA HẢI AN" width={3.4} height={0.65} position={[0, 4.35, 0.26]} />
-      <Roof width={9.5} depth={3.2} rise={1.3} y={4.6} tile={roofTile} />
+      <TextSign text="CHÙA HẢI AN" width={3.6} height={0.68} position={[0, 4.35, 0.30]} />
+
+      {/* Mái đao hai cổng bên (Cửa Giả & Cửa Không) */}
+      {[-4.4, 4.4].map((wx, idx) => (
+        <group key={`wing-roof-${idx}`} position={[wx, 0, 0]}>
+          <Roof width={3.8} depth={3.0} rise={0.95} y={4.05} tile={roofTile} />
+        </group>
+      ))}
+      {/* Mái chính tầng 1 Tam Quan */}
+      <Roof width={10.2} depth={3.6} rise={1.35} y={4.65} tile={roofTile} />
+
+      {/* =====================================================================
+          TẦNG 2: GÁC TAM QUAN CỔ TỰ (2-Story Watchtower Pavilion, y = 5.4..9.2)
+         ===================================================================== */}
+      <group position={[0, 5.45, 0]}>
+        {/* Sàn & lan can gỗ con tiện Gác Tam Quan tầng 2 */}
+        <mesh castShadow position={[0, 0.14, 0]}>
+          <boxGeometry args={[6.4, 0.28, 3.0]} />
+          <meshStandardMaterial map={wood} roughness={0.75} />
+        </mesh>
+        {[-1.38, 1.38].map((rz, ri) => (
+          <mesh key={`tq-rail-${ri}`} position={[0, 0.48, rz]}>
+            <boxGeometry args={[6.2, 0.42, 0.08]} />
+            <meshStandardMaterial color="#c9a227" metalness={0.48} roughness={0.42} />
+          </mesh>
+        ))}
+        {/* Thân lầu Gác Tam Quan tầng 2 */}
+        <mesh castShadow position={[0, 1.15, 0]}>
+          <boxGeometry args={[5.2, 1.85, 2.2]} />
+          <meshStandardMaterial color="#8a241b" roughness={0.75} />
+        </mesh>
+        {/* 4 cột gỗ Gác Tam Quan */}
+        {[
+          [-2.4, 1.0], [2.4, 1.0], [-2.4, -1.0], [2.4, -1.0],
+        ].map(([cx, cz], ci) => (
+          <mesh key={`tq-ucol-${ci}`} castShadow position={[cx, 1.15, cz]}>
+            <cylinderGeometry args={[0.16, 0.18, 1.85, 10]} />
+            <meshStandardMaterial map={wood} roughness={0.7} />
+          </mesh>
+        ))}
+        {/* Ô cửa vòm & phù điêu Pháp luân vàng trên Gác Tam Quan */}
+        <mesh position={[0, 1.12, 1.12]}>
+          <circleGeometry args={[0.46, 18]} />
+          <meshStandardMaterial color="#d4af37" metalness={0.68} roughness={0.3} />
+        </mesh>
+        {/* Đèn lồng đỏ treo hai bên Gác Tam Quan */}
+        {[-2.8, 2.8].map((lx, li) => (
+          <mesh key={`tq-lan-${li}`} position={[lx, 1.45, 1.15]}>
+            <sphereGeometry args={[0.20, 12, 12]} />
+            <meshStandardMaterial color="#d93829" emissive="#ff6b2b" emissiveIntensity={0.45} />
+          </mesh>
+        ))}
+      </group>
+      {/* Mái chồng diêm tầng 2 Gác Tam Quan (Double-eave upper tower roof) */}
+      <Roof width={6.8} depth={3.2} rise={1.15} y={7.35} tile={roofTile} />
+      <Roof width={5.2} depth={2.5} rise={1.05} y={8.35} tile={roofTile} />
     </group>
   );
 }
@@ -798,6 +1165,9 @@ export function Garden() {
       <Bonsai position={[-4.6, 0, -2.0]} />
       <Bonsai position={[4.6, 0, -2.0]} />
 
+      {/* Bảo Tháp Báo Ân 7 Tầng (Seven-Story Octagonal Lotus Stupa at (35.0, 0, -2.5)) */}
+      <SevenStoryStupa />
+
       {/* Distant misty hills — smooth DOMES far outside the enlarged compound */}
       {(
         [
@@ -837,6 +1207,151 @@ export function Garden() {
         </bufferGeometry>
         <pointsMaterial size={0.12} color="#c8d98a" transparent opacity={0.8} sizeAttenuation depthWrite={false} />
       </points>
+    </group>
+  );
+}
+
+/**
+ * Bảo Tháp Báo Ân 7 Tầng (Seven-Story Octagonal Buddhist Stupa) tại (35.0, 0, -2.5):
+ * Kiến trúc tháp bát giác truyền thống Việt Nam cao ~19.5m với đế đá xanh chạm sen,
+ * 7 tầng tháp gạch đỏ nâu thu nhỏ dần lên cao, mỗi tầng có 8 mái đao cong vút treo
+ * chuông gió đồng, 4 ô khám thờ Phật mạ vàng, và đỉnh Cửu Phẩm Liên Hoa / Hồ Lô Vàng.
+ */
+export function SevenStoryStupa() {
+  const { stone } = useTextures();
+  const tiers = [
+    { y: 1.0, h: 2.35, rBody: 1.95, rRoof: 2.75 },
+    { y: 3.35, h: 2.15, rBody: 1.74, rRoof: 2.48 },
+    { y: 5.50, h: 1.98, rBody: 1.54, rRoof: 2.22 },
+    { y: 7.48, h: 1.82, rBody: 1.35, rRoof: 1.96 },
+    { y: 9.30, h: 1.66, rBody: 1.18, rRoof: 1.72 },
+    { y: 10.96, h: 1.52, rBody: 1.02, rRoof: 1.50 },
+    { y: 12.48, h: 1.40, rBody: 0.86, rRoof: 1.30 },
+  ];
+
+  return (
+    <group position={[35.0, 0, -2.5]}>
+      {/* Lối đá xanh dẫn từ hành lang Đông sang Bảo Tháp */}
+      {[-6.5, -5.0, -3.5].map((ox, i) => (
+        <mesh key={`stupa-path-${i}`} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[ox, 0.032, 0]}>
+          <planeGeometry args={[1.1, 1.5]} />
+          <meshStandardMaterial color="#b0a894" roughness={0.95} />
+        </mesh>
+      ))}
+
+      {/* Đế tháp đá xanh 2 cấp bát giác + Lan can đá chạm hoa sen */}
+      <mesh receiveShadow castShadow position={[0, 0.25, 0]}>
+        <cylinderGeometry args={[2.85, 3.05, 0.5, 8]} />
+        <meshStandardMaterial map={stone} roughness={0.92} />
+      </mesh>
+      <mesh receiveShadow castShadow position={[0, 0.72, 0]}>
+        <cylinderGeometry args={[2.35, 2.55, 0.48, 8]} />
+        <meshStandardMaterial color="#7d786e" roughness={0.88} />
+      </mesh>
+      {/* Vòng cánh sen đá nâng chân tháp */}
+      <mesh castShadow position={[0, 0.98, 0]}>
+        <cylinderGeometry args={[2.18, 2.38, 0.14, 16]} />
+        <meshStandardMaterial color="#c9a227" metalness={0.55} roughness={0.38} />
+      </mesh>
+      {/* Bậc tam cấp đá phía Tây hướng về sân Chính điện */}
+      <mesh receiveShadow castShadow position={[-2.65, 0.22, 0]}>
+        <boxGeometry args={[0.9, 0.44, 1.4]} />
+        <meshStandardMaterial map={stone} roughness={0.92} />
+      </mesh>
+
+      {/* 7 Tầng Tháp Bát Giác (7 Octagonal Stories with upturned eaves & golden Buddha niches) */}
+      {tiers.map((t, idx) => (
+        <group key={`stupa-tier-${idx}`} position={[0, t.y, 0]}>
+          {/* Thân tháp bát giác gạch nung đỏ sẫm truyền thống */}
+          <mesh castShadow receiveShadow position={[0, t.h / 2, 0]}>
+            <cylinderGeometry args={[t.rBody * 0.94, t.rBody, t.h, 8]} />
+            <meshStandardMaterial color="#8c3324" roughness={0.78} />
+          </mesh>
+          {/* Viền chỉ vàng chân & cổ tầng tháp */}
+          <mesh position={[0, t.h - 0.12, 0]}>
+            <cylinderGeometry args={[t.rBody * 0.97, t.rBody * 0.97, 0.12, 8]} />
+            <meshStandardMaterial color="#d4af37" metalness={0.62} roughness={0.35} />
+          </mesh>
+          {/* 4 Ô khám thờ Phật mạ vàng (Đông - Tây - Nam - Bắc mỗi tầng) */}
+          {[0, Math.PI / 2, Math.PI, -Math.PI / 2].map((ang, ni) => (
+            <group
+              key={`niche-${ni}`}
+              position={[
+                Math.sin(ang) * (t.rBody * 0.90),
+                t.h * 0.46,
+                Math.cos(ang) * (t.rBody * 0.90),
+              ]}
+              rotation={[0, ang, 0]}
+            >
+              {/* Khung vòm khám thờ */}
+              <mesh>
+                <boxGeometry args={[0.42, 0.62, 0.08]} />
+                <meshStandardMaterial color="#3d1e12" roughness={0.75} />
+              </mesh>
+              {/* Tượng Phật nhỏ tọa thiền tỏa ánh vàng trong khám */}
+              <mesh position={[0, -0.06, 0.04]}>
+                <coneGeometry args={[0.13, 0.34, 10]} />
+                <meshStandardMaterial color="#ffd75e" metalness={0.82} roughness={0.22} emissive="#c98a18" emissiveIntensity={0.2} />
+              </mesh>
+              <mesh position={[0, 0.14, 0.04]}>
+                <sphereGeometry args={[0.075, 10, 10]} />
+                <meshStandardMaterial color="#ffe680" metalness={0.85} roughness={0.2} />
+              </mesh>
+            </group>
+          ))}
+          {/* Mái ngói bát giác uốn cong (Octagonal pagoda roof eave) */}
+          <mesh castShadow position={[0, t.h + 0.18, 0]}>
+            <coneGeometry args={[t.rRoof, 0.56, 8]} />
+            <meshStandardMaterial color="#a83b24" roughness={0.78} />
+          </mesh>
+          {/* 8 Đầu đao cong vút + Chuông gió đồng ở 8 góc mái mỗi tầng */}
+          {[0, 1, 2, 3, 4, 5, 6, 7].map((c) => {
+            const a = (c * Math.PI) / 4 + Math.PI / 8;
+            const rx = Math.sin(a) * (t.rRoof * 0.94);
+            const rz = Math.cos(a) * (t.rRoof * 0.94);
+            return (
+              <group key={`eave-${c}`} position={[rx, t.h + 0.05, rz]} rotation={[0, a, 0]}>
+                <mesh castShadow position={[0, 0.14, 0.16]} rotation={[-0.65, 0, 0]}>
+                  <coneGeometry args={[0.09, 0.45, 5]} />
+                  <meshStandardMaterial color="#c9a227" metalness={0.62} roughness={0.32} />
+                </mesh>
+                <mesh position={[0, -0.10, 0.14]}>
+                  <cylinderGeometry args={[0.035, 0.06, 0.12, 6]} />
+                  <meshStandardMaterial color="#d4af37" metalness={0.75} roughness={0.28} />
+                </mesh>
+              </group>
+            );
+          })}
+        </group>
+      ))}
+
+      {/* Đỉnh Bảo Tháp: Bệ sen vàng + Tướng luân Cửu Phẩm + Bầu Hồ Lô Vàng (y = 14.1 .. 19.2m) */}
+      <group position={[0, 14.1, 0]}>
+        <mesh castShadow position={[0, 0.25, 0]}>
+          <cylinderGeometry args={[0.48, 0.72, 0.5, 12]} />
+          <meshStandardMaterial color="#d4af37" metalness={0.78} roughness={0.25} />
+        </mesh>
+        {/* Trụ tướng luân 9 vòng (Nine-ring golden spire) */}
+        <mesh castShadow position={[0, 1.85, 0]}>
+          <cylinderGeometry args={[0.08, 0.18, 3.2, 12]} />
+          <meshStandardMaterial color="#ffd75e" metalness={0.85} roughness={0.2} />
+        </mesh>
+        {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((rIdx) => (
+          <mesh key={`ring-${rIdx}`} position={[0, 0.65 + rIdx * 0.28, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.38 - rIdx * 0.024, 0.03, 8, 18]} />
+            <meshStandardMaterial color="#ffe070" metalness={0.85} roughness={0.2} />
+          </mesh>
+        ))}
+        {/* Bầu hồ lô vàng & Châu ngọc trên đỉnh tháp (y ≈ 18.8m) */}
+        <mesh castShadow position={[0, 3.55, 0]}>
+          <sphereGeometry args={[0.26, 14, 14]} />
+          <meshStandardMaterial color="#ffd75e" metalness={0.88} roughness={0.18} emissive="#c98a18" emissiveIntensity={0.3} />
+        </mesh>
+        <mesh castShadow position={[0, 3.92, 0]}>
+          <sphereGeometry args={[0.17, 14, 14]} />
+          <meshStandardMaterial color="#fff099" metalness={0.92} roughness={0.15} emissive="#ffae2b" emissiveIntensity={0.4} />
+        </mesh>
+      </group>
     </group>
   );
 }

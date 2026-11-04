@@ -34,3 +34,7 @@
 - Build tĩnh (bắt buộc có biến môi trường, không là MẤT multiplayer):
   `NEXT_PUBLIC_MULTIPLAYER_WS_URL=wss://chua-online-temple.hunganhz179.workers.dev/ws npm run build`
 - Test nhanh: `node test-v2-unit.js` (109 kiểm tra) + `npx tsc --noEmit` + build.
+
+## 2026-11-04: repo chuyển sang public, Vercel tự deploy
+- Repo `haianhant/chua-online` chuyển từ private sang public lúc ~16:50 ngày 2026-11-04 (user tự đổi trong Settings) để Vercel gói Hobby deploy được commit của collaborator.
+- Commit này chỉ để kích hoạt một production deploy mới với cấu hình framework Next.js (deploy git trước đó build lúc project chưa cài framework nên lên live bị 404).

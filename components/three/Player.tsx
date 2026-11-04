@@ -16,16 +16,17 @@ type Props = {
 const SPEED = 3.4;
 
 /**
- * Stylized visitor in áo dài-inspired dress + nón lá, natural proportions.
+ * Phật tử trong trang phục Bộ đồ lam đi chùa truyền thống (Áo lam cổ tàu vạt chéo
+ * cài nút vải, quần lam ống suông, giày vải, chuỗi hạt gỗ trầm, đầu trần tóc búi gọn).
  * Walk: legs/arms swing, body bobs. Idle: gentle breathing.
  * Sit: lowered, legs folded, hands together. Pray: standing, hands together.
  */
 export default function Player({ name, visible, canMove, onZone }: Props) {
   const group = useRef<THREE.Group>(null);
-  const legL = useRef<THREE.Mesh>(null);
-  const legR = useRef<THREE.Mesh>(null);
-  const armL = useRef<THREE.Mesh>(null);
-  const armR = useRef<THREE.Mesh>(null);
+  const legL = useRef<THREE.Group>(null);
+  const legR = useRef<THREE.Group>(null);
+  const armL = useRef<THREE.Group>(null);
+  const armR = useRef<THREE.Group>(null);
   const body = useRef<THREE.Group>(null);
   const vel = useRef({ x: 0, z: 0 });
   const phase = useRef(0);
@@ -293,55 +294,263 @@ export default function Player({ name, visible, canMove, onZone }: Props) {
   return (
     <group ref={group} position={[LAYOUT.spawn.x, 0, LAYOUT.spawn.z]}>
       {/* Name label — DOM text, so Vietnamese diacritics render perfectly */}
-      <Html center position={[0, 2.35, 0]} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
+      <Html center position={[0, 2.32, 0]} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
         <div className="whitespace-nowrap rounded-full border border-white/40 bg-black/45 px-3 py-1 font-sans text-xs font-medium text-amber-50 shadow">
           {name}
         </div>
       </Html>
       <group ref={body}>
-        {/* Legs (trousers) */}
-        {[-0.14, 0.14].map((x, i) => (
-          <mesh
+        {/* Quần lam ống suông + Giày vải đi chùa (Trousers & Cloth Shoes) */}
+        {[-0.135, 0.135].map((x, i) => (
+          <group
             key={i}
             ref={i === 0 ? legL : legR}
             position={[x, 0.48, 0]}
-            castShadow
           >
-            <boxGeometry args={[0.2, 0.95, 0.22]} />
-            <meshStandardMaterial color="#2e3a4a" roughness={0.85} />
+            {/* Ống quần lam suông rộng vừa phải */}
+            <mesh position={[0, 0.04, 0]} castShadow>
+              <cylinderGeometry args={[0.105, 0.122, 0.82, 14]} />
+              <meshStandardMaterial color="#5c738a" roughness={0.86} />
+            </mesh>
+            {/* Gấu quần lam (Trouser hem cuff) */}
+            <mesh position={[0, -0.355, 0]} castShadow>
+              <cylinderGeometry args={[0.123, 0.124, 0.045, 14]} />
+              <meshStandardMaterial color="#4b6075" roughness={0.88} />
+            </mesh>
+            {/* Cổ chân / tất vải (Ankle sock) */}
+            <mesh position={[0, -0.40, 0]}>
+              <cylinderGeometry args={[0.072, 0.075, 0.08, 12]} />
+              <meshStandardMaterial color="#e8e2d5" roughness={0.85} />
+            </mesh>
+            {/* Thân giày vải đi chùa (Cloth temple shoe upper) */}
+            <mesh position={[0, -0.435, 0.028]} castShadow>
+              <boxGeometry args={[0.145, 0.065, 0.24]} />
+              <meshStandardMaterial color="#382e28" roughness={0.88} />
+            </mesh>
+            {/* Mũi giày bo tròn (Rounded shoe toe) */}
+            <mesh position={[0, -0.438, 0.135]} scale={[1, 0.55, 1]} castShadow>
+              <sphereGeometry args={[0.071, 12, 10]} />
+              <meshStandardMaterial color="#382e28" roughness={0.88} />
+            </mesh>
+            {/* Đế giày vải trắng ngà (Cloth shoe sole) */}
+            <mesh position={[0, -0.47, 0.032]}>
+              <boxGeometry args={[0.152, 0.022, 0.255]} />
+              <meshStandardMaterial color="#dfd7c8" roughness={0.9} />
+            </mesh>
+          </group>
+        ))}
+
+        {/* Áo lam Phật tử — Thân áo trên (Upper tunic torso) */}
+        <mesh castShadow position={[0, 1.44, 0]}>
+          <cylinderGeometry args={[0.245, 0.265, 0.44, 18]} />
+          <meshStandardMaterial color="#6e859c" roughness={0.84} />
+        </mesh>
+        {/* Cầu vai bo tròn tự nhiên (Rounded shoulder yoke) */}
+        <mesh castShadow position={[0, 1.63, 0]} scale={[1.28, 0.42, 0.9]}>
+          <sphereGeometry args={[0.255, 16, 12]} />
+          <meshStandardMaterial color="#6e859c" roughness={0.84} />
+        </mesh>
+        {/* Đường chiết eo nhẹ (Subtle waist seam) */}
+        <mesh position={[0, 1.23, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.26, 0.012, 8, 20]} />
+          <meshStandardMaterial color="#586f86" roughness={0.86} />
+        </mesh>
+        {/* Tà áo lam vạt hò xẻ tà (Flared lower tunic skirt) */}
+        <mesh castShadow position={[0, 1.01, 0]}>
+          <cylinderGeometry args={[0.262, 0.345, 0.46, 18]} />
+          <meshStandardMaterial color="#6e859c" roughness={0.84} />
+        </mesh>
+        {/* Viền gấu tà áo lam (Lower tunic hem trim) */}
+        <mesh position={[0, 0.79, 0]}>
+          <cylinderGeometry args={[0.344, 0.348, 0.03, 18]} />
+          <meshStandardMaterial color="#4b6075" roughness={0.86} />
+        </mesh>
+        {/* Đường xẻ tà hai bên hông (Traditional side slits) */}
+        {[-0.31, 0.31].map((sx, idx) => (
+          <mesh key={`slit-${idx}`} position={[sx, 0.91, 0]}>
+            <boxGeometry args={[0.018, 0.26, 0.055]} />
+            <meshStandardMaterial color="#435668" roughness={0.9} />
           </mesh>
         ))}
-        {/* Áo dài-inspired tunic */}
-        <mesh castShadow position={[0, 1.28, 0]}>
-          <cylinderGeometry args={[0.32, 0.42, 0.95, 12]} />
-          <meshStandardMaterial color="#e8e0cc" roughness={0.85} />
+
+        {/* Cổ tàu truyền thống (Mandarin standing collar) */}
+        <mesh position={[0, 1.675, 0]}>
+          <cylinderGeometry args={[0.135, 0.145, 0.075, 16]} />
+          <meshStandardMaterial color="#4b6075" roughness={0.84} />
         </mesh>
-        {/* Arms */}
-        {[-0.42, 0.42].map((x, i) => (
-          <mesh
+        {/* Cổ (Neck) */}
+        <mesh position={[0, 1.725, 0]}>
+          <cylinderGeometry args={[0.112, 0.122, 0.11, 14]} />
+          <meshStandardMaterial color="#ecc39e" roughness={0.72} />
+        </mesh>
+
+        {/* Nẹp áo vạt chéo cài cúc vải phía trước (Front diagonal placket + cloth knot buttons on +Z) */}
+        <mesh position={[0.08, 1.54, 0.252]} rotation={[0, 0, -0.62]}>
+          <boxGeometry args={[0.032, 0.28, 0.018]} />
+          <meshStandardMaterial color="#4b6075" roughness={0.85} />
+        </mesh>
+        <mesh position={[0.165, 1.13, 0.285]} rotation={[-0.14, 0, 0]}>
+          <boxGeometry args={[0.03, 0.62, 0.018]} />
+          <meshStandardMaterial color="#4b6075" roughness={0.85} />
+        </mesh>
+        {/* 5 nút vải trắng ngà (5 traditional ivory silk knot buttons) */}
+        {[
+          [0.03, 1.61, 0.262],
+          [0.095, 1.525, 0.262],
+          [0.16, 1.435, 0.262],
+          [0.168, 1.28, 0.282],
+          [0.172, 1.12, 0.304],
+        ].map(([bx, by, bz], idx) => (
+          <mesh key={`btn-${idx}`} position={[bx, by, bz]}>
+            <sphereGeometry args={[0.016, 8, 8]} />
+            <meshStandardMaterial color="#f2ead8" roughness={0.65} />
+          </mesh>
+        ))}
+
+        {/* Huy hiệu hoa sen thêu ngực trái (Embroidered lotus badge on front left chest) */}
+        <group position={[-0.105, 1.48, 0.258]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.034, 0.034, 0.008, 12]} />
+            <meshStandardMaterial color="#4b6075" roughness={0.8} />
+          </mesh>
+          <mesh position={[0, 0, 0.006]}>
+            <sphereGeometry args={[0.018, 10, 8]} />
+            <meshStandardMaterial color="#f0a8be" roughness={0.6} />
+          </mesh>
+          <mesh position={[0, 0.004, 0.014]}>
+            <sphereGeometry args={[0.009, 8, 8]} />
+            <meshStandardMaterial color="#e8c266" roughness={0.5} />
+          </mesh>
+        </group>
+
+        {/* Chi tiết mặt sau lưng áo lam (Back seam + subtle embroidered lotus motif seen by follow camera on -Z) */}
+        <mesh position={[0, 1.22, -0.285]} rotation={[0.13, 0, 0]}>
+          <boxGeometry args={[0.016, 0.82, 0.012]} />
+          <meshStandardMaterial color="#586f86" roughness={0.88} />
+        </mesh>
+        {/* Hoa sen thêu trang nhã giữa lưng áo trên (Back lotus emblem) */}
+        <group position={[0, 1.47, -0.256]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.052, 0.052, 0.006, 16]} />
+            <meshStandardMaterial color="#556b82" roughness={0.82} />
+          </mesh>
+          {[0, -0.48, 0.48, -0.92, 0.92].map((ang, idx) => (
+            <mesh
+              key={`back-petal-${idx}`}
+              position={[Math.sin(ang) * 0.018, Math.cos(ang) * 0.012 - 0.006, -0.004]}
+              rotation={[0, 0, -ang]}
+              scale={[0.55, 1.15, 0.35]}
+            >
+              <sphereGeometry args={[0.018, 8, 8]} />
+              <meshStandardMaterial color="#e8b4c4" roughness={0.65} />
+            </mesh>
+          ))}
+          <mesh position={[0, -0.016, -0.005]}>
+            <sphereGeometry args={[0.011, 8, 8]} />
+            <meshStandardMaterial color="#e6c36a" roughness={0.55} />
+          </mesh>
+        </group>
+
+        {/* Tay áo lam dài + Vòng hạt gỗ trầm + Bàn tay (Sleeves, prayer beads & hands pivoting from shoulder) */}
+        {[-0.34, 0.34].map((x, i) => (
+          <group
             key={i}
             ref={i === 0 ? armL : armR}
-            position={[x, 1.55, 0]}
-            castShadow
+            position={[x, 1.58, 0]}
           >
-            <boxGeometry args={[0.14, 0.8, 0.16]} />
-            <meshStandardMaterial color="#e8e0cc" roughness={0.85} />
+            {/* Đầu vai áo bo tròn (Rounded shoulder cap at pivot) */}
+            <mesh position={[0, 0, 0]} castShadow>
+              <sphereGeometry args={[0.092, 12, 10]} />
+              <meshStandardMaterial color="#6e859c" roughness={0.84} />
+            </mesh>
+            {/* Ống tay áo lam dài (Long lam sleeve) */}
+            <mesh position={[0, -0.22, 0]} castShadow>
+              <cylinderGeometry args={[0.088, 0.098, 0.44, 14]} />
+              <meshStandardMaterial color="#6e859c" roughness={0.84} />
+            </mesh>
+            {/* Viền cổ tay áo lam (Sleeve cuff trim) */}
+            <mesh position={[0, -0.425, 0]} castShadow>
+              <cylinderGeometry args={[0.099, 0.101, 0.045, 14]} />
+              <meshStandardMaterial color="#4b6075" roughness={0.86} />
+            </mesh>
+            {/* Vòng chuỗi hạt gỗ trầm đeo cổ tay (Wooden prayer bead bracelet) */}
+            <mesh position={[0, -0.452, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[0.068, 0.016, 8, 14]} />
+              <meshStandardMaterial color="#5c3820" roughness={0.65} />
+            </mesh>
+            {/* Bàn tay (Sculpted hand) */}
+            <mesh position={[0, -0.495, 0.01]} scale={[0.85, 1.15, 0.95]} castShadow>
+              <sphereGeometry args={[0.064, 12, 10]} />
+              <meshStandardMaterial color="#ecc39e" roughness={0.72} />
+            </mesh>
+          </group>
+        ))}
+
+        {/* Đầu + Khuôn mặt hiền hòa + Tóc búi gọn gàng (Head, serene face & neat hair bun — no conical hat indoors) */}
+        <mesh castShadow position={[0, 1.96, 0]}>
+          <sphereGeometry args={[0.235, 22, 22]} />
+          <meshStandardMaterial color="#ecc39e" roughness={0.7} />
+        </mesh>
+        {/* Đôi tai (Ears) */}
+        {[-0.228, 0.228].map((ex, idx) => (
+          <mesh key={`ear-${idx}`} position={[ex, 1.95, 0]} scale={[0.45, 0.85, 0.65]}>
+            <sphereGeometry args={[0.055, 10, 10]} />
+            <meshStandardMaterial color="#e6ba94" roughness={0.72} />
           </mesh>
         ))}
-        {/* Head + hair */}
-        <mesh castShadow position={[0, 1.98, 0]}>
-          <sphereGeometry args={[0.26, 20, 20]} />
-          <meshStandardMaterial color="#e8b88a" roughness={0.7} />
+        {/* Nét mặt hiền hòa hướng về phía trước (+Z) */}
+        {/* Chân mày (Eyebrows) */}
+        {[-0.075, 0.075].map((fx, idx) => (
+          <mesh key={`brow-${idx}`} position={[fx, 2.015, 0.218]} rotation={[0, 0, idx === 0 ? 0.08 : -0.08]}>
+            <boxGeometry args={[0.052, 0.01, 0.01]} />
+            <meshStandardMaterial color="#241812" roughness={0.85} />
+          </mesh>
+        ))}
+        {/* Đôi mắt an tĩnh (Gentle eyes) */}
+        {[-0.075, 0.075].map((fx, idx) => (
+          <mesh key={`eye-${idx}`} position={[fx, 1.975, 0.224]}>
+            <sphereGeometry args={[0.018, 10, 10]} />
+            <meshStandardMaterial color="#1f1510" roughness={0.4} />
+          </mesh>
+        ))}
+        {/* Nụ cười nhẹ (Subtle serene smile) */}
+        <mesh position={[0, 1.895, 0.222]} rotation={[0.2, 0, 0]}>
+          <torusGeometry args={[0.032, 0.006, 6, 12, Math.PI]} />
+          <meshStandardMaterial color="#b86b5a" roughness={0.7} />
         </mesh>
-        <mesh position={[0, 2.12, -0.04]}>
-          <sphereGeometry args={[0.27, 20, 20, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
-          <meshStandardMaterial color="#2a1a12" roughness={0.9} />
+
+        {/* Mái tóc đen mượt ôm gọn đầu (Neat dark hair cap) */}
+        <mesh castShadow position={[0, 1.99, -0.018]}>
+          <sphereGeometry args={[0.244, 22, 20, 0, Math.PI * 2, 0, Math.PI * 0.62]} />
+          <meshStandardMaterial color="#1f1612" roughness={0.82} />
         </mesh>
-        {/* Nón lá */}
-        <mesh castShadow position={[0, 2.28, 0]}>
-          <coneGeometry args={[0.48, 0.28, 20]} />
-          <meshStandardMaterial color="#d8c48a" roughness={0.8} />
+        {/* Phần tóc sau gáy ôm trọn đầu (Back hair coverage so neck/back of head looks natural from follow camera) */}
+        <mesh castShadow position={[0, 1.93, -0.09]} scale={[0.96, 0.88, 0.82]}>
+          <sphereGeometry args={[0.22, 18, 16]} />
+          <meshStandardMaterial color="#1f1612" roughness={0.82} />
         </mesh>
+        {/* Búi tóc truyền thống gọn gàng sau đầu (Neat back hair bun + cloth tie + wooden hairpin) */}
+        <group position={[0, 1.94, -0.25]}>
+          {/* Dải vải lam buộc búi tóc (Matching slate-blue hair tie ring) */}
+          <mesh position={[0, 0, 0.025]} rotation={[0.15, 0, 0]}>
+            <torusGeometry args={[0.072, 0.016, 8, 16]} />
+            <meshStandardMaterial color="#4b6075" roughness={0.8} />
+          </mesh>
+          {/* Búi tóc tròn (Hair bun) */}
+          <mesh castShadow position={[0, 0, -0.015]} scale={[1.05, 0.95, 0.88]}>
+            <sphereGeometry args={[0.088, 16, 14]} />
+            <meshStandardMaterial color="#1f1612" roughness={0.82} />
+          </mesh>
+          {/* Trâm gỗ trầm cài tóc (Wooden hairpin) */}
+          <mesh position={[0, 0.005, -0.01]} rotation={[0, 0, Math.PI / 2 - 0.18]}>
+            <cylinderGeometry args={[0.009, 0.006, 0.24, 8]} />
+            <meshStandardMaterial color="#5c3820" roughness={0.55} />
+          </mesh>
+          <mesh position={[0.115, 0.026, -0.01]}>
+            <sphereGeometry args={[0.016, 8, 8]} />
+            <meshStandardMaterial color="#d6b265" roughness={0.45} metalness={0.3} />
+          </mesh>
+        </group>
       </group>
     </group>
   );

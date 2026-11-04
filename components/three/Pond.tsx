@@ -294,11 +294,15 @@ export default function LotusPond({ spawnTick, spawnCount, remoteTick, onFishCou
 
   return (
     <group position={[0, 0, 0]}>
-      {/* Bank: soft grass ring under the stones, so the pond edge
-          does not look cut out of the courtyard. */}
+      {/* Bank: soft grass ring under the stones + stone rim curb, so the
+          pond edge has a clean border and never overlaps the east path. */}
       <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[POND_CENTER.x, 0.03, POND_CENTER.z]}>
-        <circleGeometry args={[4.4, 28]} />
+        <circleGeometry args={[4.1, 28]} />
         <meshStandardMaterial color="#7a9a5a" roughness={1} />
+      </mesh>
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[POND_CENTER.x, 0.035, POND_CENTER.z]}>
+        <ringGeometry args={[3.95, 4.2, 32]} />
+        <meshStandardMaterial color="#8d8a82" roughness={0.95} />
       </mesh>
       {/* Water: deep centre + lighter surface, irregular shape. */}
       <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[POND_CENTER.x, 0.05, POND_CENTER.z]}>
@@ -314,15 +318,6 @@ export default function LotusPond({ spawnTick, spawnCount, remoteTick, onFishCou
         <mesh key={i} castShadow position={[s.x, 0.12, s.z]} rotation={[0, s.r, 0]} scale={[1, 0.55, 1]}>
           <dodecahedronGeometry args={[s.s, 0]} />
           <meshStandardMaterial color={i % 3 === 0 ? '#8a8578' : '#9a9484'} roughness={0.95} />
-        </mesh>
-      ))}
-      {/* Stepping stones REMOVED 2026-11-03: they sat in the
-          pond water at the east edge. The bank is reached by
-          the widened land path east of the pond instead. */}
-      {[[-5.6, 1.2], [-4.9, 1.7], [-4.3, 1.3]].map(([x, z], i) => (
-        <mesh key={i} receiveShadow position={[x, 0.06, z]} rotation={[0, i * 0.5, 0]}>
-          <cylinderGeometry args={[0.42, 0.48, 0.12, 8]} />
-          <meshStandardMaterial color="#a89f8a" roughness={0.95} />
         </mesh>
       ))}
       {/* Lily pads */}

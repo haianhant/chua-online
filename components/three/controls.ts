@@ -118,7 +118,7 @@ export const LAYOUT = {
   sweepSpot: { x: 15.5, z: 11.5 },
   sweepPile: { x: 16.9, z: 11.6 },
   corridorChair: { x: 13.5, z: -2 },
-  gardenGate: { x: 13, z: -10 },
+  gardenGate: { x: 16.0, z: -10 },
   garden: { x: 20, z: -13.5 },
   waterJar: { x: 18.5, z: -12.8 },
   vegBed: { x: 21, z: -20 },
@@ -126,7 +126,7 @@ export const LAYOUT = {
   northPath: { x: 0, z: -30 },
   lakeBank: { x: -4.6, z: 1.5 },
   lakeSeat: { x: -4.2, z: 3.2 },
-  bellTower: { x: -13, z: -8 },
+  bellTower: { x: -14, z: -8.5 },
   /** Vườn Lâm Tỳ Ni – Lễ đài Tắm Phật (Request E, 2026-11-04):
       behind the bell tower, left of the hall, in the empty
       north-west quadrant — no bounds expansion needed.
@@ -271,14 +271,11 @@ export const COLLIDERS: Collider[] = [
   // the interior columns at (±6.5, -19) and the side walls x ±9.5)
   { kind: 'box', minX: -9.0, maxX: -7.0, minZ: -21.8, maxZ: -20.2 },
   { kind: 'box', minX: 7.0, maxX: 9.0, minZ: -21.8, maxZ: -20.2 },
-  // Tam quan LOW STONE WALLS (Request C, 2026-11-04): Temple.tsx
-  // TamQuan group at [0,0,13], walls at [±5.2, 0.8, 0] with box
-  // [3.2, 1.6, 0.5] => world x 3.6..6.8 / -6.8..-3.6, z 12.75..13.25.
-  // These had NO collider before, so the player walked straight
-  // through them. The gate openings (between the ±3.6 / ±1.4
-  // pillars) stay walkable — the walls sit outside the pillars.
-  { kind: 'box', minX: -6.8, maxX: -3.6, minZ: 12.75, maxZ: 13.25 }, // west stone wall
-  { kind: 'box', minX: 3.6, maxX: 6.8, minZ: 12.75, maxZ: 13.25 }, // east stone wall
+  // Tam quan LOW STONE WALLS + perimeter front wall (z 13):
+  // The gate openings (between the ±3.6 / ±1.4 pillars) stay walkable;
+  // the low compound wall extends from ±3.6 all the way to ±32.
+  { kind: 'box', minX: -32, maxX: -3.6, minZ: 12.75, maxZ: 13.25 }, // west front compound wall
+  { kind: 'box', minX: 3.6, maxX: 32, minZ: 12.75, maxZ: 13.25 }, // east front compound wall
   // Tam quan pillars (the three openings stay walkable)
   { kind: 'circle', x: -3.6, z: 13, r: 0.5 },
   { kind: 'circle', x: -1.4, z: 13, r: 0.5 },
@@ -288,10 +285,10 @@ export const COLLIDERS: Collider[] = [
   { kind: 'circle', x: 0, z: -2.2, r: 1.05 },
   // Lotus pond (larger now, so the collider matches the water edge)
   { kind: 'circle', x: -8.5, z: 1.5, r: 3.6 },
-  { kind: 'circle', x: 4, z: 2, r: 0.7 }, // tree (moved west, away from the banyan)
+  { kind: 'circle', x: 7.5, z: 3.5, r: 0.7 }, // tree (moved east, clear of central path, lanterns, and hall facade)
   { kind: 'circle', x: 5, z: 8.5, r: 1.1 }, // bamboo (moved west, away from the banyan)
   { kind: 'circle', x: -9.5, z: 8.5, r: 1.1 },
-  { kind: 'circle', x: -18.5, z: -4.5, r: 0.7 }, // tree (moved west again, clear of the bell tower)
+  { kind: 'circle', x: -22.5, z: -4.5, r: 0.7 }, // tree (clear of bell tower and Lumbini path)
   { kind: 'circle', x: -2.4, z: 8, r: 0.45 },
   { kind: 'circle', x: 2.4, z: 8, r: 0.45 },
   { kind: 'circle', x: -2.4, z: 3.5, r: 0.45 },
@@ -300,43 +297,33 @@ export const COLLIDERS: Collider[] = [
   { kind: 'circle', x: 4.6, z: -2.0, r: 0.6 }, // bonsai (moved off the steps)
   // Grounds loop: banyan trunk, corridor pillars, garden wall (gate open),
   // tea table, bell tower, lake bank stones. The garden gate at
-  // (13, -10) is OPEN — the wall segments stop on either side of it.
+  // (16.0, -10) is OPEN — the wall segments stop on either side of it.
   { kind: 'circle', x: 16, z: 10, r: 0.9 },
   { kind: 'circle', x: 19.0, z: 10.5, r: 0.25 }, // banyan prop trunk (east)
-  { kind: 'circle', x: 13.2, z: 9.2, r: 0.25 }, // banyan prop trunk (west)
+  { kind: 'circle', x: 17.8, z: 8.0, r: 0.25 }, // banyan prop trunk (north-east, clear of west walkway)
   { kind: 'circle', x: 18.2, z: 12.0, r: 0.25 }, // banyan prop trunk (south-east)
   // Corridor pillars at their REAL positions (Request D:
-  // widened to 11.2/15.8, 4.6m apart, ~3.4m clear walkway —
-  // the old 12.6/14.4 left only 0.64m clear, the cramped feel
-  // the user complained about). Walkway centre (13.5) stays
-  // clear, so auto-walk waypoints (13.5,2) / (13.5,-6) work.
+  // widened to 11.2/15.8, 4.6m apart, ~3.4m clear walkway).
   { kind: 'circle', x: 11.2, z: 2, r: 0.2 },
   { kind: 'circle', x: 15.8, z: 2, r: 0.2 },
   { kind: 'circle', x: 11.2, z: -2, r: 0.2 },
   { kind: 'circle', x: 15.8, z: -2, r: 0.2 },
   { kind: 'circle', x: 11.2, z: -6, r: 0.2 },
   { kind: 'circle', x: 15.8, z: -6, r: 0.2 },
-  { kind: 'box', minX: 12.8, maxX: 13.2, minZ: -14, maxZ: -11.2 }, // garden wall, south of gate
-  { kind: 'box', minX: 12.8, maxX: 13.2, minZ: -8.8, maxZ: -7 }, // garden wall, north of gate, shortened 2026-11-04 (was ..-5: it poked 1m into the corridor)
-  { kind: 'circle', x: 13, z: -11.2, r: 0.25 }, // garden gate post (south)
-  { kind: 'circle', x: 13, z: -8.8, r: 0.25 }, // garden gate post (north)
+  { kind: 'box', minX: 15.8, maxX: 16.2, minZ: -14.5, maxZ: -11.2 }, // garden wall, south of gate (moved to x 16.0, east of corridor path)
+  { kind: 'box', minX: 15.8, maxX: 16.2, minZ: -8.8, maxZ: -6.8 }, // garden wall, north of gate
+  { kind: 'circle', x: 16.0, z: -11.2, r: 0.25 }, // garden gate post (south)
+  { kind: 'circle', x: 16.0, z: -8.8, r: 0.25 }, // garden gate post (north)
   // NOTE (2026-11-04): the corridor chair deliberately has NO
-  // collider — its seat IS the chair centre (13.5,-2), and sit
-  // arrival needs <0.45m, while any box around it would hold the
-  // player >=0.68m out (half box + 0.38 player radius), so sitting
-  // could never complete (caught by the arch retest). The 0.18m
-  // auto-walk clip is fixed instead by routing at x 14.4, which
-  // clears the chair footprint + player radius (0.9 > 0.68).
+  // collider — its seat IS the chair centre (13.5,-2).
   { kind: 'box', minX: 26.65, maxX: 28.35, minZ: -19, maxZ: -18 }, // tea table (site plan v2, 2026-11-04)
   // Tea house pillars (v2, corners of the widened platform):
-  // gaps around the table are west 1.04m / east 1.04m /
-  // north 1.09m / south 1.09m — all passable for the 0.76m player.
   { kind: 'circle', x: 24.6, z: -21.1, r: 0.25 },
   { kind: 'circle', x: 30.4, z: -21.1, r: 0.25 },
   { kind: 'circle', x: 24.6, z: -15.9, r: 0.25 },
   { kind: 'circle', x: 30.4, z: -15.9, r: 0.25 },
-  { kind: 'box', minX: -14.7, maxX: -11.3, minZ: -9.7, maxZ: -6.3 }, // bell tower platform (3.4m square, Request B)
-  { kind: 'box', minX: -13.6, maxX: -12.4, minZ: -6.3, maxZ: -5.9 }, // bell tower steps (south)
+  { kind: 'box', minX: -15.7, maxX: -12.3, minZ: -10.2, maxZ: -6.8 }, // bell tower platform at (-14, -8.5)
+  { kind: 'box', minX: -14.6, maxX: -13.4, minZ: -6.8, maxZ: -6.4 }, // bell tower steps (south, clear of z -5.0 path)
   // Lumbini pavilion (Request E): four corner columns inset
   // 0.4m from the 5x5m platform edges; the centre (basin
   // aside) and the south entrance stay walkable.
@@ -352,7 +339,7 @@ export const COLLIDERS: Collider[] = [
   { kind: 'circle', x: -21.5, z: -21.5, r: 0.5 },
   { kind: 'circle', x: -12.8, z: -22, r: 0.5 },
   { kind: 'circle', x: -21, z: -16.8, r: 0.5 },
-  { kind: 'circle', x: -15.2, z: -14.2, r: 0.15 },
+  { kind: 'circle', x: -14.6, z: -14.2, r: 0.15 },
   { kind: 'circle', x: -4.2, z: 0.2, r: 0.4 }, // lake bank stone
 ];
 

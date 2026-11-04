@@ -120,7 +120,7 @@ export default function BellTower({ ringSeq }: { ringSeq: number }) {
   ];
 
   return (
-    <group position={[-13, 0, -8]}>
+    <group position={[-14, 0, -8.5]}>
       {/* Platform + base slab + south steps */}
       <mesh receiveShadow position={[0, 0.2, 0]}>
         <boxGeometry args={[3.4, 0.4, 3.4]} />

@@ -692,36 +692,100 @@ export function Garden() {
 
   return (
     <group>
-      {/* Grass ground + brick courtyard + stone path (site plan
-          v2, 2026-11-04): ONE courtyard [58,50] at (3,-5) ->
-          x -26..32, z -30..20, enclosing hall, bell, Lumbini,
-          garden, tea (platform to x 31), pond, banyan — so the
-          bell and the bathing place no longer read as outside
-          the temple. (First cut [52,50] at (0,-5) stopped at
-          x 26 and left the tea platform's east 5m on grass.)
-          Base grass enlarged to [90,90] to cover the new bounds. */}
+      {/* Grass ground + unified brick courtyard + entrance forecourt +
+          low temple compound wall (tường bao khuôn viên chùa):
+          The main temple courtyard [64, 46] at (0, 0.02, -10) spans
+          x -32..32, z -33..13 — symmetric, starting right at Cổng Tam Quan
+          (z 13) and enclosing the main hall, bell tower, Lumbini garden,
+          lotus pond, banyan courtyard, corridor, vegetable garden, tea
+          house, and north path (z -30). Outside Cổng Tam Quan (z 13..20),
+          a 16x7m entrance forecourt at (0, 0.02, 16.5) abuts z 13 with
+          no overlap. A traditional low perimeter wall wraps the entire
+          64x46m compound so every structure sits unmistakably inside
+          the temple grounds. */}
       <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -6]}>
-        <planeGeometry args={[90, 90]} />
+        <planeGeometry args={[110, 110]} />
         <meshStandardMaterial map={grass} roughness={1} />
       </mesh>
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[3, 0.02, -5]}>
-        <planeGeometry args={[58, 50]} />
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, -10]}>
+        <planeGeometry args={[64, 46]} />
         <meshStandardMaterial color="#9a6b52" roughness={0.95} />
       </mesh>
-      {Array.from({ length: 15 }).map((_, i) => (
-        <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 13.5 - i * 1.35]}>
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 16.5]}>
+        <planeGeometry args={[16, 7]} />
+        <meshStandardMaterial color="#9a6b52" roughness={0.95} />
+      </mesh>
+      {/* Stone border curbing for the entrance forecourt (x ±8, z 13..20) */}
+      {[-8, 8].map((x, i) => (
+        <mesh key={`fc-${i}`} receiveShadow position={[x, 0.04, 16.5]}>
+          <boxGeometry args={[0.3, 0.06, 7]} />
+          <meshStandardMaterial color="#8d8a82" roughness={0.95} />
+        </mesh>
+      ))}
+      {/* Traditional low temple compound perimeter wall (tường bao khuôn viên chùa)
+          connecting from Tam Quan side walls (±6.8, 13) to (±32, 13),
+          then North to (±32, -33) and across the back (-32..32, -33). */}
+      {[
+        // Front West & East segments (x -32..-6.8 and 6.8..32 at z 13)
+        [-19.4, 13, 25.2, 0.42],
+        [19.4, 13, 25.2, 0.42],
+        // West & East perimeter walls (x ±32, z -33..13)
+        [-32, -10, 0.42, 46],
+        [32, -10, 0.42, 46],
+        // North perimeter wall (z -33, x -32..32)
+        [0, -33, 64.4, 0.42],
+      ].map(([x, z, w, d], i) => (
+        <group key={`pwall-${i}`} position={[x, 0, z]}>
+          {/* Stone plinth base */}
+          <mesh receiveShadow castShadow position={[0, 0.14, 0]}>
+            <boxGeometry args={[w, 0.28, d]} />
+            <meshStandardMaterial color="#8d8a82" roughness={0.95} />
+          </mesh>
+          {/* Warm lime-yellow wall body */}
+          <mesh receiveShadow castShadow position={[0, 0.62, 0]}>
+            <boxGeometry args={[w > d ? w : w * 0.85, 0.68, d > w ? d : d * 0.85]} />
+            <meshStandardMaterial color="#e8d9b8" roughness={0.9} />
+          </mesh>
+          {/* Terracotta tile coping cap */}
+          <mesh castShadow position={[0, 1.01, 0]}>
+            <boxGeometry args={[w > d ? w + 0.08 : w + 0.12, 0.1, d > w ? d + 0.08 : d + 0.12]} />
+            <meshStandardMaterial color="#a8432a" roughness={0.85} />
+          </mesh>
+        </group>
+      ))}
+      {/* Corner & interval pillars along the temple perimeter wall */}
+      {[
+        [-32, 13], [-19, 13], [19, 13], [32, 13],
+        [-32, -2], [-32, -17], [-32, -33],
+        [32, -2], [32, -17], [32, -33],
+        [-16, -33], [0, -33], [16, -33],
+      ].map(([x, z], i) => (
+        <group key={`ppillar-${i}`} position={[x, 0, z]}>
+          <mesh castShadow position={[0, 0.62, 0]}>
+            <boxGeometry args={[0.58, 1.24, 0.58]} />
+            <meshStandardMaterial color="#8d8a82" roughness={0.95} />
+          </mesh>
+          <mesh castShadow position={[0, 1.28, 0]}>
+            <boxGeometry args={[0.68, 0.1, 0.68]} />
+            <meshStandardMaterial color="#a8432a" roughness={0.85} />
+          </mesh>
+        </group>
+      ))}
+      {/* Central stone path from entrance forecourt through Tam Quan
+          to the incense burner (stops cleanly at z 0.2, never cutting
+          under the burner or into the hall steps). */}
+      {Array.from({ length: 11 }).map((_, i) => (
+        <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 16.2 - i * 1.6]}>
           <planeGeometry args={[2.2, 1.1]} />
           <meshStandardMaterial color="#b0a894" roughness={0.95} />
         </mesh>
       ))}
-      {/* Lotus pond lives in Pond.tsx now (interactive, with koi) —
-          the old small decorative pond here is removed so there is
-          exactly one pond, at the same west spot. */}
-      {/* Tree moved west (was 9.5,2): its canopy touched the banyan canopy edge. */}
-      <Tree position={[4, 0, 2]} scale={1.15} />
-      {/* Moved west (was x -10): its canopy (r ~2.6) cut through the hall's west wall at x -9.65. */}
-      {/* Tree moved west again (was -12.5,-6.5): its canopy still pierced the bell tower at (-13,-8). Now at (-18.5,-4.5), scale 1.0, ~1.4m clear of the tower. */}
-      <Tree position={[-18.5, 0, -4.5]} scale={1.0} />
+      {/* Lotus pond lives in Pond.tsx now (interactive, with koi). */}
+      {/* Tree moved east-south to (7.5, 3.5) so its canopy never covers
+          the central stone path, the (2.4, 3.5) lantern, or the hall facade. */}
+      <Tree position={[7.5, 0, 3.5]} scale={1.05} />
+      {/* West tree moved to (-22.5, -4.5), well clear of the bell tower at (-14, -8.5) and Lumbini path. */}
+      <Tree position={[-22.5, 0, -4.5]} scale={1.0} />
       <Tree position={[-11, 0, 10]} scale={0.9} />
       {/* Bamboo moved west (was 8,7.5): its stalks stood against the banyan canopy. */}
       <Bamboo position={[5, 0, 8.5]} />

@@ -739,15 +739,15 @@ export default function Home() {
       // (27.5,-14.0), then the east gap (x 29.3) to the seat
       // approach (29.3,-17.7), 0.8m from the tea seat. The old
       // diagonal west-edge staircase is gone.
-      garden: { target: LAYOUT.garden, via: [{ x: 14.5, z: 2 }, { x: 14.5, z: -6 }, { x: 14.5, z: -10 }, { x: 13, z: -10 }, { x: 20, z: -10 }] },
-      tea: { target: { x: 29.3, z: -17.7 }, via: [{ x: 14.5, z: 2 }, { x: 14.5, z: -6 }, { x: 14.5, z: -10 }, { x: 13, z: -10 }, { x: 20, z: -10 }, { x: 27.5, z: -10 }, { x: 27.5, z: -14.0 }, { x: 29.3, z: -14.0 }] },
-      bell: { target: { x: -12, z: -5.5 }, via: [{ x: -3.5, z: 1.5 }, { x: -3.5, z: -5 }, { x: -12, z: -5 }] }, // around the pond, never through it
+      garden: { target: LAYOUT.garden, via: [{ x: 14.5, z: 2 }, { x: 14.5, z: -6 }, { x: 14.5, z: -10 }, { x: 16.0, z: -10 }, { x: 20, z: -10 }] },
+      tea: { target: { x: 29.3, z: -17.7 }, via: [{ x: 14.5, z: 2 }, { x: 14.5, z: -6 }, { x: 14.5, z: -10 }, { x: 16.0, z: -10 }, { x: 20, z: -10 }, { x: 27.5, z: -10 }, { x: 27.5, z: -14.0 }, { x: 29.3, z: -14.0 }] },
+      bell: { target: { x: -14, z: -5.8 }, via: [{ x: -3.5, z: 1.5 }, { x: -3.5, z: -5 }, { x: -14, z: -5 }] }, // around the pond, never through it
       // Lumbini (site plan v2): around the pond like the bell
-      // route, then straight west along z -5.2 (0.32m clear of
-      // the bell steps' expanded edge -5.52), straight north
-      // along x -17 on the new stone line to the steps, then
-      // the ritual spot. The old x -15.5 jog is gone.
-      lumbini: { target: { ...LAYOUT.lumbiniSpot }, via: [{ x: -3.5, z: 1.5 }, { x: -3.5, z: -5.2 }, { x: -17, z: -5.2 }, { x: -17, z: -16.8 }] },
+      // route, then straight west along z -5 (0.88m clear of
+      // the bell steps' expanded edge -5.88), straight north
+      // along x -17 on the stone line to the steps, then
+      // the ritual spot.
+      lumbini: { target: { ...LAYOUT.lumbiniSpot }, via: [{ x: -3.5, z: 1.5 }, { x: -3.5, z: -5 }, { x: -17, z: -5 }, { x: -17, z: -16.8 }] },
       gate: { target: { x: 0, z: 15 }, via: [] },
     };
     const r = routes[zoneId];
@@ -1561,7 +1561,7 @@ export default function Home() {
               <li><strong>Phòng chung:</strong> khi phòng chung được bật, bạn sẽ thấy người khác cùng đi chùa trong cùng một phòng (tối đa 15 người/phòng, phòng đầy sẽ tự chuyển sang phòng khác). Số người và tên phòng hiện ở góc trên. Bạn có thể ẩn người khác hoặc bật chế độ riêng trong Cài đặt. Nếu mất mạng, bạn vẫn đi chùa bình thường một mình.</li>
               <li>Lư hương luôn cố định — dâng hương của người khác chỉ hiện thêm một làn khói ngắn ở lư, không làm lư xoay hay thêm vô hạn que hương.</li>
               <li><strong>Nguồn âm thanh:</strong> nhạc nền đang phát là đoạn trích 5 phút (phút 10:00–15:00) từ bài “02 Nhac Thien Dan Tranh (Meditation Music) [60 min]” trong album Nhạc Thiền 1, trang <a className="underline" href="https://ph.tinhtong.vn/Home/MP3?p=MP3+Nhac*07+Nhac+Thien*Nhac+Thien+1&shem=aimgspe," target="_blank" rel="noreferrer">ph.tinhtong.vn — Nhạc Thiền 1</a>. Bài gốc dài 61 phút 20 giây, chỉ lấy 5 phút ở giữa để phát lặp, gắn fade-in 3 giây đầu và fade-out 3 giây cuối, mã hóa lại 128 kbps, không cắt nội dung khác. Trang nguồn không ghi rõ giấy phép; đây là nhạc Phật giáo chia sẻ trên trang Tịnh Tông, chùa dùng phi thương mại (không thu phí, không quảng cáo). Các bản trước (Tibetan Bowls, Kevin MacLeod) vẫn còn trong dự án nếu bạn muốn đổi lại.</li>
-              <li><strong>Vườn Lâm Tỳ Ni – Tắm Phật:</strong> sau gác chuông, phía trái chính điện — đi theo đường lát đá từ gác chuông về phía bắc. Tới gần bồn nước, bấm “Tắm Phật” để thực hiện nghi thức mô phỏng (chắp tay, múc nước, ba gáo rưới, hồi hướng, khoảng 24 giây) hoặc “Tìm hiểu Phật đản” để đọc ý nghĩa và bật chế độ lễ hội. Đài sen trong bồn hiện để trống, chờ tượng Thái tử sơ sinh được cấp phép — chưa có tượng tạm nào đặt ở đó.</li>
+              <li><strong>Vườn Lâm Tỳ Ni – Tắm Phật:</strong> nằm trong khuôn viên chùa ở phía tây bắc, sau gác chuông — đi theo đường lát đá từ gác chuông về phía bắc. Giữa bồn nước hoa sen là tôn tượng Thái tử Tất Đạt Đa đản sinh đứng trên đài sen (tay trái chỉ trời, tay phải chỉ đất theo truyền thống Bắc tông Việt Nam). Tới gần bồn nước, bấm “Tắm Phật” để thực hiện nghi thức Mộc Dục mô phỏng (chắp tay, múc nước thơm, rưới ba gáo lên vai tôn tượng Thái tử, hồi hướng, khoảng 24 giây) hoặc “Tìm hiểu Phật đản” để đọc ý nghĩa và bật chế độ lễ hội.</li>
               <li><strong>Nguồn tượng (hai ban phụ, bản xem trước):</strong> ban Tây là tượng quét 3D “1986.7 Shakyamuni” của Cleveland Museum of Art, tượng gỗ sơn mài Nhật Bản thời Heian (khoảng năm 900), phạm vi công cộng CC0, đã giảm kích thước texture và chỉnh tông ấm, xem tại <a className="underline" href="https://sketchfab.com/3d-models/19867-shakyamuni-e8b473c60f3c417c86dc07a02b0de289" target="_blank" rel="noreferrer">Sketchfab — 1986.7 Shakyamuni</a>. Ban Đông là tượng “Ksitigarbha Bodhisattva - Statue” của Truong Kieu Van, giấy phép CC BY 4.0, đã bỏ đế đá và giảm đa giác, xem tại <a className="underline" href="https://sketchfab.com/3d-models/ksitigarbha-bodhisattva-statue-86ac52263ea74a16ac2bf8900dcd8456" target="_blank" rel="noreferrer">Sketchfab — Ksitigarbha Bodhisattva</a>. Cả hai đều là bản xem trước đặt trên bệ riêng trong chính điện, chưa phải tượng đúc cuối cùng; tượng Địa Tạng trong bản này đứng chứ không ngồi như ảnh mẫu.</li>
             </ul>
             <button type="button" onClick={() => setHelpOpen(false)} className="mt-4 w-full rounded-full bg-amber-800 py-3 font-medium text-white">Đã hiểu</button>
@@ -1731,7 +1731,7 @@ export default function Home() {
       {entered && bathPhase !== 'idle' && bathPhase !== 'done' && (
         <div className="absolute bottom-28 left-1/2 z-30 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-3xl bg-[#fdf8ec] p-4 text-center shadow-2xl sm:bottom-24">
           <p className="font-medium text-amber-900">🪷 Đang tắm Phật — lễ đài Lâm Tỳ Ni</p>
-          <p className="mt-1 text-sm text-stone-600">{bathPhase === 'pray' ? 'Chắp tay — lặng một nhịp trước khi bắt đầu.' : bathPhase === 'scoop' ? 'Múc nước thơm — gáo chạm mặt nước, rồi nâng lên nhẹ nhàng.' : bathPhase === 'pour' ? `Gáo ${bathPourRound}/3 — rưới nước lên tôn tượng, nước chảy về bồn.` : 'Hoàn tất — gáo về đúng chỗ, chắp tay hồi hướng.'}</p>
+          <p className="mt-1 text-sm text-stone-600">{bathPhase === 'pray' ? 'Chắp tay — cung kính trước tôn tượng Thái tử Tất Đạt Đa đản sinh.' : bathPhase === 'scoop' ? 'Múc nước thơm — gáo chạm mặt nước hoa sen, nâng lên nhẹ nhàng.' : bathPhase === 'pour' ? `Gáo ${bathPourRound}/3 — rưới nước thơm tắm tôn tượng Thái tử, nguyện thân tâm thanh tịnh.` : 'Hoàn tất — đặt gáo về kệ, chắp tay hồi hướng.'}</p>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-stone-200">
             <div className="h-full rounded-full bg-amber-800 transition-all duration-200" style={{ width: `${Math.round(bathProgress * 100)}%` }} />
           </div>
@@ -1874,6 +1874,8 @@ export default function Home() {
                   y=(wz+40)*10 for the new bounds x -32..32,
                   z -40..30. Every dot/rect was recomputed — the
                   old (wx+24)*10 / (wz+34)*10 formula is gone. */}
+              {/* Tường bao khuôn viên chùa (Compound enclosure wall: x -32..32, z -33..13) */}
+              <rect x="6" y="70" width="628" height="460" rx="8" fill="#dfd5be" stroke="#8a6842" strokeWidth="4" />
               {/* Hall */}
               <rect x="225" y="140" width="190" height="202" fill="#e8d9b8" stroke="#7a5c3a" />
               <text x="320" y="240" textAnchor="middle" fontSize="13" fill="#7a1f1f">Chính điện</text>
@@ -1886,12 +1888,12 @@ export default function Home() {
               {/* Banyan, garden, tea, bell */}
               <circle cx="480" cy="500" r="26" fill="#3f7a2e" />
               <text x="480" y="504" textAnchor="middle" fontSize="11" fill="#fff">Sân đa</text>
-              <rect x="490" y="140" width="140" height="170" fill="#7a9a5a" />
-              <text x="560" y="225" textAnchor="middle" fontSize="11">Vườn sau</text>
+              <rect x="494" y="150" width="136" height="152" fill="#7a9a5a" />
+              <text x="530" y="225" textAnchor="middle" fontSize="11">Vườn sau</text>
               <rect x="560" y="182" width="70" height="65" fill="#e8d9b8" stroke="#7a5c3a" />
               <text x="595" y="215" textAnchor="middle" fontSize="10">Nhà trà</text>
-              <circle cx="190" cy="320" r="14" fill="#c9a227" />
-              <text x="190" y="342" textAnchor="middle" fontSize="10">Gác chuông</text>
+              <circle cx="180" cy="315" r="14" fill="#c9a227" />
+              <text x="180" y="337" textAnchor="middle" fontSize="10">Gác chuông</text>
               {/* Lumbini: (-17,-20) -> (150,200), inside the
                   enlarged courtyard like everything else now. */}
               <circle cx="150" cy="200" r="16" fill="#c98a9e" stroke="#7a5c3a" />

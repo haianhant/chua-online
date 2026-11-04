@@ -290,11 +290,12 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         <ringGeometry args={[1.3, 2.0, 24]} />
         <meshStandardMaterial color="#b0a894" roughness={0.95} />
       </mesh>
-      {/* Stone path: main courtyard -> banyan (5 stones; the 6th
-          used to sit exactly under the trunk) */}
+      {/* Stone path: main courtyard -> banyan (5 stones, ending at
+          x 13.8 so the last stone stays 0.2m clear of the r 2.0
+          banyan stone ring at x 14.0..18.0 — zero overlap). */}
       {Array.from({ length: 5 }).map((_, i) => (
-        <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[5 + i * 2.2, 0.04, 10]}>
-          <planeGeometry args={[1.8, 1.1]} />
+        <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[4.6 + i * 2.1, 0.04, 10]}>
+          <planeGeometry args={[1.6, 1.1]} />
           <meshStandardMaterial color="#b0a894" roughness={0.95} />
         </mesh>
       ))}
@@ -334,10 +335,10 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
             <meshStandardMaterial color="#5a3a22" roughness={0.9} />
           </mesh>
         ))}
-        {/* Prop trunks: aerial roots that reached the ground */}
+        {/* Prop trunks: aerial roots that reached the ground (moved off the west walkway) */}
         {[
           [3.0, 0.5, 0],
-          [-2.8, -0.8, 0],
+          [1.8, -2.0, 0],
           [2.2, 2.0, 0],
         ].map(([x, z], i) => (
           <mesh key={i} castShadow position={[x, 2.25, z]}>
@@ -535,13 +536,14 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         </mesh>
       </group>
 
-      {/* --- Garden wall (lime) with an open gate at (13, -10) ---
-          North segment SHORTENED 2026-11-04 (site plan v2): it
-          used to run to z -5, poking 1m into the corridor's south
-          end. Now it stops at z -7, flush with the corridor. */}
+      {/* --- Garden wall (lime) with an open gate at (16.0, -10) ---
+          Placed along the west boundary of the back garden (x 16.0),
+          EAST of the corridor walkway (x 14.5), so walking north along
+          the corridor and turning east at z -10 leads straight through
+          the garden gate into the garden and tea house. */}
       {[
-        [13, -12.6, 2.8],
-        [13, -7.9, 1.8],
+        [16.0, -12.85, 3.3],
+        [16.0, -7.8, 2.0],
       ].map(([x, z, len], i) => (
         <mesh key={i} castShadow position={[x, 0.9, z]}>
           <boxGeometry args={[0.4, 1.8, len]} />
@@ -549,39 +551,43 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         </mesh>
       ))}
       {/* Gate posts + lintel + mini tiled roof (the gate itself
-          stays open). Raised 2026-11-03: the old 2.2m posts with
-          a bare lintel read as a squat frame, lower than a
-          person with a hat. Now 2.8m posts, lintel at 2.95, and
-          a small tiled roof on top (~3.4m total) so it reads
-          unmistakably as a garden gate. */}
+          stays open at z -11.2 .. -8.8). */}
       {[-11.2, -8.8].map((z, i) => (
-        <mesh key={i} castShadow position={[13, 1.4, z]}>
+        <mesh key={i} castShadow position={[16.0, 1.4, z]}>
           <boxGeometry args={[0.5, 2.8, 0.5]} />
           <meshStandardMaterial color="#8d8a82" roughness={0.95} />
         </mesh>
       ))}
-      <mesh castShadow position={[13, 2.95, -10]}>
+      <mesh castShadow position={[16.0, 2.95, -10]}>
         <boxGeometry args={[0.6, 0.3, 3.2]} />
         <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
       </mesh>
-      <mesh castShadow position={[13, 3.25, -10]}>
+      <mesh castShadow position={[16.0, 3.25, -10]}>
         <boxGeometry args={[0.9, 0.25, 3.6]} />
         <meshStandardMaterial color="#a8432a" roughness={0.85} />
       </mesh>
 
       {/* --- Back garden: vegetable beds, water jar, dipper ---
-          Site plan v2 (2026-11-04): the whole east wing moved
-          out and apart — lawn x 17..31, z -26..-9 (was 10x10 at
-          x 13..23, z -21..-11, jammed against the tea platform);
-          beds x 18.5..23.5, rows z -22/-20/-18; jar clear of every
-          path. The lawn's edges now meet only courtyard: the N-S
-          path runs 2.5m west of it (x 14.5) and the E-W path 1m
-          south of it (z -10), so no edge slices a walking line —
-          the old south edging strips are gone with the old lawn. */}
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[24, 0.04, -17.5]}>
-        <planeGeometry args={[14, 17]} />
+          Green lawn [6.4, 13.2] at (20.6, 0.03, -18.4) -> x 17.4..23.8,
+          z -25.0..-11.8, at y 0.03 with a stone border curb (y 0.05).
+          Trimmed so it NEVER overlaps the z -10 stone path (y 0.04)
+          and NEVER runs under the tea house platform (x 24.0..31.0). */}
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[20.6, 0.03, -18.4]}>
+        <planeGeometry args={[6.4, 13.2]} />
         <meshStandardMaterial color="#7a9a5a" roughness={1} />
       </mesh>
+      {/* Stone edging curb around the garden lawn */}
+      {[
+        [20.6, -11.8, 6.6, 0.22],
+        [20.6, -25.0, 6.6, 0.22],
+        [17.4, -18.4, 0.22, 13.2],
+        [23.8, -18.4, 0.22, 13.2],
+      ].map(([x, z, w, d], i) => (
+        <mesh key={`gcurb-${i}`} receiveShadow position={[x, 0.045, z]}>
+          <boxGeometry args={[w, 0.05, d]} />
+          <meshStandardMaterial color="#8d8a82" roughness={0.95} />
+        </mesh>
+      ))}
       {[0, 1, 2].map((i) => (
         <group key={i} position={[21, 0, -22 + i * 2]}>
           <mesh receiveShadow position={[0, 0.12, 0]}>
@@ -846,49 +852,37 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         </group>
       ))}
 
-      {/* --- Garden path (site plan v2, 2026-11-04): ALL STRAIGHT
-          axis-aligned lines — the diagonal staircase the user
-          rejected is gone. N-S at x 14.5 (corridor walkway east
-          side, 0.54m clear of the garden wall) from the corridor
-          to the gate; E-W at z -10 (1.0m south of the lawn edge)
-          through the gate to the garden and the tea porch; N-S
-          at x 27.5 on the lawn (y 0.06) to the tea porch. The
-          banyan->corridor stones (13.5, 8/6/4) are unchanged. */}
+      {/* --- Garden path: ALL STRAIGHT axis-aligned lines on the
+          brick courtyard (y 0.04) — one straight N-S line at x 14.5
+          from the banyan (z 8) through the corridor to z -10, then
+          straight E-W at z -10 through the garden gate (16.0, -10)
+          to the garden turn (20, -10) and tea porch turn (27.5, -10),
+          then N-S at x 27.5 (z -12, -14) up to the tea steps. */}
       {[
-        [13.5, 8], [13.5, 6], [13.5, 4],
+        [14.5, 8], [14.5, 6], [14.5, 4],
         [14.5, 2], [14.5, 0], [14.5, -2], [14.5, -4], [14.5, -6], [14.5, -8], [14.5, -10],
-        [16, -10], [18, -10], [20, -10], [22, -10], [24, -10], [26, -10],
+        [16.2, -10], [18, -10], [20, -10], [22, -10], [24, -10], [26, -10],
+        [27.5, -10], [27.5, -12], [27.5, -14],
       ].map(([x, z], i) => (
         <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.04, z]}>
-          <planeGeometry args={[1.6, 1.6]} />
+          <planeGeometry args={[1.5, 1.5]} />
           <meshStandardMaterial color="#b0a894" roughness={0.95} />
         </mesh>
       ))}
-      {[
-        [27.5, -12], [27.5, -14],
-      ].map(([x, z], i) => (
-        <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.06, z]}>
-          <planeGeometry args={[1.6, 1.6]} />
-          <meshStandardMaterial color="#b0a894" roughness={0.95} />
-        </mesh>
-      ))}
-      {/* Low shrubs (off the stones, no colliders; middle one
-          moved 2026-11-04 west of the wall so it no longer sits
-          on the x 14.5 stone line) */}
-      {[[11.5, -7.5], [12.0, -13.5], [18.4, -13.4]].map(([x, z], i) => (
+      {/* Low shrubs (clear of paths and walls) */}
+      {[[11.5, -7.5], [12.0, -13.5], [22.5, -13.2]].map(([x, z], i) => (
         <mesh key={i} castShadow position={[x, 0.4, z]}>
           <icosahedronGeometry args={[0.4, 1]} />
           <meshStandardMaterial color="#3a7a2a" roughness={0.9} flatShading />
         </mesh>
       ))}
-      {/* Flower bed at the lawn's west edge (clear of the x 14.5
-          path by 0.55m and of the lawn edge by 0.25m) */}
-      <mesh receiveShadow position={[16.3, 0.075, -13.0]}>
+      {/* Flower bed inside the south-east corner of the garden lawn */}
+      <mesh receiveShadow position={[22.2, 0.09, -15.2]}>
         <boxGeometry args={[0.9, 0.15, 0.6]} />
         <meshStandardMaterial color="#6a4a2a" roughness={1} />
       </mesh>
-      {[[16.1, -13.0], [16.3, -12.8], [16.5, -13.1], [16.3, -13.2]].map(([x, z], i) => (
-        <group key={i} position={[x, 0.15, z]}>
+      {[[22.0, -15.2], [22.2, -15.0], [22.4, -15.3], [22.2, -15.4]].map(([x, z], i) => (
+        <group key={i} position={[x, 0.16, z]}>
           <mesh position={[0, 0.1, 0]}>
             <cylinderGeometry args={[0.01, 0.01, 0.2, 6]} />
             <meshStandardMaterial color="#3a7a2a" roughness={0.9} />
@@ -959,13 +953,15 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
           bell removed 2026-11-03. */}
       <BellTower ringSeq={bellRingSeq} />
 
-      {/* --- Lake bank steps (seat: -4.2, 3.2, facing west to water) --- */}
-      <mesh receiveShadow castShadow position={[-4.2, 0.2, 3.2]}>
-        <boxGeometry args={[1.4, 0.4, 0.7]} />
+      {/* --- Lake bank steps (seat: -4.2, 3.2, facing west to water) ---
+          Two abutting stone tiers (upper seat x -4.05 w 0.7 -> -4.4..-3.7;
+          lower step x -4.6 w 0.4 -> -4.8..-4.4), no overlap. */}
+      <mesh receiveShadow castShadow position={[-4.05, 0.2, 3.2]}>
+        <boxGeometry args={[0.7, 0.4, 1.1]} />
         <meshStandardMaterial color="#8d8a82" roughness={0.95} />
       </mesh>
       <mesh receiveShadow castShadow position={[-4.6, 0.1, 3.2]}>
-        <boxGeometry args={[1.2, 0.2, 0.6]} />
+        <boxGeometry args={[0.4, 0.2, 1.0]} />
         <meshStandardMaterial color="#a39e92" roughness={0.95} />
       </mesh>
 

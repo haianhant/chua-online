@@ -38,11 +38,12 @@ check('tea east-gap route point walkable', !collides(29.3, -16));
 check('tea porch target walkable', !collides(27.5, -14.0));
 // --- Routes: axis-aligned + clear (waypoints + midpoints) ---
 const routes = {
-  garden: [[14.5, 2], [14.5, -6], [14.5, -10], [13, -10], [20, -10], [20, -13.5]],
-  tea: [[14.5, 2], [14.5, -6], [14.5, -10], [13, -10], [20, -10], [27.5, -10], [27.5, -14.0], [29.3, -14.0], [29.3, -17.7]],
+  garden: [[14.5, 2], [14.5, -6], [14.5, -10], [16.0, -10], [20, -10], [20, -13.5]],
+  tea: [[14.5, 2], [14.5, -6], [14.5, -10], [16.0, -10], [20, -10], [27.5, -10], [27.5, -14.0], [29.3, -14.0], [29.3, -17.7]],
   pond: [[0, 10], [-3.6, 10], [-3.6, 1.5]],
   banyan: [[0, 10], [8, 10], [16, 10]],
-  lumbini: [[-3.5, 1.5], [-3.5, -5.2], [-17, -5.2], [-17, -16.8], [-17, -18.4]],
+  bell: [[-3.5, 1.5], [-3.5, -5], [-14, -5], [-14, -5.8]],
+  lumbini: [[-3.5, 1.5], [-3.5, -5], [-17, -5], [-17, -16.8], [-17, -18.4]],
 };
 for (const [name, pts] of Object.entries(routes)) {
   for (let i = 0; i < pts.length - 1; i++) {
@@ -62,7 +63,7 @@ for (const [name, pts] of Object.entries(routes)) {
 }
 // Corridor leg clearances (chair + east pillars).
 check('corridor leg x 14.5 clear of chair (1.0 > 0.68)', Math.hypot(14.5 - 13.5, 0) > 0.3 + 0.38);
-check('gate waypoint (13,-10) clear', !collides(13, -10));
+check('gate waypoint (16.0,-10) clear', !collides(16.0, -10));
 check('doorway staging (0,-4) clear', !collides(0, -4));
 // --- Floors ---
 check('tea platform floor 0.45', floorYAt(27.5, -18.5) === 0.45);
@@ -71,12 +72,12 @@ check('tea lower step floor 0.15', floorYAt(27.5, -14.5) === 0.15);
 check('tea porch floor 0', floorYAt(27.5, -14.0) === 0);
 check('bed floor 0.24', floorYAt(21, -20) === 0.24);
 check('garden target floor 0', floorYAt(20, -13.5) === 0);
-// --- Courtyard enclosure (x -26..32, z -30..20) ---
-const inCourt = (x, z) => x >= -26 && x <= 32 && z >= -30 && z <= 20;
-check('bell (-13,-8) inside courtyard', inCourt(-13, -8));
+// --- Courtyard enclosure (x -32..32, z -33..13) ---
+const inCourt = (x, z) => x >= -32 && x <= 32 && z >= -33 && z <= 13;
+check('bell (-14,-8.5) inside courtyard', inCourt(-14, -8.5));
 check('lumbini yard (-17,-20) inside courtyard', inCourt(-17, -20));
 check('lumbini yard corners inside courtyard', inCourt(-23, -24) && inCourt(-11, -14));
 check('tea platform (24..31) inside courtyard', inCourt(24, -18.5) && inCourt(31, -18.5));
-check('lawn (17..31) inside courtyard', inCourt(17, -17.5) && inCourt(31, -17.5));
+check('lawn (17.4..23.8) inside courtyard', inCourt(17.4, -18.4) && inCourt(23.8, -18.4));
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

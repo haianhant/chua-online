@@ -33,13 +33,13 @@ function hashLabelOffset(id: string): number {
 
 function RemoteAvatar({ player }: { player: RemotePlayer }) {
   const group = useRef<THREE.Group>(null);
-  const leftLeg = useRef<THREE.Mesh>(null);
-  const rightLeg = useRef<THREE.Mesh>(null);
-  const leftArm = useRef<THREE.Mesh>(null);
-  const rightArm = useRef<THREE.Mesh>(null);
-  const body = useRef<THREE.Mesh>(null);
+  const leftLeg = useRef<THREE.Group>(null);
+  const rightLeg = useRef<THREE.Group>(null);
+  const leftArm = useRef<THREE.Group>(null);
+  const rightArm = useRef<THREE.Group>(null);
+  const body = useRef<THREE.Group>(null);
   const pos = useRef(new THREE.Vector3(player.target.x, 0, player.target.z));
-  const labelY = 2.35 + hashLabelOffset(player.id);
+  const labelY = 2.32 + hashLabelOffset(player.id);
 
   // Snap on first mount only.
   useEffect(() => {
@@ -117,35 +117,86 @@ function RemoteAvatar({ player }: { player: RemotePlayer }) {
           {player.name}
         </div>
       </Html>
-      {/* Visitor: tunic colour differs per player, nón lá like the local player. */}
-      <mesh position={[0, 0.85, 0]} ref={body}>
-        <boxGeometry args={[0.55, 0.85, 0.32]} />
-        <meshStandardMaterial color={player.color} />
-      </mesh>
-      <mesh position={[0, 1.55, 0]}>
-        <sphereGeometry args={[0.22, 16, 16]} />
-        <meshStandardMaterial color="#e8c9a8" />
-      </mesh>
-      <mesh position={[0, 1.72, 0]} rotation={[0.35, 0, 0]}>
-        <coneGeometry args={[0.55, 0.28, 20]} />
-        <meshStandardMaterial color="#d9b36a" />
-      </mesh>
-      <mesh ref={leftLeg} position={[-0.16, 0.4, 0]}>
-        <boxGeometry args={[0.2, 0.8, 0.2]} />
-        <meshStandardMaterial color="#3a3a3a" />
-      </mesh>
-      <mesh ref={rightLeg} position={[0.16, 0.4, 0]}>
-        <boxGeometry args={[0.2, 0.8, 0.2]} />
-        <meshStandardMaterial color="#3a3a3a" />
-      </mesh>
-      <mesh ref={leftArm} position={[-0.38, 1.15, 0]}>
-        <boxGeometry args={[0.16, 0.7, 0.16]} />
-        <meshStandardMaterial color={player.color} />
-      </mesh>
-      <mesh ref={rightArm} position={[0.38, 1.15, 0]}>
-        <boxGeometry args={[0.16, 0.7, 0.16]} />
-        <meshStandardMaterial color={player.color} />
-      </mesh>
+      {/* Phật tử mặc bộ đồ lam đi chùa trang nhã, không đội nón trong khuôn viên chùa */}
+      <group ref={body}>
+        {/* Áo lam thân trên + tà áo dưới */}
+        <mesh position={[0, 1.44, 0]}>
+          <cylinderGeometry args={[0.24, 0.26, 0.44, 14]} />
+          <meshStandardMaterial color="#6e859c" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, 1.01, 0]}>
+          <cylinderGeometry args={[0.255, 0.34, 0.46, 14]} />
+          <meshStandardMaterial color="#6e859c" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, 0.79, 0]}>
+          <cylinderGeometry args={[0.338, 0.342, 0.03, 14]} />
+          <meshStandardMaterial color={player.color || '#4b6075'} roughness={0.85} />
+        </mesh>
+        {/* Cổ tàu + nẹp vạt chéo */}
+        <mesh position={[0, 1.67, 0]}>
+          <cylinderGeometry args={[0.135, 0.145, 0.07, 12]} />
+          <meshStandardMaterial color="#4b6075" roughness={0.85} />
+        </mesh>
+        <mesh position={[0.08, 1.54, 0.25]} rotation={[0, 0, -0.62]}>
+          <boxGeometry args={[0.03, 0.28, 0.018]} />
+          <meshStandardMaterial color="#4b6075" roughness={0.85} />
+        </mesh>
+        {/* Đầu + tóc búi gọn */}
+        <mesh position={[0, 1.95, 0]}>
+          <sphereGeometry args={[0.23, 16, 16]} />
+          <meshStandardMaterial color="#ecc39e" roughness={0.72} />
+        </mesh>
+        <mesh position={[0, 1.98, -0.02]}>
+          <sphereGeometry args={[0.24, 16, 14, 0, Math.PI * 2, 0, Math.PI * 0.62]} />
+          <meshStandardMaterial color="#1f1612" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, 1.93, -0.25]}>
+          <sphereGeometry args={[0.082, 12, 10]} />
+          <meshStandardMaterial color="#1f1612" roughness={0.85} />
+        </mesh>
+      </group>
+      {/* Quần lam + giày vải */}
+      <group ref={leftLeg} position={[-0.135, 0.48, 0]}>
+        <mesh position={[0, 0.04, 0]}>
+          <cylinderGeometry args={[0.105, 0.12, 0.82, 12]} />
+          <meshStandardMaterial color="#5c738a" roughness={0.86} />
+        </mesh>
+        <mesh position={[0, -0.44, 0.025]}>
+          <boxGeometry args={[0.14, 0.07, 0.24]} />
+          <meshStandardMaterial color="#382e28" roughness={0.88} />
+        </mesh>
+      </group>
+      <group ref={rightLeg} position={[0.135, 0.48, 0]}>
+        <mesh position={[0, 0.04, 0]}>
+          <cylinderGeometry args={[0.105, 0.12, 0.82, 12]} />
+          <meshStandardMaterial color="#5c738a" roughness={0.86} />
+        </mesh>
+        <mesh position={[0, -0.44, 0.025]}>
+          <boxGeometry args={[0.14, 0.07, 0.24]} />
+          <meshStandardMaterial color="#382e28" roughness={0.88} />
+        </mesh>
+      </group>
+      {/* Tay áo lam dài + bàn tay */}
+      <group ref={leftArm} position={[-0.34, 1.58, 0]}>
+        <mesh position={[0, -0.22, 0]}>
+          <cylinderGeometry args={[0.085, 0.095, 0.44, 12]} />
+          <meshStandardMaterial color="#6e859c" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, -0.48, 0]}>
+          <sphereGeometry args={[0.06, 10, 8]} />
+          <meshStandardMaterial color="#ecc39e" roughness={0.72} />
+        </mesh>
+      </group>
+      <group ref={rightArm} position={[0.34, 1.58, 0]}>
+        <mesh position={[0, -0.22, 0]}>
+          <cylinderGeometry args={[0.085, 0.095, 0.44, 12]} />
+          <meshStandardMaterial color="#6e859c" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, -0.48, 0]}>
+          <sphereGeometry args={[0.06, 10, 8]} />
+          <meshStandardMaterial color="#ecc39e" roughness={0.72} />
+        </mesh>
+      </group>
     </group>
   );
 }

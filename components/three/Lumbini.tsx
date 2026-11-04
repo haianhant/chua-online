@@ -21,10 +21,12 @@ import TextSign from './TextSign';
  *   at y 4.8, gold finial ~5.0m — NEVER a flat red plane
  * - bathing basin (r 0.6, real wall thickness, water surface,
  *   floating petals) with a lotus pedestal rising from it
- * - STATUE SLOT IS EMPTY: no placeholder statue is rendered here.
- *   The lotus pedestal waits for a properly licensed infant
- *   Prince Siddhartha model (left hand up, right hand down);
- *   deploying a poor script statue would fail the quality gate.
+ * - Tôn tượng Thái tử Tất Đạt Đa đản sinh (Infant Prince Siddhartha)
+ *   standing atop the lotus pedestal in the traditional Vietnamese
+ *   Buddhist posture: bare chest, ornate waist cloth (xiêm y),
+ *   left hand raised pointing to heaven (chỉ thiên), right hand
+ *   lowered pointing to earth (chỉ địa), serene face, elongated ears,
+ *   ushnisha, and golden halo.
  * - ladle on a rest stand east of the basin; the bath timeline
  *   (this file's useFrame, like Grounds owns the sweep) moves it
  *   rest -> dip -> ready -> pour (x3) -> rest, 24s total
@@ -48,9 +50,9 @@ const FINISH_T = 3;
 // pray 2 + scoop 4 + 3x5 + finish 3 = 24s, inside the 20-35s spec.
 
 const REST = { x: 0.8, y: 0.58, z: 0.5 }; // ladle rest (local)
-const DIP = { x: 0.15, y: 0.92, z: 0.5 }; // ladle dipped in the basin
-const READY = { x: 0.35, y: 1.35, z: 0.9 }; // ladle ready, south of basin
-const POUR = { x: 0, y: 2.0, z: 0.5 }; // ladle above the statue
+const DIP = { x: 0.22, y: 0.92, z: 0.5 }; // ladle dipped in the basin
+const READY = { x: 0.35, y: 1.45, z: 0.9 }; // ladle ready, south of basin
+const POUR = { x: 0, y: 2.12, z: 0.5 }; // ladle above the infant Buddha statue
 
 const smooth = (k: number) => k * k * (3 - 2 * k);
 const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
@@ -194,29 +196,41 @@ export default function Lumbini({ festivalOn }: { festivalOn: boolean }) {
 
   return (
     <group position={[LAYOUT.lumbini.x, 0, LAYOUT.lumbini.z]}>
-      {/* Yard ground: dry earth + stone path, bell -> yard entrance */}
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 1]}>
+      {/* Yard ground: raised to y 0.03 (above the y 0.02 courtyard so it
+          NEVER z-fights) and framed by a 4-sided stone border curb
+          with a south entrance opening for the stone path. */}
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0.5]}>
         <planeGeometry args={[12, 10]} />
         <meshStandardMaterial color="#b0a184" roughness={1} />
       </mesh>
-      {/* Stone path (1.8m stones, straight L): bell standing area
-          -> west along z -5.2 -> north along x -17 -> yard
-          entrance landing at the pavilion steps. Local coords:
-          world = local + (-17, -20). The old diagonal jogs
-          (-14,-5.5)/(-16,-11) are gone; the landing stone
-          [1.8,1.0] abuts the steps' south edge (-16.5) exactly. */}
       {[
-        [4.5, 14.8], [2.2, 14.8], [0, 14.8],
-        [0, 12.5], [0, 10.2], [0, 7.9], [0, 5.6],
-      ].map(([x, z], i) => (
-        <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.04, z]}>
-          <planeGeometry args={[1.8, 1.8]} />
-          <meshStandardMaterial color={stoneLight} roughness={0.95} />
+        [-3.5, 5.5, 5.0, 0.24],
+        [3.5, 5.5, 5.0, 0.24],
+        [0, -4.5, 12.24, 0.24],
+        [-6.0, 0.5, 0.24, 10.0],
+        [6.0, 0.5, 0.24, 10.0],
+      ].map(([x, z, w, d], i) => (
+        <mesh key={`lcurb-${i}`} receiveShadow position={[x, 0.045, z]}>
+          <boxGeometry args={[w, 0.05, d]} />
+          <meshStandardMaterial color={stone} roughness={0.95} />
         </mesh>
       ))}
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 4.0]}>
+      {/* Stone path (straight L, uniform #b0a894 stone matching the
+          rest of the temple): aligned with the pond/bell E-W path at
+          world z -5.0 (local z 15.0) -> north along local x 0 (world
+          x -17) -> landing stone abutting the pavilion south steps. */}
+      {[
+        [4.5, 15.0], [2.2, 15.0], [0, 15.0],
+        [0, 12.6], [0, 10.2], [0, 7.8], [0, 5.6],
+      ].map(([x, z], i) => (
+        <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.042, z]}>
+          <planeGeometry args={[1.6, 1.6]} />
+          <meshStandardMaterial color="#b0a894" roughness={0.95} />
+        </mesh>
+      ))}
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.042, 4.1]}>
         <planeGeometry args={[1.8, 1.0]} />
-        <meshStandardMaterial color={stoneLight} roughness={0.95} />
+        <meshStandardMaterial color="#b0a894" roughness={0.95} />
       </mesh>
 
       {/* Pavilion platform + base slab + south steps */}
@@ -395,11 +409,188 @@ export default function Lumbini({ festivalOn }: { festivalOn: boolean }) {
           <cylinderGeometry args={[0.16, 0.16, 0.03, 24]} />
           <meshStandardMaterial color={bronze} roughness={0.5} metalness={0.4} />
         </mesh>
-        {/* Water stream: ladle mouth -> statue top, pour window only.
-            Vertical, so it never starts mid-air or passes through
-            the statue: it ends just above the pedestal (y 1.15). */}
-        <mesh ref={streamRef} position={[0, 1.55, 0]} visible={false}>
-          <cylinderGeometry args={[0.012, 0.016, 0.8, 8]} />
+
+        {/* Tôn tượng Thái tử Tất Đạt Đa Đản Sinh (Đức Phật Thích Ca lúc sơ sinh):
+            Đứng trang nghiêm trên gương sen (y 1.135), mặt hướng Nam (+Z).
+            - Thân tượng đồng thếp vàng ấm (#d4a838 / #b88924), để trần phần ngực,
+              quấn xiêm y / khố lụa chạm nổi ngang hông có đai và dải vạt trước.
+            - Tay trái (+X) giơ cao chỉ thẳng lên trời ("Thiên thượng thiên hạ"),
+              tay phải (-X) duỗi xuống chỉ đất ("Duy ngã độc tôn") — đúng truyền thống
+              tượng Phật Đản Sinh Bắc tông Việt Nam.
+            - Khuôn mặt từ hòa, mắt khép nhẹ, tai dài phúc tướng, tóc xoắn ốc có
+              nhục kế (ushnisha) và hào quang tròn phía sau. */}
+        <group position={[0, 1.135, 0]}>
+          {/* Golden lotus receptacle pad under feet (gương sen vàng) */}
+          <mesh castShadow position={[0, 0.02, 0]}>
+            <cylinderGeometry args={[0.12, 0.14, 0.04, 20]} />
+            <meshStandardMaterial color="#c99b2e" metalness={0.55} roughness={0.38} />
+          </mesh>
+          {/* Bare feet planted side by side */}
+          {[-0.04, 0.04].map((x, i) => (
+            <group key={`foot-${i}`} position={[x, 0.045, 0]}>
+              <mesh castShadow position={[0, 0, 0.018]} scale={[0.9, 0.6, 1.45]}>
+                <sphereGeometry args={[0.026, 10, 10]} />
+                <meshStandardMaterial color="#d4a838" metalness={0.55} roughness={0.35} />
+              </mesh>
+              {/* Lower leg / calf */}
+              <mesh castShadow position={[0, 0.08, 0]}>
+                <cylinderGeometry args={[0.024, 0.021, 0.15, 12]} />
+                <meshStandardMaterial color="#d4a838" metalness={0.55} roughness={0.35} />
+              </mesh>
+            </group>
+          ))}
+          {/* Draped waist skirt / dhoti (xiêm y / khố lụa Đản Sinh) */}
+          <mesh castShadow position={[0, 0.23, 0]}>
+            <cylinderGeometry args={[0.078, 0.092, 0.17, 20]} />
+            <meshStandardMaterial color="#b88924" metalness={0.5} roughness={0.42} />
+          </mesh>
+          {/* Ornate waist belt (đai lưng chạm nổi) */}
+          <mesh castShadow position={[0, 0.315, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.078, 0.014, 10, 24]} />
+            <meshStandardMaterial color="#e6c35c" metalness={0.65} roughness={0.32} />
+          </mesh>
+          {/* Central front pleated sash (dải vạt lụa rủ trước bụng) */}
+          <mesh castShadow position={[0, 0.22, 0.082]} rotation={[-0.06, 0, 0]}>
+            <boxGeometry args={[0.042, 0.18, 0.016]} />
+            <meshStandardMaterial color="#e6c35c" metalness={0.6} roughness={0.35} />
+          </mesh>
+          {/* Side drapery fold ridges */}
+          {[-0.055, -0.028, 0.028, 0.055].map((x, i) => (
+            <mesh key={`fold-${i}`} castShadow position={[x, 0.225, 0.072]} rotation={[0, 0, x * 0.4]}>
+              <cylinderGeometry args={[0.008, 0.01, 0.16, 8]} />
+              <meshStandardMaterial color="#9e731b" metalness={0.5} roughness={0.45} />
+            </mesh>
+          ))}
+          {/* Bare upper torso & chest */}
+          <mesh castShadow position={[0, 0.40, 0]} scale={[1.05, 1.15, 0.85]}>
+            <sphereGeometry args={[0.082, 18, 16]} />
+            <meshStandardMaterial color="#d4a838" metalness={0.55} roughness={0.35} />
+          </mesh>
+          {/* Golden neck torque (vòng anh lạc mảnh nơi cổ) */}
+          <mesh position={[0, 0.485, 0.01]} rotation={[Math.PI / 2 + 0.2, 0, 0]}>
+            <torusGeometry args={[0.058, 0.008, 8, 20]} />
+            <meshStandardMaterial color="#e6c35c" metalness={0.65} roughness={0.3} />
+          </mesh>
+          {/* LEFT ARM (+X): Raised high, index finger pointing straight to heaven (Tay trái chỉ thiên) */}
+          <group position={[0.095, 0.465, 0]}>
+            {/* Shoulder */}
+            <mesh castShadow position={[0, 0, 0]}>
+              <sphereGeometry args={[0.028, 12, 12]} />
+              <meshStandardMaterial color="#d4a838" metalness={0.55} roughness={0.35} />
+            </mesh>
+            {/* Raised upper arm & forearm */}
+            <mesh castShadow position={[0.012, 0.10, 0.01]} rotation={[0, 0, -0.08]}>
+              <cylinderGeometry args={[0.021, 0.025, 0.20, 12]} />
+              <meshStandardMaterial color="#d4a838" metalness={0.55} roughness={0.35} />
+            </mesh>
+            {/* Wrist bangle */}
+            <mesh position={[0.018, 0.195, 0.01]} rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[0.022, 0.005, 8, 16]} />
+              <meshStandardMaterial color="#e6c35c" metalness={0.65} roughness={0.3} />
+            </mesh>
+            {/* Left hand */}
+            <mesh castShadow position={[0.018, 0.22, 0.01]} scale={[0.85, 1.1, 0.7]}>
+              <sphereGeometry args={[0.022, 10, 10]} />
+              <meshStandardMaterial color="#d4a838" metalness={0.55} roughness={0.35} />
+            </mesh>
+            {/* Index finger pointing straight UP to heaven */}
+            <mesh castShadow position={[0.018, 0.268, 0.01]}>
+              <cylinderGeometry args={[0.006, 0.008, 0.065, 8]} />
+              <meshStandardMaterial color="#d4a838" metalness={0.55} roughness={0.35} />
+            </mesh>
+          </group>
+          {/* RIGHT ARM (-X): Lowered alongside body, index finger pointing to earth (Tay phải chỉ địa) */}
+          <group position={[-0.095, 0.465, 0]}>
+            {/* Shoulder */}
+            <mesh castShadow position={[0, 0, 0]}>
+              <sphereGeometry args={[0.028, 12, 12]} />
+              <meshStandardMaterial color="#d4a838" metalness={0.55} roughness={0.35} />
+            </mesh>
+            {/* Lowered upper arm & forearm */}
+            <mesh castShadow position={[-0.012, -0.095, 0.01]} rotation={[0, 0, 0.08]}>
+              <cylinderGeometry args={[0.025, 0.021, 0.19, 12]} />
+              <meshStandardMaterial color="#d4a838" metalness={0.55} roughness={0.35} />
+            </mesh>
+            {/* Wrist bangle */}
+            <mesh position={[-0.018, -0.185, 0.01]} rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[0.022, 0.005, 8, 16]} />
+              <meshStandardMaterial color="#e6c35c" metalness={0.65} roughness={0.3} />
+            </mesh>
+            {/* Right hand */}
+            <mesh castShadow position={[-0.018, -0.21, 0.01]} scale={[0.85, 1.1, 0.7]}>
+              <sphereGeometry args={[0.022, 10, 10]} />
+              <meshStandardMaterial color="#d4a838" metalness={0.55} roughness={0.35} />
+            </mesh>
+            {/* Index finger pointing straight DOWN to earth */}
+            <mesh castShadow position={[-0.018, -0.255, 0.01]}>
+              <cylinderGeometry args={[0.008, 0.006, 0.06, 8]} />
+              <meshStandardMaterial color="#d4a838" metalness={0.55} roughness={0.35} />
+            </mesh>
+          </group>
+          {/* Neck & Head */}
+          <mesh castShadow position={[0, 0.505, 0]}>
+            <cylinderGeometry args={[0.032, 0.036, 0.045, 12]} />
+            <meshStandardMaterial color="#d4a838" metalness={0.55} roughness={0.35} />
+          </mesh>
+          <mesh castShadow position={[0, 0.585, 0]} scale={[0.92, 1.06, 0.95]}>
+            <sphereGeometry args={[0.074, 20, 20]} />
+            <meshStandardMaterial color="#d4a838" metalness={0.55} roughness={0.35} />
+          </mesh>
+          {/* Elongated auspicious ears (tai dài phúc tướng) */}
+          {[-1, 1].map((s) => (
+            <mesh key={`ear-${s}`} castShadow position={[s * 0.072, 0.575, 0]} scale={[0.35, 1.15, 0.55]}>
+              <sphereGeometry args={[0.026, 10, 10]} />
+              <meshStandardMaterial color="#d4a838" metalness={0.55} roughness={0.35} />
+            </mesh>
+          ))}
+          {/* Serene facial features (+Z front): brows, downcast eyes, nose, gentle smile, bạch hào */}
+          {[-1, 1].map((s) => (
+            <group key={`face-${s}`}>
+              <mesh position={[s * 0.026, 0.60, 0.068]} rotation={[0, 0, s * -0.18]}>
+                <boxGeometry args={[0.022, 0.004, 0.004]} />
+                <meshStandardMaterial color="#5a3e10" roughness={0.7} />
+              </mesh>
+              <mesh position={[s * 0.026, 0.586, 0.070]}>
+                <boxGeometry args={[0.020, 0.0035, 0.004]} />
+                <meshStandardMaterial color="#5a3e10" roughness={0.7} />
+              </mesh>
+            </group>
+          ))}
+          <mesh position={[0, 0.608, 0.071]}>
+            <sphereGeometry args={[0.006, 8, 8]} />
+            <meshStandardMaterial color="#fff3c4" emissive="#ffd97d" emissiveIntensity={0.4} />
+          </mesh>
+          <mesh position={[0, 0.576, 0.073]} scale={[0.55, 1.1, 0.7]}>
+            <sphereGeometry args={[0.011, 8, 8]} />
+            <meshStandardMaterial color="#d4a838" metalness={0.55} roughness={0.35} />
+          </mesh>
+          <mesh position={[0, 0.558, 0.070]}>
+            <boxGeometry args={[0.022, 0.004, 0.004]} />
+            <meshStandardMaterial color="#7a4e18" roughness={0.7} />
+          </mesh>
+          {/* Hair cap + Ushnisha (nhục kế trên đỉnh đầu) */}
+          <mesh castShadow position={[0, 0.605, -0.006]} scale={[0.95, 0.92, 0.98]}>
+            <sphereGeometry args={[0.076, 18, 16, 0, Math.PI * 2, 0, Math.PI * 0.58]} />
+            <meshStandardMaterial color="#7a5816" metalness={0.45} roughness={0.55} />
+          </mesh>
+          <mesh castShadow position={[0, 0.672, -0.004]}>
+            <sphereGeometry args={[0.028, 14, 14]} />
+            <meshStandardMaterial color="#7a5816" metalness={0.45} roughness={0.55} />
+          </mesh>
+          {/* Sacred Halo (Hào quang tròn phía sau đầu Thái tử) */}
+          <mesh position={[0, 0.59, -0.055]}>
+            <ringGeometry args={[0.105, 0.135, 32]} />
+            <meshStandardMaterial color="#e6c35c" metalness={0.65} roughness={0.3} side={THREE.DoubleSide} />
+          </mesh>
+          <mesh position={[0, 0.59, -0.057]}>
+            <circleGeometry args={[0.105, 32]} />
+            <meshStandardMaterial color="#f5e19c" transparent opacity={0.35} side={THREE.DoubleSide} />
+          </mesh>
+        </group>
+
+        {/* Water stream: ladle mouth -> onto the Prince statue during the pour window */}
+        <mesh ref={streamRef} position={[0, 1.84, 0]} visible={false}>
+          <cylinderGeometry args={[0.012, 0.018, 0.48, 8]} />
           <meshStandardMaterial color="#a8d4e6" roughness={0.1} transparent opacity={0.85} />
         </mesh>
       </group>
@@ -420,8 +611,9 @@ export default function Lumbini({ festivalOn }: { festivalOn: boolean }) {
         </mesh>
       </group>
 
-      {/* Yard sign: "Vườn Lâm Tỳ Ni" (east of the path, facing south) */}
-      <group position={[1.8, 0, 5.8]}>
+      {/* Yard sign: "Vườn Lâm Tỳ Ni" (east of the entrance path, facing south,
+          clear of the stone lamp and festival sign) */}
+      <group position={[2.4, 0, 5.8]}>
         <mesh castShadow position={[-0.5, 0.6, 0]}>
           <cylinderGeometry args={[0.05, 0.05, 1.2, 10]} />
           <meshStandardMaterial color={wood} roughness={0.8} />
@@ -434,9 +626,7 @@ export default function Lumbini({ festivalOn }: { festivalOn: boolean }) {
       </group>
 
       {/* Garden: slender trees, shrubs, flower bushes, lotus pots,
-          landscape rocks, stone lamps (form only, no light). No
-          tree is claimed to be a vô ưu or sa la tree — these are
-          ordinary garden trees, and none blocks the altar front. */}
+          landscape rocks, stone lamps (form only, no light). */}
       {[[-4.5, -1.5, 1.0], [4.2, -2, 0.9], [-4, 3.2, 0.85]].map(([x, z, s], i) => (
         <group key={`tree${i}`} position={[x, 0, z]}>
           <mesh castShadow position={[0, 0.9 * s, 0]}>
@@ -457,13 +647,13 @@ export default function Lumbini({ festivalOn }: { festivalOn: boolean }) {
           </mesh>
         </group>
       ))}
-      {[[-3, 0.5], [3.5, 1.5], [-5, 4.5], [4.5, 4.8], [-2.5, -3.5], [3, -3.8]].map(([x, z], i) => (
+      {[[-3.6, 0.5], [3.6, 1.2], [-5, 4.5], [4.8, 4.5], [-2.5, -3.5], [3, -3.8]].map(([x, z], i) => (
         <mesh key={`shrub${i}`} castShadow position={[x, 0.25, z]}>
           <icosahedronGeometry args={[0.35, 1]} />
           <meshStandardMaterial color={i % 2 ? leafLight : leaf} roughness={0.9} />
         </mesh>
       ))}
-      {[[-2, 4.2], [2.5, -4.2], [-5.2, -0.5]].map(([x, z], i) => (
+      {[[-2, 4.2], [2.5, -3.9], [-5.0, -0.5]].map(([x, z], i) => (
         <group key={`flower${i}`} position={[x, 0, z]}>
           <mesh position={[0, 0.08, 0]}>
             <boxGeometry args={[0.9, 0.15, 0.6]} />
@@ -483,8 +673,8 @@ export default function Lumbini({ festivalOn }: { festivalOn: boolean }) {
           ))}
         </group>
       ))}
-      {/* Lotus pots */}
-      {[[-3.2, 2.2], [3.2, 2.4]].map(([x, z], i) => (
+      {/* Lotus pots (placed outside the ±3.25 roof eaves line) */}
+      {[[-3.6, 2.5], [3.6, 2.5]].map(([x, z], i) => (
         <group key={`pot${i}`} position={[x, 0, z]}>
           <mesh castShadow position={[0, 0.2, 0]}>
             <cylinderGeometry args={[0.3, 0.22, 0.4, 16]} />
@@ -501,14 +691,14 @@ export default function Lumbini({ festivalOn }: { festivalOn: boolean }) {
         </group>
       ))}
       {/* Landscape rocks */}
-      {[[-4.8, 1.5], [5, 0.5], [0.5, -4.5]].map(([x, z], i) => (
+      {[[-4.8, 1.5], [5, 0.5], [0.5, -3.9]].map(([x, z], i) => (
         <mesh key={`rock${i}`} castShadow position={[x, 0.18, z]} rotation={[0, i, 0]}>
           <dodecahedronGeometry args={[0.35, 0]} />
           <meshStandardMaterial color={stone} roughness={1} />
         </mesh>
       ))}
-      {/* Stone lamps (form only, no light) flanking the entrance */}
-      {[[-3, 4.5], [3, 4.5]].map(([x, z], i) => (
+      {/* Stone lamps (form only, no light) flanking the pavilion steps */}
+      {[[-2.4, 3.6], [2.4, 3.6]].map(([x, z], i) => (
         <group key={`lamp${i}`} position={[x, 0, z]}>
           <mesh position={[0, 0.1, 0]}>
             <boxGeometry args={[0.4, 0.2, 0.4]} />
@@ -529,15 +719,13 @@ export default function Lumbini({ festivalOn }: { festivalOn: boolean }) {
         </group>
       ))}
 
-      {/* Festival mode: 5-colour flags, Vesak sign, extra lotus.
-          Toggled from the education dialog; no festival music. */}
+      {/* Festival mode: 5-colour flags, Vesak sign on the WEST side
+          flanking the entrance opposite "Vườn Lâm Tỳ Ni", extra lotus. */}
       {festivalOn && (
         <group>
-          {/* 5-colour flags flanking the entrance path (the path
-              itself, local x 0, stays clear — no pole on it). */}
           {[
-            ['#e53935', -3.5, 3.8], ['#fb8c00', -3.5, 4.8], ['#fdd835', -3.5, 5.8],
-            ['#43a047', 3.5, 4.3], ['#1e88e5', 3.5, 5.3],
+            ['#e53935', -4.2, 3.8], ['#fb8c00', -4.2, 4.8], ['#fdd835', -4.2, 5.8],
+            ['#43a047', 4.2, 4.2], ['#1e88e5', 4.2, 5.2],
           ].map(([c, x, z], i) => (
             <group key={i} position={[x as number, 0, z as number]}>
               <mesh position={[0, 0.8, 0]}>
@@ -550,7 +738,7 @@ export default function Lumbini({ festivalOn }: { festivalOn: boolean }) {
               </mesh>
             </group>
           ))}
-          <group position={[2.5, 0, 5.0]}>
+          <group position={[-2.6, 0, 5.8]}>
             <mesh castShadow position={[-0.6, 0.6, 0]}>
               <cylinderGeometry args={[0.05, 0.05, 1.2, 10]} />
               <meshStandardMaterial color={wood} roughness={0.8} />
@@ -561,7 +749,7 @@ export default function Lumbini({ festivalOn }: { festivalOn: boolean }) {
             </mesh>
             <TextSign text="Kính mừng Đại lễ Phật đản" position={[0, 1.35, 0]} width={2.0} height={0.4} />
           </group>
-          {[[-3.8, 3.6], [4.2, 3.4]].map(([x, z], i) => (
+          {[[-1.4, 3.6], [1.4, 3.6]].map(([x, z], i) => (
             <group key={`fpot${i}`} position={[x, 0, z]}>
               <mesh castShadow position={[0, 0.2, 0]}>
                 <cylinderGeometry args={[0.3, 0.22, 0.4, 16]} />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { lanternState, LAYOUT, releaseState } from './controls';
@@ -290,27 +290,37 @@ function ReleasingFishArc() {
     if (arcGroup.current) arcGroup.current.visible = active;
     if (!active) return;
 
-    const p = releaseState.progress; // 0..1 over ~3.8s
+    const p = releaseState.progress; // 0..1 over ~3.2s
     const count = releaseState.count;
     const t = clock.getElapsedTime();
 
-    // Dòng nước nghiêng chảy từ bát phóng sinh xuống mặt hồ (p = 0.10..0.90)
+    // Tọa độ chính xác của chiếc bát trên hai bàn tay người chơi (cập nhật mỗi frame từ Player.tsx)
+    const startX = releaseState.handPos.x;
+    const startY = releaseState.handPos.y;
+    const startZ = releaseState.handPos.z;
+    const endX = releaseState.waterTarget.x;
+    const endY = releaseState.waterTarget.y;
+    const endZ = releaseState.waterTarget.z;
+    const facing = releaseState.facing;
+
+    // Dòng nước nghiêng chảy trực tiếp từ miệng bát trên tay xuống mặt hồ (p = 0.08..0.92)
     if (streamRef.current) {
       const showStream = p > 0.08 && p < 0.92;
       streamRef.current.visible = showStream;
       if (showStream) {
+        const midX = (startX + endX) * 0.5;
+        const midY = (startY + endY) * 0.5;
+        const midZ = (startZ + endZ) * 0.5;
+        streamRef.current.position.set(midX, midY, midZ);
+        streamRef.current.rotation.set(0.75, facing, 0);
         const sOp = p < 0.2 ? (p - 0.08) / 0.12 : p > 0.78 ? (0.92 - p) / 0.14 : 1;
         (streamRef.current.material as THREE.MeshStandardMaterial).opacity = 0.58 * Math.max(0, Math.min(1, sOp));
       }
     }
 
-    // Điểm xuất phát từ bát trên tay người đứng ở bờ hồ (-11.1, 3.0) -> miệng bát (-11.68, 0.72, 3.0)
-    // Điểm chạm mặt nước hồ sen: (-12.95, 0.06, 3.0 + offset)
-    const startX = LAYOUT.pondApproach.x - 0.58;
-    const startY = 0.72;
-    const startZ = LAYOUT.pondApproach.z;
-    const endX = POND_CENTER.x + POND_RX - 0.45;
-    const endY = 0.04;
+    // Vector vuông góc với hướng nhìn để tách nhẹ các chú cá khi thả 2-3 con
+    const perpX = Math.cos(facing);
+    const perpZ = -Math.sin(facing);
 
     for (let i = 0; i < 3; i++) {
       const fg = fishRefs.current[i];
@@ -321,31 +331,34 @@ function ReleasingFishArc() {
         sp.visible = false;
         continue;
       }
-      // Stagger mỗi chú cá phóng sinh cách nhau một nhịp nhẹ nhàng
+      // Stagger mỗi chú cá phóng sinh nhảy trực tiếp từ bát trên tay ra hồ
       const windowStart = 0.14 + i * 0.22;
       const windowEnd = windowStart + 0.38;
-      const zOff = count === 1 ? 0 : (i - (count - 1) / 2) * 0.26;
+      const latOff = count === 1 ? 0 : (i - (count - 1) / 2) * 0.24;
+      const targetX = endX + perpX * latOff;
+      const targetZ = endZ + perpZ * latOff;
+
       if (p >= windowStart && p <= windowEnd) {
         fg.visible = true;
         const k = (p - windowStart) / (windowEnd - windowStart);
-        const fx = startX + (endX - startX) * k;
-        // Quỹ đạo parabol mềm mại từ miệng bát lao nhẹ xuống mặt hồ
-        const fy = startY * (1 - k) + endY * k + Math.sin(k * Math.PI) * 0.28;
-        const fz = startZ + zOff * k;
+        const fx = startX + (targetX - startX) * k;
+        // Quỹ đạo parabol vọt nhẹ từ miệng bát trên tay người chơi rồi đáp xuống mặt nước hồ
+        const fy = startY * (1 - k) + endY * k + Math.sin(k * Math.PI) * 0.34;
+        const fz = startZ + (targetZ - startZ) * k;
         fg.position.set(fx, fy, fz);
-        // Hướng đầu cá về phía tây (-Math.PI / 2) và chúc nhẹ xuống theo đường cong
-        fg.rotation.set(0.25 - k * 0.85, -Math.PI / 2, Math.sin(t * 14 + i) * 0.12);
+        // Hướng đầu cá theo đúng hướng tay người chơi thả xuống mặt hồ + quẫy nhẹ đuôi
+        fg.rotation.set(0.32 - k * 0.95, facing, Math.sin(t * 16 + i) * 0.14);
       } else {
         fg.visible = false;
       }
 
-      // Vòng sóng nước lan tỏa khi từng chú cá chạm mặt hồ
+      // Vòng sóng nước lan tỏa ngay tại điểm từng chú cá chạm mặt hồ
       const splashStart = windowEnd - 0.05;
       const splashEnd = splashStart + 0.28;
       if (p >= splashStart && p <= splashEnd) {
         sp.visible = true;
         const sk = (p - splashStart) / (splashEnd - splashStart);
-        sp.position.set(endX, 0.09, startZ + zOff);
+        sp.position.set(targetX, 0.09, targetZ);
         sp.scale.setScalar(0.35 + sk * 1.15);
         (sp.material as THREE.MeshBasicMaterial).opacity = 0.65 * (1 - sk);
       } else {
@@ -356,35 +369,31 @@ function ReleasingFishArc() {
 
   return (
     <group ref={arcGroup} visible={false}>
-      {/* Dòng nước trong từ bát nghiêng xuống hồ */}
-      <mesh
-        ref={streamRef}
-        position={[LAYOUT.pondApproach.x - 1.05, 0.40, LAYOUT.pondApproach.z]}
-        rotation={[0, 0, 0.88]}
-      >
-        <cylinderGeometry args={[0.035, 0.075, 1.15, 12]} />
+      {/* Dòng nước trong chảy từ bát trên tay người chơi xuống hồ */}
+      <mesh ref={streamRef}>
+        <cylinderGeometry args={[0.032, 0.072, 1.25, 10]} />
         <meshStandardMaterial color="#8ecae6" transparent opacity={0.55} roughness={0.2} />
       </mesh>
-      {/* Tối đa 3 chú cá chép phóng sinh bay ra từ bát nước đúng theo số lượng chọn */}
+      {/* Tối đa 3 chú cá chép phóng sinh bay ra trực tiếp từ bát nước trên tay đúng theo số lượng chọn */}
       {[0, 1, 2].map((i) => {
         const pal = PALETTE[i % PALETTE.length];
         return (
           <group key={`rel-fish-${i}`}>
-            <group ref={(el) => { fishRefs.current[i] = el; }} scale={0.58}>
-              <mesh castShadow position={[0, 0, 0.1]} scale={[0.8, 0.6, 1.5]}>
-                <sphereGeometry args={[0.26, 16, 12]} />
+            <group ref={(el) => { fishRefs.current[i] = el; }} scale={0.62}>
+              <mesh position={[0, 0, 0.1]} scale={[0.8, 0.6, 1.5]}>
+                <sphereGeometry args={[0.26, 14, 10]} />
                 <meshStandardMaterial color={pal.body} roughness={0.32} />
               </mesh>
               <mesh position={[0, 0.16, -0.02]} rotation={[-0.28, 0, 0]} scale={[0.14, 0.7, 1.2]}>
-                <sphereGeometry args={[0.14, 10, 8]} />
+                <sphereGeometry args={[0.14, 8, 8]} />
                 <meshStandardMaterial color={pal.tail} roughness={0.45} />
               </mesh>
               <mesh position={[0, 0.04, -0.38]} rotation={[0.32, 0, 0]} scale={[0.14, 0.7, 1.3]}>
-                <sphereGeometry args={[0.16, 10, 8]} />
+                <sphereGeometry args={[0.16, 8, 8]} />
                 <meshStandardMaterial color={pal.tail} roughness={0.45} />
               </mesh>
               <mesh position={[0, -0.04, -0.38]} rotation={[-0.32, 0, 0]} scale={[0.14, 0.65, 1.2]}>
-                <sphereGeometry args={[0.15, 10, 8]} />
+                <sphereGeometry args={[0.15, 8, 8]} />
                 <meshStandardMaterial color={pal.tail} roughness={0.45} />
               </mesh>
             </group>
@@ -393,7 +402,7 @@ function ReleasingFishArc() {
               rotation={[-Math.PI / 2, 0, 0]}
               visible={false}
             >
-              <ringGeometry args={[0.18, 0.28, 24]} />
+              <ringGeometry args={[0.18, 0.28, 20]} />
               <meshBasicMaterial color="#ffffff" transparent opacity={0.65} depthWrite={false} />
             </mesh>
           </group>
@@ -413,12 +422,14 @@ type Props = {
   onFishCount?: (n: number) => void;
 };
 
-export default function LotusPond({ spawnTick, spawnCount, remoteTick, onFishCount }: Props) {
+function LotusPondInner({ spawnTick, spawnCount, remoteTick, onFishCount }: Props) {
   const [fish, setFish] = useState<Fish[]>([]);
   const [ripples, setRipples] = useState<Ripple[]>([]);
   const nextId = useRef(1);
   const shape = useMemo(() => pondShape(), []);
   const spawnPoint = useMemo(() => ({ x: POND_CENTER.x + POND_RX - 0.6, z: POND_CENTER.z }), []);
+  const ambientRippleRef = useRef<THREE.Mesh>(null);
+  const ambientPadIdx = useRef(0);
 
   const addFish = (n: number, at: { x: number; z: number }) => {
     setFish((prev) => {
@@ -431,12 +442,22 @@ export default function LotusPond({ spawnTick, spawnCount, remoteTick, onFishCou
       }
       return next;
     });
-    setRipples((prev) => [...prev.slice(-5), { id: nextId.current++, x: at.x, z: at.z, born: Date.now() }]);
+    setRipples((prev) => [...prev.slice(-4), { id: nextId.current++, x: at.x, z: at.z, born: Date.now() }]);
   };
 
   useEffect(() => {
     if (spawnTick <= 0) return;
-    addFish(Math.max(1, spawnCount), spawnPoint);
+    // Clamp landing point inside pond ellipse so fish swim naturally from where they hit the water
+    const rawX = releaseState.waterTarget.x;
+    const rawZ = releaseState.waterTarget.z;
+    const dx = rawX - POND_CENTER.x;
+    const dz = rawZ - POND_CENTER.z;
+    const norm = Math.hypot(dx / (POND_RX * 0.8), dz / (POND_RZ * 0.8));
+    const at =
+      norm > 1
+        ? { x: POND_CENTER.x + (dx / norm), z: POND_CENTER.z + (dz / norm) }
+        : { x: rawX, z: rawZ };
+    addFish(Math.max(1, spawnCount), at);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spawnTick]);
 
@@ -450,14 +471,25 @@ export default function LotusPond({ spawnTick, spawnCount, remoteTick, onFishCou
     onFishCount?.(fish.length);
   }, [fish.length, onFishCount]);
 
-  // Ambient ripple every ~5s, at a lily pad — gentle, never a storm.
-  const lastAmbient = useRef(0);
+  // Ref-driven ambient ripple (zero React state churn / zero re-renders in useFrame!)
   useFrame(({ clock }) => {
+    const m = ambientRippleRef.current;
+    if (!m) return;
     const t = clock.getElapsedTime();
-    if (t - lastAmbient.current > 5) {
-      lastAmbient.current = t;
-      const pad = PADS[Math.floor(Math.random() * PADS.length)];
-      setRipples((prev) => [...prev.slice(-5), { id: nextId.current++, x: POND_CENTER.x + pad[0], z: POND_CENTER.z + pad[1], born: Date.now() }]);
+    const cycle = t % 5.0;
+    if (cycle < 1.6) {
+      const k = cycle / 1.6;
+      if (k < 0.05) {
+        ambientPadIdx.current = Math.floor(t / 5.0) % PADS.length;
+      }
+      const pad = PADS[ambientPadIdx.current];
+      m.visible = true;
+      m.position.set(POND_CENTER.x + pad[0], 0.1, POND_CENTER.z + pad[1]);
+      const s = 0.25 + k * 1.1;
+      m.scale.set(s, s, 1);
+      (m.material as THREE.MeshBasicMaterial).opacity = 0.5 * (1 - k);
+    } else {
+      m.visible = false;
     }
   });
 
@@ -523,6 +555,10 @@ export default function LotusPond({ spawnTick, spawnCount, remoteTick, onFishCou
         </mesh>
       ))}
       {/* Ripples */}
+      <mesh ref={ambientRippleRef} rotation={[-Math.PI / 2, 0, 0]} position={[POND_CENTER.x, 0.1, POND_CENTER.z]} visible={false}>
+        <ringGeometry args={[0.28, 0.36, 20]} />
+        <meshBasicMaterial color="#e8f4f4" transparent opacity={0.5} depthWrite={false} />
+      </mesh>
       {ripples.map((r) => (
         <Ripple key={r.id} x={r.x} z={r.z} onDone={() => setRipples((prev) => prev.filter((p) => p.id !== r.id))} />
       ))}
@@ -537,6 +573,9 @@ export default function LotusPond({ spawnTick, spawnCount, remoteTick, onFishCou
     </group>
   );
 }
+
+const LotusPond = React.memo(LotusPondInner);
+export default LotusPond;
 
 const POND_LANTERN_SPOTS: Array<{ x: number; z: number; phase: number; color: string }> = [
   { x: -0.6, z: -0.8, phase: 0.3, color: '#ff8da1' },

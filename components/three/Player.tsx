@@ -21,6 +21,8 @@ import {
 type Props = {
   name: string;
   gender?: PlayerGender;
+  rankBadge?: string;
+  rankTitle?: string;
   visible: boolean;
   canMove: boolean;
   carryingWater?: boolean;
@@ -29,6 +31,7 @@ type Props = {
 };
 
 const SPEED = 3.4;
+const bowlWorldVec = new THREE.Vector3();
 
 /**
  * Phật tử đi chùa với 2 hình mẫu lựa chọn:
@@ -48,6 +51,8 @@ const SPEED = 3.4;
 export default function Player({
   name,
   gender = 'female',
+  rankBadge,
+  rankTitle,
   visible,
   canMove,
   carryingWater = false,
@@ -63,6 +68,8 @@ export default function Player({
   const armR = useRef<THREE.Group>(null);
   const body = useRef<THREE.Group>(null);
   const ladleRef = useRef<THREE.Group>(null);
+  const releaseBowlRef = useRef<THREE.Group>(null);
+  const bowlFishRefs = useRef<Array<THREE.Group | null>>([null, null, null]);
   const vel = useRef({ x: 0, z: 0 });
   const phase = useRef(0);
   const zoneRef = useRef<'burner' | 'chant' | 'pond' | 'altar' | 'none'>('none');
@@ -218,8 +225,9 @@ export default function Player({
       lerpFacing(gardenFacing);
     }
     if (releasingNow) {
-      // Face West toward Tâm Liên Hồ
-      lerpFacing(-Math.PI / 2);
+      // Turn directly toward Tâm Liên Hồ center from wherever the player stands on the bank
+      const pondFacing = Math.atan2(LAYOUT.pond.x - pos.current.x, LAYOUT.pond.z - pos.current.z);
+      lerpFacing(pondFacing);
     }
 
     const seated = controls.pose === 'sit' || controls.pose === 'kneel';
@@ -254,6 +262,11 @@ export default function Player({
 
     const kneel = controls.pose === 'kneel';
     const inHall = isInHall(pos.current.x, pos.current.z);
+    const isLotusMatSeat =
+      inHall ||
+      controls.seatId.startsWith('west-chant') ||
+      controls.seatId.startsWith('stupa-chant') ||
+      controls.seatId.includes('mat');
 
     // Release & Watering blends
     const releaseTarget = releasingNow ? 1 : 0;
@@ -266,13 +279,13 @@ export default function Player({
 
     // Accurate grounded drop without squashing body scale:
     // - Kneeling in hall: -0.42m so knees rest on cushion
-    // - Cross-legged sitting in hall: -0.68m so pelvis & folded shins rest on mat
+    // - Cross-legged sitting on any meditation mat (hall, Niệm Phật Đường Tây, Đài Bảo Tháp, etc.): -0.68m
     // - Sitting on tea-seat (higher chair at 0.50m above tea platform): -0.30m
     // - Sitting on outdoor stone/wood benches (0.38m-0.42m): -0.40m so hips sit on bench and feet touch floor
     let targetPoseDrop = -0.40;
     if (kneel) {
       targetPoseDrop = -0.42;
-    } else if (inHall) {
+    } else if (isLotusMatSeat) {
       targetPoseDrop = -0.68;
     } else if (controls.seatId === 'tea-seat') {
       targetPoseDrop = -0.30;
@@ -312,8 +325,8 @@ export default function Player({
         hipPitchR = hipPitchR * (1 - blend) + -0.28 * blend;
         kneePitchL = kneePitchL * (1 - blend) + 1.82 * blend;
         kneePitchR = kneePitchR * (1 - blend) + 1.82 * blend;
-      } else if (inHall) {
-        // Ngồi thiền kiết già / bán già trên tọa cụ trong Chính điện
+      } else if (isLotusMatSeat) {
+        // Ngồi thiền kiết già / bán già trên tọa cụ (Chính điện, Niệm Phật Đường, Đài Bảo Tháp, Hồ sen, Cây đa)
         hipPitchL = hipPitchL * (1 - blend) + -1.48 * blend;
         hipPitchR = hipPitchR * (1 - blend) + -1.48 * blend;
         hipYawL = 0.48 * blend;
@@ -445,11 +458,11 @@ export default function Player({
     // Thả cá phóng sinh (Hai tay nâng bát sành nghiêng nhẹ xuống hồ)
     if (rb > 0.01) {
       const tiltProgress = Math.min(1, releaseState.progress * 1.4);
-      armPitchL = armPitchL * (1 - rb) + (-0.95 - tiltProgress * 0.12) * rb;
-      armPitchR = armPitchR * (1 - rb) + (-0.95 - tiltProgress * 0.12) * rb;
-      armRollL = armRollL * (1 - rb) + -0.26 * rb;
-      armRollR = armRollR * (1 - rb) + 0.26 * rb;
-      bodyPitch = bodyPitch * (1 - rb) + (0.26 + tiltProgress * 0.08) * rb;
+      armPitchL = armPitchL * (1 - rb) + (-0.92 - tiltProgress * 0.16) * rb;
+      armPitchR = armPitchR * (1 - rb) + (-0.92 - tiltProgress * 0.16) * rb;
+      armRollL = armRollL * (1 - rb) + -0.35 * rb;
+      armRollR = armRollR * (1 - rb) + 0.35 * rb;
+      bodyPitch = bodyPitch * (1 - rb) + (0.24 + tiltProgress * 0.10) * rb;
     }
 
     if (armL.current) {
@@ -464,13 +477,52 @@ export default function Player({
       body.current.scale.y = 1 + (canMove && speed < 0.35 ? idle * 0.45 : 0);
     }
 
-    // Interaction zones
+    // Cập nhật tọa độ thế giới chính xác của chiếc bát trên hai bàn tay người chơi khi đang thả cá
+    if (releasingNow && releaseBowlRef.current) {
+      const tiltProgress = Math.min(1, releaseState.progress * 1.3);
+      releaseBowlRef.current.position.set(0, 1.28 - tiltProgress * 0.08, 0.43 + tiltProgress * 0.05);
+      releaseBowlRef.current.rotation.set(0.32 + tiltProgress * 0.52, 0, 0);
+      releaseBowlRef.current.updateWorldMatrix(true, false);
+      releaseBowlRef.current.getWorldPosition(bowlWorldVec);
+      releaseState.handPos.x = bowlWorldVec.x;
+      releaseState.handPos.y = bowlWorldVec.y + 0.03;
+      releaseState.handPos.z = bowlWorldVec.z;
+
+      // Điểm rơi của cá trên mặt nước hồ ngay phía trước bàn tay người chơi
+      const dirX = LAYOUT.pond.x - pos.current.x;
+      const dirZ = LAYOUT.pond.z - pos.current.z;
+      const dist = Math.hypot(dirX, dirZ) || 1;
+      const ux = dirX / dist;
+      const uz = dirZ / dist;
+      const landDist = Math.min(2.2, Math.max(1.2, dist - 1.0));
+      releaseState.waterTarget.x = pos.current.x + ux * landDist;
+      releaseState.waterTarget.y = 0.06;
+      releaseState.waterTarget.z = pos.current.z + uz * landDist;
+      releaseState.facing = Math.atan2(ux, uz);
+
+      // Hiển thị từng chú cá bơi trong bát trên tay cho đến đúng khoảnh khắc chú cá đó nhảy ra khỏi tay
+      for (let i = 0; i < 3; i++) {
+        const bf = bowlFishRefs.current[i];
+        if (!bf) continue;
+        const jumpTime = 0.14 + i * 0.22;
+        const stillInBowl = i < releaseState.count && releaseState.progress < jumpTime;
+        bf.visible = stillInBowl;
+        if (stillInBowl) {
+          bf.rotation.y = Math.sin(t * 10 + i * 2) * 0.25;
+        }
+      }
+    }
+
+    // Interaction zones (bao gồm cả Niệm Phật Đường Tây & Đài Niệm Kinh Bảo Tháp)
     const db = Math.hypot(pos.current.x - LAYOUT.burner.x, pos.current.z - LAYOUT.burner.z);
-    const dc = Math.hypot(pos.current.x - LAYOUT.chantPavilion.x, pos.current.z - LAYOUT.chantPavilion.z);
+    const dc1 = Math.hypot(pos.current.x - LAYOUT.chantPavilion.x, pos.current.z - LAYOUT.chantPavilion.z);
+    const dc2 = Math.hypot(pos.current.x - LAYOUT.westChantHall.x, pos.current.z - LAYOUT.westChantHall.z);
+    const dc3 = Math.hypot(pos.current.x - LAYOUT.eastChantPavilion.x, pos.current.z - LAYOUT.eastChantPavilion.z);
+    const dc = Math.min(dc1, dc2, dc3);
     const dp = Math.hypot(pos.current.x - LAYOUT.pond.x, pos.current.z - LAYOUT.pond.z);
     const da = Math.hypot(pos.current.x - LAYOUT.altarSpot.x, pos.current.z - LAYOUT.altarSpot.z);
     const zone: 'burner' | 'chant' | 'pond' | 'altar' | 'none' =
-      db < 2.9 ? 'burner' : dc < 3.4 ? 'chant' : dp < 5.0 ? 'pond' : da < 2.4 ? 'altar' : 'none';
+      db < 2.9 ? 'burner' : dc < 4.2 ? 'chant' : dp < 5.0 ? 'pond' : da < 2.4 ? 'altar' : 'none';
     if (zone !== zoneRef.current) {
       zoneRef.current = zone;
       onZone(zone);
@@ -491,10 +543,17 @@ export default function Player({
 
   return (
     <group ref={group} position={[LAYOUT.spawn.x, 0, LAYOUT.spawn.z]}>
-      {/* Name label — DOM text, so Vietnamese diacritics render perfectly */}
-      <Html center position={[0, 2.34, 0]} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
-        <div className="whitespace-nowrap rounded-full border border-white/40 bg-black/45 px-3 py-1 font-sans text-xs font-medium text-amber-50 shadow">
-          {name}
+      {/* Name & Merit Rank label — DOM text, so Vietnamese diacritics render perfectly */}
+      <Html center position={[0, 2.38, 0]} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
+        <div className="flex flex-col items-center gap-0.5">
+          {rankTitle && (
+            <div className="whitespace-nowrap rounded-full border border-amber-300/60 bg-amber-950/75 px-2 py-0.5 font-sans text-[10px] font-medium text-amber-200 shadow-sm">
+              {rankBadge} {rankTitle}
+            </div>
+          )}
+          <div className="whitespace-nowrap rounded-full border border-white/40 bg-black/45 px-3 py-1 font-sans text-xs font-medium text-amber-50 shadow">
+            {name}
+          </div>
         </div>
       </Html>
 
@@ -770,11 +829,12 @@ export default function Player({
           </group>
         ))}
 
-        {/* Bát sành đựng cá phóng sinh nâng bằng hai tay trước ngực khi thả cá */}
+        {/* Bát sành đựng cá phóng sinh nâng bằng hai bàn tay trước ngực khi thả cá */}
         {showReleaseBowl && (
           <group
-            position={[0, 1.12, 0.42]}
-            rotation={[0.35 + Math.min(1, releaseState.progress * 1.3) * 0.45, 0, 0]}
+            ref={releaseBowlRef}
+            position={[0, 1.28, 0.43]}
+            rotation={[0.35, 0, 0]}
           >
             {/* Thân bát sành nung */}
             <mesh castShadow>
@@ -791,6 +851,27 @@ export default function Player({
               <circleGeometry args={[0.154, 16]} />
               <meshStandardMaterial color="#67bddb" roughness={0.2} transparent opacity={0.85} />
             </mesh>
+            {/* Các chú cá chép Koi nhỏ bơi trong bát trên tay trước khi nhảy ra khỏi bát xuống hồ */}
+            {[
+              { x: 0, z: 0.03, col: '#d95d2e' },
+              { x: -0.055, z: -0.025, col: '#e8a83a' },
+              { x: 0.055, z: -0.025, col: '#f2ede2' },
+            ].map((cf, ci) => (
+              <group
+                key={`bowl-fish-${ci}`}
+                ref={(el) => { bowlFishRefs.current[ci] = el; }}
+                position={[cf.x, 0.055, cf.z]}
+              >
+                <mesh scale={[0.7, 0.55, 1.4]}>
+                  <sphereGeometry args={[0.042, 10, 8]} />
+                  <meshStandardMaterial color={cf.col} roughness={0.35} />
+                </mesh>
+                <mesh position={[0, 0.005, -0.055]} scale={[0.3, 0.65, 1.1]}>
+                  <sphereGeometry args={[0.026, 8, 6]} />
+                  <meshStandardMaterial color="#d95d2e" roughness={0.4} />
+                </mesh>
+              </group>
+            ))}
           </group>
         )}
 

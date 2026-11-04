@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { memo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { controls, LAYOUT, sweepState, wishingRackState } from './controls';
@@ -139,10 +139,14 @@ const COMPLETE_T = 1.5; // D: 1-2s (total 14s, inside 9-15s)
  * Reuses the same dark-wood / terracotta / lime / grey-stone palette
  * as Temple.tsx. Positions MUST match LAYOUT in controls.ts.
  */
-export default function Grounds({ soilWet, waterStream, carryingWater, bellRingSeq }: Props) {
+const Grounds = memo(function Grounds({ soilWet, waterStream, carryingWater, bellRingSeq }: Props) {
   const { roofTile } = useTextures();
   const broomRef = useRef<THREE.Group>(null);
-  const leavesRef = useRef<Leaf[]>(makeLeaves());
+  const leavesInitRef = useRef<Leaf[] | null>(null);
+  if (!leavesInitRef.current) {
+    leavesInitRef.current = makeLeaves();
+  }
+  const leavesRef = leavesInitRef as { current: Leaf[] };
   const leafMeshes = useRef<Array<THREE.Mesh | null>>([]);
   const tl = useRef({ phase: 'idle' as string, t: 0, collectTimer: 0 });
   // Test hook only (not user-visible): Playwright reads leaf counts
@@ -441,17 +445,30 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         <boxGeometry args={[3.2, 0.4, 0.7]} />
         <meshStandardMaterial color="#8d8a82" roughness={0.95} />
       </mesh>
+      {/* 2 Bồ đoàn Hoa Sen dưới gốc đa Bách Linh (seats: banyan-mat-1 at 20.1,11.2 & banyan-mat-2 at 23.9,11.2) */}
+      {[20.1, 23.9].map((mx, mi) => (
+        <group key={`banyan-mat-${mi}`} position={[mx, 0, 11.2]}>
+          <mesh receiveShadow position={[0, 0.025, 0]}>
+            <cylinderGeometry args={[0.42, 0.46, 0.05, 16]} />
+            <meshStandardMaterial color="#8a2420" roughness={0.88} />
+          </mesh>
+          <mesh position={[0, 0.08, 0]}>
+            <cylinderGeometry args={[0.30, 0.34, 0.09, 14]} />
+            <meshStandardMaterial color="#681818" roughness={0.85} />
+          </mesh>
+          <mesh position={[0, 0.13, 0]}>
+            <cylinderGeometry args={[0.20, 0.24, 0.015, 12]} />
+            <meshStandardMaterial color="#d4af37" metalness={0.5} roughness={0.4} />
+          </mesh>
+        </group>
+      ))}
       {/* Basket for swept leaves */}
       <mesh castShadow position={[23.5, 0.35, 9]}>
         <cylinderGeometry args={[0.45, 0.35, 0.7, 12]} />
         <meshStandardMaterial color="#a8824a" roughness={0.9} />
       </mesh>
       {/* Bamboo broom (chổi tre), long axis along Z: handle
-          back (-Z), fan forward (+Z) on the ground. Fixed
-          2026-11-03: the old Y-axis broom read upside-down
-          (fan on top) from the handle side, and swept behind
-          the player instead of in front. Resting it lies FLAT;
-          sweeping it tilts fan-down in front (see useFrame). */}
+          back (-Z), fan forward (+Z) on the ground. */}
       <group ref={broomRef} position={[LAYOUT.broom.x, 0.08, LAYOUT.broom.z]}>
         {/* Handle (along Z, back) */}
         <mesh castShadow position={[0, 0, -0.6]} rotation={[Math.PI / 2, 0, 0]}>
@@ -466,20 +483,16 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
           </mesh>
         ))}
         {/* Binding band */}
-        <mesh castShadow position={[0, 0, 0]}>
+        <mesh position={[0, 0, 0]}>
           <boxGeometry args={[0.16, 0.1, 0.12]} />
           <meshStandardMaterial color="#7a1f1f" roughness={0.8} />
         </mesh>
-        {/* Fan of straw strands, forward (+Z), touching the ground.
-            Fan spread comes from strand positions + slight Z
-            tilts: a Y-cylinder rotated X=PI/2 points along Z, and
-            a yaw before that rotation would not change its axis. */}
+        {/* Fan of straw strands, forward (+Z), touching the ground. */}
         {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((i) => {
           const a = i * 0.13;
           return (
             <mesh
               key={i}
-              castShadow
               position={[Math.sin(a) * 0.22, 0, 0.2]}
               rotation={[Math.PI / 2, 0, -a]}
             >
@@ -490,8 +503,7 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         })}
       </group>
       {/* Individual sweep leaves (Request C): 24 meshes, created
-          once; positions/rotations/visibility updated in useFrame.
-          The basket at (17.5,11) is where collected leaves go. */}
+          once; positions/rotations/visibility updated in useFrame. */}
       {leavesRef.current.map((l, i) => (
         <mesh
           key={i}
@@ -504,22 +516,7 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         </mesh>
       ))}
 
-      {/* --- Roofed corridor (Request D, 2026-11-04): rebuilt
-          higher, wider, open. Old: 1.4m clear between pillar inner
-          faces, flat red slab at 3.35m, head-pressed, camera clipped
-          the slab. New: pillars at x 11.2/15.8 (4.6m apart, ~3.4m
-          clear walkway), 4.2m tall with stone bases, longitudinal +
-          cross beams at 4.45m, simple sloped rafters, and a REAL
-          pitched tile roof (Temple Roof, ridge along the corridor,
-          eaves 4.55m, ridge ~5.75m) instead of a flat slab. The
-          corridor stays open-sided, so the third-person camera
-          passes under the roof through the open sides/ends. Chair
-          kept at the centre (13.5,-2) with legs added (it floated
-          before); walkway is ~2m clear on either side of it.
-          Site plan v2: NO separate floor plane — the old 6.2x10
-          brown slab was the same material as the courtyard and its
-          edge cut across the banyan approach. The corridor now
-          stands on the single courtyard ground. */}
+      {/* --- Roofed corridor --- */}
       {[
         [11.2, 2], [15.8, 2], [11.2, -2], [15.8, -2], [11.2, -6], [15.8, -6],
       ].map(([x, z], i) => (
@@ -561,39 +558,36 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
           </mesh>
         </group>
       ))}
-      {/* Pitched tile roof, ridge along the corridor (z): Roof's
-          ridge runs along its width, so rotate Y 90 deg — width
-          10 becomes the corridor length, depth 6 the width. */}
+      {/* Pitched tile roof, ridge along the corridor (z) */}
       <group position={[13.5, 4.55, -2]} rotation={[0, Math.PI / 2, 0]}>
         <Roof width={10} depth={6} rise={1.2} y={0} tile={roofTile} />
       </group>
-      {/* Chair at the corridor centre, facing west to the hall roof
-          (seat kept at 13.5,-2; legs added — it floated before;
-          legs thickened + stretchers 2026-11-04: the thin dark
-          legs vanished against the dark floor on phones and the
-          seat read as floating) */}
-      <group position={[13.5, 0, -2]}>
-        {[-0.25, 0.25].map((dx) => [-0.25, 0.25].map((dz) => (
-          <mesh key={`${dx}${dz}`} castShadow position={[dx, 0.175, dz]}>
-            <boxGeometry args={[0.12, 0.35, 0.12]} />
+      {/* 3 Chairs along the roofed corridor (seats: corridor-chair at 13.5,-2,
+          corridor-chair-2 at 13.5,0.5, corridor-chair-3 at 13.5,-4.5) */}
+      {[-2, 0.5, -4.5].map((cz, ci) => (
+        <group key={`corridor-chair-${ci}`} position={[13.5, 0, cz]}>
+          {[-0.25, 0.25].map((dx) => [-0.25, 0.25].map((dz) => (
+            <mesh key={`${dx}${dz}`} position={[dx, 0.175, dz]}>
+              <boxGeometry args={[0.12, 0.35, 0.12]} />
+              <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
+            </mesh>
+          )))}
+          {[0.25, -0.25].map((dz, i) => (
+            <mesh key={i} position={[0, 0.12, dz]}>
+              <boxGeometry args={[0.5, 0.08, 0.08]} />
+              <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
+            </mesh>
+          ))}
+          <mesh castShadow position={[0, 0.35, 0]}>
+            <boxGeometry args={[0.6, 0.08, 0.6]} />
             <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
           </mesh>
-        )))}
-        {[0.25, -0.25].map((dz, i) => (
-          <mesh key={i} castShadow position={[0, 0.12, dz]}>
-            <boxGeometry args={[0.5, 0.08, 0.08]} />
+          <mesh castShadow position={[0, 0.75, 0.3]}>
+            <boxGeometry args={[0.6, 0.8, 0.07]} />
             <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
           </mesh>
-        ))}
-        <mesh castShadow position={[0, 0.35, 0]}>
-          <boxGeometry args={[0.6, 0.08, 0.6]} />
-          <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
-        </mesh>
-        <mesh castShadow position={[0, 0.75, 0.3]}>
-          <boxGeometry args={[0.6, 0.8, 0.07]} />
-          <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
-        </mesh>
-      </group>
+        </group>
+      ))}
 
       {/* --- Garden wall (lime) with an open gate at (20.0, -10) ---
           Placed along the west boundary of Vườn Lộc Uyển (x 20.0),
@@ -994,6 +988,26 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         <boxGeometry args={[0.4, 0.2, 1.0]} />
         <meshStandardMaterial color="#a39e92" roughness={0.95} />
       </mesh>
+      {/* 2 Bồ đoàn Hoa Sen bên bờ Tâm Liên Hồ (seats: lake-mat-1 at -11.7,0.4 & lake-mat-2 at -12.2,6.2) */}
+      {[
+        [-11.7, 0.4],
+        [-12.2, 6.2],
+      ].map(([lx, lz], li) => (
+        <group key={`lake-mat-${li}`} position={[lx, 0, lz]}>
+          <mesh receiveShadow position={[0, 0.025, 0]}>
+            <cylinderGeometry args={[0.42, 0.46, 0.05, 16]} />
+            <meshStandardMaterial color="#8a2420" roughness={0.88} />
+          </mesh>
+          <mesh position={[0, 0.08, 0]}>
+            <cylinderGeometry args={[0.30, 0.34, 0.09, 14]} />
+            <meshStandardMaterial color="#681818" roughness={0.85} />
+          </mesh>
+          <mesh position={[0, 0.13, 0]}>
+            <cylinderGeometry args={[0.20, 0.24, 0.015, 12]} />
+            <meshStandardMaterial color="#d4af37" metalness={0.5} roughness={0.4} />
+          </mesh>
+        </group>
+      ))}
 
       {/* Biển hiệu "Bảo Tháp Báo Ân" trước Bảo Tháp 7 tầng */}
       <TempleSignboard text="Bảo Tháp Báo Ân" position={[31.2, 0, -0.2]} rotationY={-0.65} width={2.05} />
@@ -1002,7 +1016,9 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
       <WishingPlaqueRack />
     </group>
   );
-}
+});
+
+export default Grounds;
 
 /**
  * Giá Treo Thẻ Ước Nguyện Bồ Đề (Wooden Wishing Plaque Rack) tại (18.5, 0, 5.2):
@@ -1061,7 +1077,7 @@ function WishingPlaqueRack() {
 
       {/* 3 thanh xà ngang treo thẻ gỗ */}
       {[1.68, 1.32, 0.96].map((ry, ri) => (
-        <mesh key={`wr-bar-${ri}`} castShadow position={[0, ry, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <mesh key={`wr-bar-${ri}`} position={[0, ry, 0]} rotation={[0, 0, Math.PI / 2]}>
           <cylinderGeometry args={[0.022, 0.022, 2.25, 8]} />
           <meshStandardMaterial color="#c9a227" metalness={0.55} roughness={0.4} />
         </mesh>
@@ -1080,7 +1096,7 @@ function WishingPlaqueRack() {
                   <meshStandardMaterial color="#d62828" />
                 </mesh>
                 {/* Thân thẻ gỗ */}
-                <mesh castShadow position={[0, -0.14, 0]}>
+                <mesh position={[0, -0.14, 0]}>
                   <boxGeometry args={[0.14, 0.21, 0.018]} />
                   <meshStandardMaterial
                     color={isGold ? '#e9c46a' : '#b82921'}
@@ -1103,7 +1119,7 @@ function WishingPlaqueRack() {
       <group ref={customGroup}>
         {[-0.75, -0.48, -0.22, 0.04, 0.30, 0.56, 0.80].map((rx, idx) => (
           <group key={`custom-plaque-${idx}`} position={[rx, 1.66, 0.035]} visible={false}>
-            <mesh castShadow position={[0, -0.14, 0]}>
+            <mesh position={[0, -0.14, 0]}>
               <boxGeometry args={[0.16, 0.23, 0.022]} />
               <meshStandardMaterial
                 color="#ffd75e"

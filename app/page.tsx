@@ -26,6 +26,17 @@ import ChantPanel, { type ChantMode } from '@/components/ui/ChantPanel';
 import type { ChantItem } from '@/lib/chanting';
 import { multiplayer, getSessionId, guestName, getStoredWsUrl, setStoredWsUrl, getSolo, setSolo, type MpStatus } from '@/lib/multiplayer';
 import { loadFlame, markFlameDay, flameLabel, flameNote, type FlameState } from '@/lib/flame';
+import {
+  loadMeritState,
+  awardMerit,
+  buildMeritLeaderboard,
+  getMeritRank,
+  getNextMeritRank,
+  MERIT_RANKS,
+  MERIT_ACTIONS,
+  type MeritActionKey,
+  type MeritState,
+} from '@/lib/merit';
 
 const World = dynamic(() => import('@/components/three/World'), { ssr: false });
 
@@ -186,12 +197,18 @@ export default function Home() {
   const [flame, setFlame] = useState<FlameState>(() => loadFlame());
   const touchFlame = () => { setFlame(markFlameDay().state); };
   const [soundBlocked, setSoundBlocked] = useState(false);
-  // Usable seats (hall 8 mats + outdoor): sit via auto-walk, then pose.
+  // Usable seats (38 chanting & meditation seats across 7 temple zones): sit via auto-walk, then pose.
   const [seatedSeat, setSeatedSeat] = useState<Seat | null>(null);
   const [sitPending, setSitPending] = useState<Seat | null>(null);
+  const [seatsModalOpen, setSeatsModalOpen] = useState(false);
+  const [seatsFilter, setSeatsFilter] = useState<'all' | 'hall' | 'westChant' | 'stupaChant' | 'outdoor'>('all');
+  // Merit Leaderboard & Temple Rank System (lib/merit.ts)
+  const [meritState, setMeritState] = useState<MeritState>(() => loadMeritState());
+  const [meritOpen, setMeritOpen] = useState(false);
+  const [meritTab, setMeritTab] = useState<'leaderboard' | 'ranks' | 'history'>('leaderboard');
   // Context action (nearest object, hysteresis in the poll below).
   type Ctx = {
-    kind: 'seat' | 'broom' | 'jar' | 'bed' | 'bell' | 'bath' | 'monk' | 'boat' | 'wishingRack' | 'fortune' | 'stupa' | 'lantern';
+    kind: 'seat' | 'broom' | 'jar' | 'bed' | 'bell' | 'bath' | 'monk' | 'boat' | 'wishingRack' | 'fortune' | 'stupa' | 'lantern' | 'meritBoard';
     id: string;
     label: string;
   };
@@ -300,6 +317,7 @@ export default function Home() {
       controls.gender = savedGender;
     }
     setPrayers(loadPrayers());
+    setMeritState(loadMeritState());
     setSoloMode(getSolo());
     setSoundMuted(localStorage.getItem('thien-vien-sound') === 'off');
     setHideOthers(localStorage.getItem('thien-vien-hide-others') === '1');
@@ -395,6 +413,26 @@ export default function Home() {
     setTimeout(() => setToast(''), 4000);
   };
 
+  const earnMerit = useCallback((action: MeritActionKey, customToast?: string) => {
+    const res = awardMerit(action);
+    setMeritState(res.state);
+    if (res.rankUp) {
+      showToast(`🏆 Thăng phẩm vị Công Đức: ${res.rankUp.badge} ${res.rankUp.title} (${res.state.points} Công Đức)!`);
+    } else if (customToast) {
+      showToast(`${customToast} (+${res.added} Công Đức)`);
+    } else {
+      showToast(`🪷 +${res.added} Công Đức (${MERIT_ACTIONS[action].label}) · Tổng: ${res.state.points} Công Đức`);
+    }
+  }, []);
+
+  const currentRank = getMeritRank(meritState.points);
+  const nextRank = getNextMeritRank(meritState.points);
+
+  const openMap = () => {
+    setPlayerPos({ x: controls.playerPos.x, z: controls.playerPos.z });
+    setMapOpen(true);
+  };
+
   const savePrayer = (type: string, text: string) => {
     const entry = { type, text, date: new Date().toLocaleString('vi-VN') };
     const next = [...loadPrayers(), entry];
@@ -407,6 +445,7 @@ export default function Home() {
     setMonkTopic('welcome');
     monksState.taman.talking = id === 'taman';
     monksState.tamminh.talking = id === 'tamminh';
+    earnMerit('monk_talk');
   };
 
   const closeMonkModal = () => {
@@ -480,6 +519,7 @@ export default function Home() {
       const idx = Math.floor(Math.random() * FORTUNE_STICKS.length);
       setFortuneStickIdx(idx);
       setFortuneShaking(false);
+      earnMerit('fortune_stick');
     }, 1500);
   };
 
@@ -491,7 +531,7 @@ export default function Home() {
     savePrayer('Thẻ gỗ ước nguyện Bồ Đề', text);
     setPlaqueOpen(false);
     setPlaqueWish('');
-    showToast('🎋 Đã treo thẻ gỗ ước nguyện lên giá dưới tán Cây đa Bách Linh & lưu vào Sổ cầu an!');
+    earnMerit('wishing_plaque', '🎋 Đã treo thẻ gỗ ước nguyện dưới tán Cây đa Bách Linh');
   };
 
   const confirmReleaseLantern = () => {
@@ -502,12 +542,13 @@ export default function Home() {
     touchFlame();
     savePrayer('Thả đèn Hoa Đăng cầu nguyện', text);
     setLanternModalOpen(false);
-    showToast('🪷 Đã thắp và thả một ngọn đèn Hoa Đăng lung linh trên mặt nước!');
+    earnMerit('lotus_lantern', '🪷 Đã thắp và thả một ngọn đèn Hoa Đăng trên mặt nước');
   };
 
   const startStupaCircumambulation = () => {
     setStupaModalOpen(false);
     touchFlame();
+    earnMerit('stupa_walk', '🙏 Đang đi kinh hành nhiễu Bảo Tháp Báo Ân 1 vòng theo chiều kim đồng hồ');
     // Nhiễu tháp 1 vòng theo chiều kim đồng hồ quanh Bảo Tháp Báo Ân (35.0, -2.5)
     controls.waypoints = [
       { x: 31.2, z: -2.5 },
@@ -518,7 +559,6 @@ export default function Home() {
     ];
     controls.moveTarget = { x: 31.2, z: -2.5 };
     if (controls.mode === 'menu' || controls.mode === 'intro') controls.mode = 'follow';
-    showToast('🙏 Đang đi kinh hành nhiễu Bảo Tháp Báo Ân theo chiều kim đồng hồ…');
   };
 
   // Camera mode + pose follow the current activity (intro is left alone
@@ -538,6 +578,8 @@ export default function Home() {
     !plaqueOpen &&
     !lanternModalOpen &&
     !stupaModalOpen &&
+    !meritOpen &&
+    !seatsModalOpen &&
     ritual === 'none' &&
     !(chantPlaying && chantMode === 'calm') &&
     !dedicationOpen &&
@@ -737,7 +779,11 @@ export default function Home() {
     const iv = setInterval(() => {
       const px = controls.playerPos.x;
       const pz = controls.playerPos.z;
-      setPlayerPos({ x: px, z: pz });
+      // Performance optimization: only update React playerPos state when the 2D map
+      // is open and the player actually moved >0.35m (prevents 5x/sec full-app re-renders!).
+      if (mapOpen) {
+        setPlayerPos((prev) => (Math.hypot(px - prev.x, pz - prev.z) > 0.35 ? { x: px, z: pz } : prev));
+      }
       const insideHallNow = isInHall(px, pz);
       if (insideHallNow !== inHallPrevRef.current) {
         inHallPrevRef.current = insideHallNow;
@@ -754,9 +800,6 @@ export default function Home() {
       }
       // Sweep: auto-walk arrival -> start; phase/progress mirror;
       // completed->idle -> final message + free walk resumes.
-      // Safety: if the player somehow ends up far from the sweep
-      // spot mid-sweep, cancel (leaves keep positions, no
-      // background animation after leaving the area).
       if (sweepPending && Math.hypot(px - LAYOUT.sweepSpot.x, pz - LAYOUT.sweepSpot.z) < 0.45) {
         setSweepPending(false);
         controls.sweepAutoWalk = false;
@@ -774,20 +817,20 @@ export default function Home() {
           if (sweepPrevRef.current === 'completed' && ph === 'idle') {
             setSweepDone(true);
             setSweepThanksOpen(true);
+            earnMerit('sweep_leaves');
           }
           sweepPrevRef.current = ph;
           setSweepPhase(ph);
         }
-        setSweepProgress(sweepState.progress);
-        if (ph !== 'idle' && Math.hypot(px - LAYOUT.sweepSpot.x, pz - LAYOUT.sweepSpot.z) > 4) {
-          cancelSweep();
+        if (ph !== 'idle') {
+          setSweepProgress(sweepState.progress);
+          if (Math.hypot(px - LAYOUT.sweepSpot.x, pz - LAYOUT.sweepSpot.z) > 4) {
+            cancelSweep();
+          }
         }
       }
       // Bath ritual (Request E): auto-walk arrival -> start;
       // phase/pour-round mirror; done -> blessing dialog.
-      // Pose stays 'pray' for the whole ritual (remote players
-      // see a praying figure at Lumbini); safety-cancel if the
-      // player somehow ends up far from the ritual spot mid-way.
       if (bathPending && Math.hypot(px - LAYOUT.lumbiniSpot.x, pz - LAYOUT.lumbiniSpot.z) < 0.45) {
         setBathPending(false);
         controls.bathAutoWalk = false;
@@ -803,14 +846,17 @@ export default function Home() {
           if (ph === 'done') {
             controls.pose = 'stand';
             setBathBlessingOpen(true);
+            earnMerit('bath_buddha');
           }
           bathPrevRef.current = ph;
           setBathPhase(ph);
         }
-        setBathProgress(bathState.progress);
-        setBathPourRound(bathState.pourRound);
-        if (ph !== 'idle' && ph !== 'done' && Math.hypot(px - LAYOUT.lumbiniSpot.x, pz - LAYOUT.lumbiniSpot.z) > 4) {
-          cancelBath();
+        if (ph !== 'idle' && ph !== 'done') {
+          setBathProgress(bathState.progress);
+          setBathPourRound(bathState.pourRound);
+          if (Math.hypot(px - LAYOUT.lumbiniSpot.x, pz - LAYOUT.lumbiniSpot.z) > 4) {
+            cancelBath();
+          }
         }
       }
       // Boat ride across Sông Bát Nhã to Hòn Đảo HSK:
@@ -829,6 +875,7 @@ export default function Home() {
         if (bph !== boatPrevRef.current) {
           if (bph === 'at_hsk') {
             setHskModalOpen(true);
+            earnMerit('hsk_boat');
           } else if (bph === 'idle' && boatPrevRef.current === 'sailing_back') {
             controls.mode = 'follow';
             showToast('⛵ Thuyền đã cập Bến Thuyền Độ Sinh — chào mừng bạn trở lại Chùa Hải An.');
@@ -836,7 +883,9 @@ export default function Home() {
           boatPrevRef.current = bph;
           setBoatPhase(bph);
         }
-        setBoatProgress(boatState.progress);
+        if (bph === 'sailing_to_hsk' || bph === 'sailing_back') {
+          setBoatProgress(boatState.progress);
+        }
       }
       // Context action: nearest object, with hysteresis so the
       // prompt does not flicker when standing between two objects.
@@ -851,7 +900,15 @@ export default function Home() {
         for (const s of SEATS) {
           if (seatOccupied(s)) continue;
           const d = Math.hypot(px - s.x, pz - s.z);
-          if (d < 1.4) candidates.push({ kind: 'seat', id: s.id, label: s.area === 'lake' ? 'Ngồi ngắm hồ' : 'Ngồi tại đây', d });
+          if (d < 1.4) {
+            const label =
+              s.area === 'lake'
+                ? 'Ngồi tọa thiền · Ngắm hồ'
+                : s.area === 'hall' || s.area === 'westChant' || s.area === 'stupaChant'
+                  ? `Ngồi tọa cụ niệm kinh (${s.label})`
+                  : `Ngồi tại đây (${s.label})`;
+            candidates.push({ kind: 'seat', id: s.id, label, d });
+          }
         }
       }
       if (sweepState.phase === 'idle' && !sweepPending && !sweepDone) {
@@ -878,6 +935,11 @@ export default function Home() {
       if (boatState.phase === 'idle' && !boatPending) {
         const d = Math.hypot(px - LAYOUT.pier.x, pz - LAYOUT.pier.z);
         if (d < 3.8) candidates.push({ kind: 'boat', id: 'boat', label: 'Đi thuyền sang Đảo HSK', d });
+      }
+      // Đài Bia Vàng Công Đức Chùa Hải An
+      {
+        const d = Math.hypot(px - LAYOUT.meritBoard.x, pz - LAYOUT.meritBoard.z);
+        if (d < 3.0) candidates.push({ kind: 'meritBoard', id: 'meritBoard', label: 'Xem Bảng Vàng Công Đức & Phẩm Vị', d });
       }
       // Giá treo thẻ ước nguyện Bồ Đề cạnh Cây đa Bách Linh
       {
@@ -925,7 +987,7 @@ export default function Home() {
     }, 200);
     return () => clearInterval(iv);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entered, sitPending, sweepPending, sweepDone, bathPending, boatPending, seatedSeat, carryingWater, waterStream, activeMonk]);
+  }, [entered, mapOpen, sitPending, sweepPending, sweepDone, bathPending, boatPending, seatedSeat, carryingWater, waterStream, activeMonk]);
 
   const doCtxAction = () => {
     const a = ctxRef.current;
@@ -933,6 +995,8 @@ export default function Home() {
     if (a.kind === 'seat') {
       const s = SEATS.find((x) => x.id === a.id);
       if (s) sitAtSeat(s);
+    } else if (a.kind === 'meritBoard') {
+      setMeritOpen(true);
     } else if (a.kind === 'monk') {
       openMonkModal(a.id as MonkId);
     } else if (a.kind === 'boat') {
@@ -987,6 +1051,7 @@ export default function Home() {
           setSoilWet(true);
           setCarryingWater(false);
           setWaterCardOpen(true);
+          earnMerit('water_garden');
         }
       }, 60);
     } else if (a.kind === 'bath') {
@@ -1010,6 +1075,7 @@ export default function Home() {
       setBellRingSeq((s) => s + 1);
       setBellRinging(true);
       touchFlame();
+      earnMerit('ring_bell');
       setTimeout(() => setBellRinging(false), 3000);
       const bell = bellRef.current;
       if (bell) {
@@ -1018,10 +1084,7 @@ export default function Home() {
       }
     }
   };
-  // Cancel a sweep mid-way: timeline stops, broom returns to
-  // rest (Grounds idle branch), camera back to follow, leaves keep
-  // their current positions, sweep NOT done — starting again later
-  // continues from the partial state, never resets to full.
+  // Cancel a sweep mid-way
   const cancelSweep = () => {
     setSweepPending(false);
     controls.sweepAutoWalk = false;
@@ -1034,8 +1097,7 @@ export default function Home() {
     setSweepPhase('idle');
     if (controls.mode === 'sweep') controls.mode = 'follow';
   };
-  // Cancel a bath mid-way: timeline stops, ladle returns to its
-  // exact rest spot (Lumbini idle branch), avatar stands again.
+  // Cancel a bath mid-way
   const cancelBath = () => {
     setBathPending(false);
     controls.bathAutoWalk = false;
@@ -1060,6 +1122,9 @@ export default function Home() {
       hall: { target: LAYOUT.altarSpot, via: [{ x: -2.5, z: 0.5 }, { x: -2.5, z: -4.2 }, { x: 0, z: -4.2 }, { x: 0, z: -9 }] },
       burner: { target: LAYOUT.burnerApproach, via: [] },
       chant: { target: LAYOUT.chantApproach, via: [{ x: -2.5, z: 0.5 }, { x: -2.5, z: -4.2 }, { x: 0, z: -4.2 }] },
+      westChant: { target: { x: -15.5, z: -13.0 }, via: [{ x: -3.5, z: 1.5 }, { x: -3.5, z: -5 }, { x: -15.5, z: -5 }] },
+      stupaChant: { target: { x: 35.0, z: 5.8 }, via: [{ x: 14.5, z: 8 }, { x: 26, z: 8 }] },
+      merit: { target: { ...LAYOUT.meritSpot }, via: [] },
       pond: { target: LAYOUT.pondApproach, via: [{ x: 0, z: 10 }, { x: -11.1, z: 10 }] },
       banyan: { target: LAYOUT.banyan, via: [{ x: 0, z: 10 }, { x: 14.5, z: 10 }, { x: 14.5, z: 8 }] },
       wishing: { target: LAYOUT.wishingSpot, via: [{ x: 0, z: 10 }, { x: 14.5, z: 10 }, { x: 14.5, z: 6.4 }] },
@@ -1086,7 +1151,7 @@ export default function Home() {
     const text = (wishChoice || wishText.trim() || 'Cầu bình an').slice(0, 200);
     savePrayer('Lời nguyện trong điện', text);
     setWishOpen(false);
-    showToast('Đã lưu lời nguyện — chỉ trên thiết bị của bạn, không công khai.');
+    earnMerit('hall_pray', '🙏 Đã lưu lời nguyện trong Chính điện');
   };
 
   const startRitual = () => {
@@ -1115,6 +1180,7 @@ export default function Home() {
         setPrayerMessage(msg);
         setRitual('done');
         savePrayer('Dâng hương', prayer);
+        earnMerit('incense');
         setTimeout(() => {
           setRitual('none');
           setPrayerMessage('');
@@ -1155,6 +1221,7 @@ export default function Home() {
         releaseState.phase = 'idle';
         releaseState.progress = 0;
         setReleasingFish(false);
+        earnMerit('fish_release');
         const msg = blessing
           ? `${name} vừa nhẹ tay thả ${exactCount} chú cá chép cầu bình an. Nguyện một niệm lành gửi theo làn nước.`
           : `Bạn đã nhẹ tay thả ${exactCount} chú cá chép xuống Tâm Liên Hồ. Chúc bạn thân tâm an yên.`;
@@ -1289,11 +1356,13 @@ export default function Home() {
         onWheel={onWheel}
       >
         {!webglFailed ? (
-        <WorldErrorBoundary onRetry={() => setWorldKey((k) => k + 1)} onOpenMap={() => setMapOpen(true)}>
+        <WorldErrorBoundary onRetry={() => setWorldKey((k) => k + 1)} onOpenMap={openMap}>
         <World
           key={worldKey}
           name={name || 'Khách'}
           gender={gender}
+          rankBadge={currentRank.badge}
+          rankTitle={currentRank.title}
           entered={entered}
           canMove={canMove}
           bellRingSeq={bellRingSeq}
@@ -1319,6 +1388,7 @@ export default function Home() {
           onSelectMonk={openMonkModal}
           onClickPierOrBoat={startBoatToHSK}
           onOpenHSKModal={() => setHskModalOpen(true)}
+          onOpenMeritModal={() => setMeritOpen(true)}
         />
         </WorldErrorBoundary>
         ) : (
@@ -1327,7 +1397,7 @@ export default function Home() {
             <p className="font-serif text-xl text-amber-900">Chế độ nhẹ — không có khung cảnh 3D.</p>
             <p className="mt-2 text-sm text-stone-600">Thiết bị này không tạo được WebGL. Bạn vẫn xem được sơ đồ, đọc bài và nghe nhạc.</p>
             <div className="mt-4 flex flex-col gap-2">
-              <button type="button" onClick={() => setMapOpen(true)} className="rounded-full bg-amber-800 py-3 font-medium text-white">🗺 Mở sơ đồ chùa</button>
+              <button type="button" onClick={openMap} className="rounded-full bg-amber-800 py-3 font-medium text-white">🗺 Mở sơ đồ chùa</button>
               <button type="button" onClick={() => setReadingOpen(true)} className="rounded-full bg-stone-200 py-3 text-sm">📖 Hiên đọc</button>
               <button type="button" onClick={toggleSound} className="rounded-full bg-stone-200 py-3 text-sm">{soundPlaying ? '🔊 Tắt nhạc' : '🔇 Bật nhạc'}</button>
               <button type="button" onClick={() => setWebglFailed(false)} className="rounded-full bg-stone-200 py-3 text-sm">Thử lại 3D</button>
@@ -1350,9 +1420,23 @@ export default function Home() {
         <div className="pointer-events-none absolute inset-x-0 top-0 z-20 hidden items-start justify-between gap-2 p-3 md:flex">
           <div className="rounded-2xl border border-white/50 bg-white/70 px-4 py-2 shadow backdrop-blur">
             <h1 className="font-serif text-lg font-semibold leading-tight text-amber-900">Chùa Hải An</h1>
-            <p className="text-[11px] text-stone-500">Đi dạo · Dâng hương · Niệm Phật</p>
+            <p className="text-[11px] text-stone-500">Đi dạo · Dâng hương · Niệm Phật · {currentRank.badge} {currentRank.title}</p>
           </div>
           <div className="pointer-events-auto flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setMeritOpen(true)}
+              className="rounded-full border border-amber-400/80 bg-gradient-to-r from-amber-800 to-amber-700 px-3.5 py-2 text-sm font-medium text-white shadow backdrop-blur hover:from-amber-900 hover:to-amber-800"
+            >
+              🏆 Bảng Công Đức ({meritState.points})
+            </button>
+            <button
+              type="button"
+              onClick={() => setSeatsModalOpen(true)}
+              className="rounded-full border border-amber-300/80 bg-amber-100/90 px-3.5 py-2 text-sm font-medium text-amber-950 shadow backdrop-blur hover:bg-amber-200"
+            >
+              🧘 Chỗ ngồi Niệm Kinh ({SEATS.length})
+            </button>
             <button
               type="button"
               onClick={startBoatToHSK}
@@ -1371,7 +1455,7 @@ export default function Home() {
             >
               {soundPlaying ? '🔊 Tắt âm thanh' : soundBlocked ? '🔇 Bật nhạc' : '🔇 Bật âm thanh'}
             </button>
-            <button type="button" onClick={() => setMapOpen(true)} className="rounded-full border border-white/50 bg-white/70 px-3 py-2 text-sm shadow backdrop-blur">🗺 Sơ đồ chùa</button>
+            <button type="button" onClick={openMap} className="rounded-full border border-white/50 bg-white/70 px-3 py-2 text-sm shadow backdrop-blur">🗺 Sơ đồ chùa</button>
             <button type="button" onClick={() => setSettingsOpen(true)} className="rounded-full border border-white/50 bg-white/70 px-3 py-2 text-sm shadow backdrop-blur">
               {soloMode ? '🧘 Chế độ riêng' : mpStatus === 'online' ? `👥 Phòng chung - ${mpCount}` : mpStatus === 'connecting' ? '👥 Đang kết nối…' : wsUrl ? '👥 Ngoại tuyến (solo)' : '🧘 Chế độ riêng'}
             </button>
@@ -1398,9 +1482,25 @@ export default function Home() {
         >
           <div className="min-w-0 rounded-2xl border border-white/50 bg-white/70 px-3 py-1.5 shadow backdrop-blur">
             <h1 className="whitespace-nowrap font-serif text-base font-semibold leading-tight text-amber-900">Chùa Hải An</h1>
-            <p className="whitespace-nowrap text-[10px] leading-tight text-stone-500">Không gian bình an</p>
+            <p className="whitespace-nowrap text-[10px] leading-tight text-stone-500">{currentRank.badge} {currentRank.title}</p>
           </div>
-          <div className="pointer-events-auto flex shrink-0 gap-2">
+          <div className="pointer-events-auto flex shrink-0 gap-1.5">
+            <button
+              type="button"
+              onClick={() => setMeritOpen(true)}
+              aria-label="Mở bảng xếp hạng công đức"
+              className="flex h-10 items-center justify-center rounded-full border border-amber-300 bg-amber-800 px-2.5 text-xs font-medium text-white shadow backdrop-blur"
+            >
+              🏆 {meritState.points}
+            </button>
+            <button
+              type="button"
+              onClick={() => setSeatsModalOpen(true)}
+              aria-label="Chọn chỗ ngồi niệm kinh"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/50 bg-white/70 text-base shadow backdrop-blur"
+            >
+              🧘
+            </button>
             <button
               type="button"
               onClick={toggleSound}
@@ -1411,7 +1511,7 @@ export default function Home() {
             </button>
             <button
               type="button"
-              onClick={() => setMapOpen(true)}
+              onClick={openMap}
               aria-label="Mở sơ đồ chùa"
               className="flex h-10 w-10 items-center justify-center rounded-full border border-white/50 bg-white/70 text-base shadow backdrop-blur"
             >
@@ -1424,14 +1524,6 @@ export default function Home() {
               className="flex h-10 w-10 items-center justify-center rounded-full border border-white/50 bg-white/70 text-lg shadow backdrop-blur"
             >
               ☰
-            </button>
-            <button
-              type="button"
-              onClick={() => showToast(flameNote(flame))}
-              title={flameNote(flame)}
-              className="flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/70 px-3 text-base shadow backdrop-blur"
-            >
-              {flameLabel(flame)}
             </button>
           </div>
         </div>
@@ -1461,12 +1553,26 @@ export default function Home() {
             <div className="flex flex-col gap-1.5 pb-1">
               <button
                 type="button"
+                onClick={() => { setMobileMenuOpen(false); setMeritOpen(true); }}
+                className="rounded-xl bg-amber-800 px-4 py-3 text-left text-sm font-medium text-white shadow-sm"
+              >
+                🏆 Bảng Vàng Công Đức ({currentRank.badge} {currentRank.title} · {meritState.points} điểm)
+              </button>
+              <button
+                type="button"
+                onClick={() => { setMobileMenuOpen(false); setSeatsModalOpen(true); }}
+                className="rounded-xl bg-amber-100 px-4 py-3 text-left text-sm font-medium text-amber-950 shadow-sm"
+              >
+                🧘 Chọn chỗ ngồi Tọa Thiền & Niệm Kinh ({SEATS.length} vị trí)
+              </button>
+              <button
+                type="button"
                 onClick={startBoatToHSK}
                 className="rounded-xl bg-amber-800 px-4 py-3 text-left text-sm font-medium text-white shadow-sm"
               >
                 ⛵ Đi thuyền qua Sông Bát Nhã → Đảo HSK (hoc-hsk.vercel.app)
               </button>
-              <button type="button" onClick={() => { setMobileMenuOpen(false); setMapOpen(true); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">🗺 Sơ đồ chùa</button>
+              <button type="button" onClick={() => { setMobileMenuOpen(false); openMap(); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">🗺 Sơ đồ chùa</button>
               <button type="button" onClick={() => { setMobileMenuOpen(false); setSettingsOpen(true); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">👤 {name} — Đổi tên</button>
               <button type="button" onClick={() => { setMobileMenuOpen(false); setBookOpen(true); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">📖 Sổ cầu an</button>
               <button type="button" onClick={() => { setMobileMenuOpen(false); setHelpOpen(true); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">❓ Hướng dẫn</button>
@@ -1577,8 +1683,9 @@ export default function Home() {
           quick-go buttons are removed; quick destinations live
           in the map and in the menu. */}
       {entered && ritual === 'none' && !chantOpen && (
-        <div className="absolute bottom-24 left-3 z-20 hidden sm:bottom-20 md:block">
-          <button type="button" onClick={() => setMapOpen(true)} className="rounded-full bg-white/80 px-4 py-2.5 text-sm shadow backdrop-blur">🗺 Sơ đồ chùa</button>
+        <div className="absolute bottom-24 left-3 z-20 hidden gap-2 sm:bottom-20 md:flex">
+          <button type="button" onClick={openMap} className="rounded-full bg-white/80 px-4 py-2.5 text-sm shadow backdrop-blur">🗺 Sơ đồ chùa</button>
+          <button type="button" onClick={() => setSeatsModalOpen(true)} className="rounded-full bg-amber-800/90 px-4 py-2.5 text-sm font-medium text-white shadow backdrop-blur hover:bg-amber-900">🧘 Chọn chỗ ngồi niệm kinh ({SEATS.length})</button>
         </div>
       )}
 
@@ -1864,6 +1971,7 @@ export default function Home() {
         }}
         onFinish={(item) => {
           setFinishedChant(item);
+          earnMerit('chant');
         }}
         onDedicate={openDedication}
       />
@@ -2115,7 +2223,7 @@ export default function Home() {
             ) : (
               <button type="button" onClick={doCtxAction} className="rounded-full bg-amber-800 px-5 py-3 text-sm font-medium text-white shadow-xl">
                 {ctxAction.kind === 'seat'
-                  ? '🪑 '
+                  ? '🧘 '
                   : ctxAction.kind === 'broom'
                     ? '🧹 '
                     : ctxAction.kind === 'jar'
@@ -2132,7 +2240,9 @@ export default function Home() {
                                 ? '🎋 '
                                 : ctxAction.kind === 'stupa'
                                   ? '🏯 '
-                                  : '📖 '}
+                                  : ctxAction.kind === 'meritBoard'
+                                    ? '🏆 '
+                                    : '📖 '}
                 {ctxAction.label}
               </button>
             )}
@@ -2157,18 +2267,23 @@ export default function Home() {
         </>
       )}
 
-      {/* Seated on a usable seat: stand up, walk back to the aisle/path. */}
+      {/* Seated on a usable seat: open Sutra Chanting panel, stand up, walk back to the aisle/path. */}
       {entered && seatedSeat && (
         <>
           <div className="absolute bottom-28 left-1/2 z-20 hidden -translate-x-1/2 gap-2 sm:bottom-24 md:flex">
             <span className="rounded-full bg-black/55 px-4 py-3 text-sm text-amber-50">{seatedSeat.area === 'lake' ? 'Đang ngắm hồ — giao diện đã thu gọn' : `Đang ngồi: ${seatedSeat.label}`}</span>
+            <button type="button" onClick={() => setChantOpen(true)} className="rounded-full bg-amber-800 px-5 py-3 text-sm font-medium text-white shadow-xl hover:bg-amber-900">📿 Mở Kinh Niệm Phật</button>
             {seatedSeat.area === 'tea' && (
-              <button type="button" onClick={() => setReadingOpen(true)} className="rounded-full bg-amber-800 px-5 py-3 text-sm font-medium text-white shadow-xl">📖 Mở hiên đọc</button>
+              <button type="button" onClick={() => setReadingOpen(true)} className="rounded-full bg-amber-100 px-5 py-3 text-sm font-medium text-amber-900 shadow-xl">📖 Mở hiên đọc</button>
             )}
             <button type="button" onClick={standUpSeat} className="rounded-full bg-white/85 px-5 py-3 text-sm font-medium text-amber-900 shadow-xl">Đứng dậy</button>
           </div>
           <div className="absolute right-3 z-20 flex flex-col items-end gap-2 md:hidden" style={{ bottom: 'calc(env(safe-area-inset-bottom) + 20px)' }}>
             <span className="max-w-[42vw] rounded-full bg-black/55 px-3 py-2 text-center text-xs text-amber-50">{seatedSeat.area === 'lake' ? 'Đang ngắm hồ' : seatedSeat.label}</span>
+            <button type="button" onClick={() => setChantOpen(true)} className="max-w-[44vw] rounded-full bg-amber-800 px-4 py-3 text-center text-sm font-medium text-white shadow-xl">📿 Niệm Kinh</button>
+            {seatedSeat.area === 'tea' && (
+              <button type="button" onClick={() => setReadingOpen(true)} className="max-w-[44vw] rounded-full bg-amber-100 px-4 py-2.5 text-center text-xs font-medium text-amber-900 shadow-xl">📖 Hiên đọc</button>
+            )}
             <button type="button" onClick={standUpSeat} className="max-w-[42vw] rounded-full bg-white/85 px-4 py-3 text-center text-sm font-medium text-amber-900 shadow-xl">Đứng dậy</button>
           </div>
         </>
@@ -2465,7 +2580,10 @@ export default function Home() {
                   <div className="mt-2.5 grid grid-cols-2 gap-2">
                     {([
                       ['burner', '🪔 Lư hương đồng'],
-                      ['hall', '🏯 Vào Chính điện'],
+                      ['hall', '🏯 Vào Chính điện (16 tọa cụ)'],
+                      ['westChant', '🧘 Niệm Phật Đường Tây (8 tọa cụ)'],
+                      ['stupaChant', '📿 Đài Niệm Kinh Bảo Tháp (6 tọa cụ)'],
+                      ['merit', '🏆 Đài Bia Vàng Công Đức'],
                       ['stupa', '🏯 Bảo Tháp Báo Ân 7 tầng'],
                       ['wishing', '🎋 Thẻ ước nguyện Bồ Đề'],
                       ['pond', '🪷 Tâm Liên Hồ'],
@@ -3029,6 +3147,467 @@ export default function Home() {
         </div>
       )}
 
+      {/* =====================================================================
+          5. BẢNG VÀNG CÔNG ĐỨC & HỆ THỐNG 8 PHẨM VỊ CHÙA HẢI AN
+         ===================================================================== */}
+      {meritOpen && (() => {
+        const leaderboard = buildMeritLeaderboard(
+          name || 'Khách',
+          meritState,
+          Array.from(multiplayer.players.values()).map((rp) => ({
+            id: rp.id,
+            name: rp.name,
+            state: rp.target.state,
+          }))
+        );
+        const myIndex = leaderboard.findIndex((r) => r.isSelf);
+        const progressPct = nextRank
+          ? Math.min(
+              100,
+              Math.max(
+                4,
+                Math.round(
+                  ((meritState.points - currentRank.minPoints) /
+                    Math.max(1, nextRank.minPoints - currentRank.minPoints)) *
+                    100
+                )
+              )
+            )
+          : 100;
+
+        return (
+          <div className="absolute inset-0 z-40 flex items-end justify-center bg-black/40 p-3 sm:items-center sm:p-4">
+            <div className="max-h-[90dvh] w-full max-w-xl overflow-y-auto rounded-3xl border border-amber-900/25 bg-[#fdf8ec] p-5 shadow-2xl">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+                    🏆 Đài Bia Vàng Công Đức · Chùa Hải An
+                  </p>
+                  <h2 className="font-serif text-2xl font-bold text-amber-900">
+                    Bảng Xếp Hạng Công Đức & Phẩm Vị Tu Tập
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMeritOpen(false)}
+                  className="rounded-full bg-stone-200 px-3 py-1 text-sm font-medium"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Player's current rank & merit summary card */}
+              <div className="mt-3 rounded-2xl border border-amber-500/40 bg-gradient-to-br from-amber-900 via-amber-800 to-amber-950 p-4 text-amber-50 shadow-lg">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-xs text-amber-200">
+                      Phật tử: <b>{name || 'Khách'}</b> {myIndex >= 0 ? `· Hạng #${myIndex + 1} trên Bảng Vàng` : ''}
+                    </p>
+                    <p className="mt-0.5 font-serif text-xl font-bold text-amber-300">
+                      {currentRank.badge} Phẩm vị Cấp {currentRank.level}/8: {currentRank.title}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-black/30 px-3.5 py-2 text-right">
+                    <p className="text-[11px] uppercase tracking-wider text-amber-200">Tổng Công Đức</p>
+                    <p className="font-serif text-2xl font-bold text-amber-300">{meritState.points}</p>
+                  </div>
+                </div>
+                <p className="mt-1.5 text-xs text-amber-100/90">{currentRank.meaning}</p>
+                {nextRank ? (
+                  <div className="mt-3">
+                    <div className="flex justify-between text-[11px] text-amber-200">
+                      <span>Tiến trình lên Cấp {nextRank.level}: {nextRank.badge} {nextRank.title}</span>
+                      <span>Còn thiếu {Math.max(0, nextRank.minPoints - meritState.points)} Công Đức ({meritState.points}/{nextRank.minPoints})</span>
+                    </div>
+                    <div className="mt-1 h-2 overflow-hidden rounded-full bg-black/35">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 transition-all duration-300"
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs font-semibold text-amber-300">
+                    ✨ Bạn đã đạt phẩm vị viên mãn cao nhất trong Chùa Hải An!
+                  </p>
+                )}
+              </div>
+
+              {/* 3 Tabs */}
+              <div className="mt-3 grid grid-cols-3 gap-1.5 rounded-2xl bg-amber-100/80 p-1">
+                {([
+                  ['leaderboard', '🏆 Bảng Xếp Hạng'],
+                  ['ranks', '🪷 8 Phẩm Vị Chùa'],
+                  ['history', '📜 Cách Tích Công Đức'],
+                ] as const).map(([tabKey, tabLabel]) => (
+                  <button
+                    key={tabKey}
+                    type="button"
+                    onClick={() => setMeritTab(tabKey)}
+                    className={`rounded-xl py-2 text-xs font-semibold transition ${
+                      meritTab === tabKey
+                        ? 'bg-amber-800 text-white shadow'
+                        : 'text-amber-900 hover:bg-amber-200/70'
+                    }`}
+                  >
+                    {tabLabel}
+                  </button>
+                ))}
+              </div>
+
+              {/* Tab 1: Leaderboard */}
+              {meritTab === 'leaderboard' && (
+                <div className="mt-3 space-y-2">
+                  <p className="text-xs text-stone-600">
+                    Bảng Vàng ghi danh các Phật tử và đạo hữu tinh tấn lễ Phật, niệm kinh, phóng sinh và chấp tác tại Chùa Hải An:
+                  </p>
+                  <div className="max-h-[42dvh] space-y-1.5 overflow-y-auto pr-1">
+                    {leaderboard.map((entry, idx) => {
+                      const pos = idx + 1;
+                      return (
+                        <div
+                          key={entry.id}
+                          className={`flex items-center justify-between gap-2 rounded-2xl border px-3.5 py-2.5 text-sm transition ${
+                            entry.isSelf
+                              ? 'border-amber-700 bg-amber-100/90 ring-2 ring-amber-700/30'
+                              : pos <= 3
+                                ? 'border-amber-400/70 bg-amber-50/80'
+                                : 'border-stone-200 bg-white'
+                          }`}
+                        >
+                          <div className="flex min-w-0 items-center gap-2.5">
+                            <span
+                              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                                pos === 1
+                                  ? 'bg-yellow-400 text-amber-950 shadow'
+                                  : pos === 2
+                                    ? 'bg-stone-300 text-stone-900'
+                                    : pos === 3
+                                      ? 'bg-amber-600 text-white'
+                                      : 'bg-stone-100 text-stone-600'
+                              }`}
+                            >
+                              {pos <= 3 ? ['🥇', '🥈', '🥉'][pos - 1] : `#${pos}`}
+                            </span>
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="truncate font-semibold text-amber-950">
+                                  {entry.name}
+                                </span>
+                                {entry.isSelf && (
+                                  <span className="rounded-full bg-amber-800 px-2 py-0.5 text-[10px] font-semibold text-white">
+                                    Bạn
+                                  </span>
+                                )}
+                                {entry.isOnline && !entry.isSelf && (
+                                  <span className="rounded-full bg-emerald-700 px-2 py-0.5 text-[10px] font-medium text-white">
+                                    Đang ở chùa
+                                  </span>
+                                )}
+                              </div>
+                              <p className="truncate text-xs text-stone-600">
+                                {entry.rank.badge} <b className="text-amber-900">{entry.rank.title}</b> · {entry.specialty}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <span className="font-serif text-base font-bold text-amber-900">
+                              {entry.points}
+                            </span>
+                            <span className="block text-[10px] text-stone-500">Công Đức</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 2: 8 Ranks */}
+              {meritTab === 'ranks' && (
+                <div className="mt-3 max-h-[45dvh] space-y-2 overflow-y-auto pr-1">
+                  {MERIT_RANKS.map((rk) => {
+                    const unlocked = meritState.points >= rk.minPoints;
+                    const isCurrent = rk.level === currentRank.level;
+                    return (
+                      <div
+                        key={rk.level}
+                        className={`rounded-2xl border p-3 ${
+                          isCurrent
+                            ? 'border-amber-700 bg-amber-100/90 ring-2 ring-amber-700/30'
+                            : unlocked
+                              ? 'border-amber-300 bg-white'
+                              : 'border-stone-200 bg-stone-100/70 opacity-75'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-serif text-base font-bold text-amber-900">
+                            {rk.badge} Cấp {rk.level}: {rk.title}
+                          </span>
+                          <span className="rounded-full bg-amber-800/10 px-2.5 py-0.5 text-xs font-semibold text-amber-900">
+                            Từ {rk.minPoints} Công Đức
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs text-stone-600">{rk.meaning}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Tab 3: How to earn merit & recent history */}
+              {meritTab === 'history' && (
+                <div className="mt-3 max-h-[45dvh] space-y-3 overflow-y-auto pr-1">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-amber-900">
+                      Các Phật sự tích lũy Công Đức tại chùa:
+                    </p>
+                    <div className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                      {(Object.keys(MERIT_ACTIONS) as MeritActionKey[]).map((actId) => {
+                        const act = MERIT_ACTIONS[actId];
+                        const count = meritState.counts[actId] || 0;
+                        return (
+                          <div
+                            key={actId}
+                            className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs"
+                          >
+                            <div>
+                              <span className="font-medium text-stone-800">
+                                {act.icon} {act.label}
+                              </span>
+                              {count > 0 && (
+                                <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900">
+                                  Đã làm {count} lần
+                                </span>
+                              )}
+                            </div>
+                            <span className="shrink-0 font-bold text-amber-800">
+                              +{act.points}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {meritState.history.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-amber-900">
+                        Nhật ký Công Đức gần đây của bạn:
+                      </p>
+                      <div className="mt-1.5 space-y-1">
+                        {meritState.history.slice(0, 10).map((h, i) => (
+                          <div
+                            key={i}
+                            className="flex items-center justify-between rounded-xl bg-white px-3 py-1.5 text-xs text-stone-700"
+                          >
+                            <span>
+                              {MERIT_ACTIONS[h.key]?.icon || '🪷'} {h.label}
+                            </span>
+                            <span className="text-stone-500">
+                              <b className="text-amber-800">+{h.points}</b> · {h.date}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMeritOpen(false);
+                    setSeatsModalOpen(true);
+                  }}
+                  className="flex-1 rounded-full bg-amber-800 py-3 text-xs font-semibold text-white shadow hover:bg-amber-900 sm:text-sm"
+                >
+                  🧘 Tìm chỗ ngồi Tọa Thiền & Niệm Kinh (+30 Công Đức)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMeritOpen(false)}
+                  className="rounded-full bg-stone-200 px-5 py-3 text-xs font-medium text-stone-700 sm:text-sm"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* =====================================================================
+          6. CHỌN CHỖ NGỒI TỌA THIỀN & NIỆM KINH (38 VỊ TRÍ TOÀN CHÙA)
+         ===================================================================== */}
+      {seatsModalOpen && (() => {
+        const seatOccupiedBy = (s: Seat): string | null => {
+          for (const rp of Array.from(multiplayer.players.values())) {
+            if (
+              (rp.target.state === 'sitting' || rp.target.state === 'praying') &&
+              Math.hypot(rp.target.x - s.x, rp.target.z - s.z) < 0.8
+            ) {
+              return rp.name || 'Phật tử';
+            }
+          }
+          return null;
+        };
+        const filteredSeats = SEATS.filter((s) => {
+          if (seatsFilter === 'all') return true;
+          if (seatsFilter === 'hall') return s.area === 'hall';
+          if (seatsFilter === 'westChant') return s.area === 'westChant';
+          if (seatsFilter === 'stupaChant') return s.area === 'stupaChant';
+          return s.area === 'banyan' || s.area === 'corridor' || s.area === 'lake' || s.area === 'tea';
+        });
+
+        return (
+          <div className="absolute inset-0 z-40 flex items-end justify-center bg-black/40 p-3 sm:items-center sm:p-4">
+            <div className="max-h-[90dvh] w-full max-w-xl overflow-y-auto rounded-3xl border border-amber-900/25 bg-[#fdf8ec] p-5 shadow-2xl">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+                    🧘 Không gian Tọa Thiền & Tụng Kinh mở rộng
+                  </p>
+                  <h2 className="font-serif text-2xl font-bold text-amber-900">
+                    {SEATS.length} Chỗ Ngồi Niệm Kinh Trong Chùa Hải An
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSeatsModalOpen(false)}
+                  className="rounded-full bg-stone-200 px-3 py-1 text-sm font-medium"
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="mt-1 text-xs leading-relaxed text-stone-600">
+                Chọn bất kỳ bồ đoàn hoặc ghế đá nào bên dưới để nhân vật tự bước đến ngồi xếp bằng kiết già và mở bảng Niệm Phật / Tụng Kinh cùng đại chúng:
+              </p>
+
+              {/* Zone filter pills */}
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {([
+                  ['all', `Tất cả (${SEATS.length})`],
+                  ['hall', '🏯 Chính Điện (16)'],
+                  ['westChant', '🧘 Niệm Phật Đường Tây (8)'],
+                  ['stupaChant', '📿 Đài Niệm Kinh Bảo Tháp (6)'],
+                  ['outdoor', '🌳 Gốc Đa · Hồ Sen · Hành Lang (8)'],
+                ] as const).map(([fKey, fLabel]) => (
+                  <button
+                    key={fKey}
+                    type="button"
+                    onClick={() => setSeatsFilter(fKey)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                      seatsFilter === fKey
+                        ? 'bg-amber-800 text-white shadow'
+                        : 'bg-amber-100 text-amber-900 hover:bg-amber-200'
+                    }`}
+                  >
+                    {fLabel}
+                  </button>
+                ))}
+              </div>
+
+              {/* Seat list */}
+              <div className="mt-3 grid max-h-[48dvh] grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+                {filteredSeats.map((s) => {
+                  const occName = seatOccupiedBy(s);
+                  const isMine = seatedSeat?.id === s.id;
+                  return (
+                    <div
+                      key={s.id}
+                      className={`flex flex-col justify-between rounded-2xl border p-3 text-xs transition ${
+                        isMine
+                          ? 'border-amber-700 bg-amber-100/90 ring-2 ring-amber-700/30'
+                          : occName
+                            ? 'border-stone-200 bg-stone-100/70 opacity-75'
+                            : 'border-amber-800/20 bg-white hover:border-amber-700'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-semibold text-amber-950">
+                            {s.area === 'hall' || s.area === 'westChant' || s.area === 'stupaChant' ? '🪷 ' : '🪑 '}
+                            {s.label}
+                          </span>
+                          <span
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                              isMine
+                                ? 'bg-amber-800 text-white'
+                                : occName
+                                  ? 'bg-stone-300 text-stone-700'
+                                  : 'bg-emerald-100 text-emerald-900'
+                            }`}
+                          >
+                            {isMine ? 'Đang ngồi' : occName ? `Có ${occName}` : 'Còn trống'}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[11px] text-stone-500">
+                          {s.area === 'hall'
+                            ? 'Đại Hùng Bảo Điện · Có bàn kinh & mõ gỗ'
+                            : s.area === 'westChant'
+                              ? 'Niệm Phật Đường Tây 2 tầng · Tụng kinh A Di Đà'
+                              : s.area === 'stupaChant'
+                                ? 'Đài Niệm Kinh hướng Bảo Tháp 7 tầng'
+                                : 'Không gian sân chùa thoáng đãng'}
+                        </p>
+                      </div>
+                      <div className="mt-2.5 flex gap-1.5">
+                        <button
+                          type="button"
+                          disabled={Boolean(occName && !isMine)}
+                          onClick={() => {
+                            setSeatsModalOpen(false);
+                            if (!isMine) sitAtSeat(s);
+                          }}
+                          className="flex-1 rounded-full bg-amber-800 py-2 text-xs font-medium text-white shadow hover:bg-amber-900 disabled:bg-stone-300 disabled:text-stone-500"
+                        >
+                          {isMine ? 'Đang ngồi tại đây' : 'Đến ngồi niệm kinh'}
+                        </button>
+                        {isMine && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSeatsModalOpen(false);
+                              setChantOpen(true);
+                            }}
+                            className="rounded-full bg-emerald-800 px-3 py-2 text-xs font-medium text-white"
+                          >
+                            📿 Mở Kinh
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSeatsModalOpen(false);
+                    setChantOpen(true);
+                  }}
+                  className="flex-1 rounded-full bg-amber-100 py-3 text-xs font-semibold text-amber-950 hover:bg-amber-200 sm:text-sm"
+                >
+                  📿 Mở ngay bảng Niệm Phật & Tụng Kinh
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSeatsModalOpen(false)}
+                  className="rounded-full bg-stone-200 px-5 py-3 text-xs font-medium text-stone-700 sm:text-sm"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Map — 2D, follows the real floor plan, "Bạn đang ở đây" marker.
           Desktop: side panel. Mobile: bottom sheet. */}
       {mapOpen && (
@@ -3043,9 +3622,15 @@ export default function Home() {
               {/* Map formula: x=(wx+46)*8, y=(wz+44)*8 for bounds x -46..46, z -44..32 */}
               {/* Tường bao khuôn viên chùa (Compound enclosure wall: x -44..44, z -36..13) */}
               <rect x="16" y="64" width="704" height="392" rx="8" fill="#dfd5be" stroke="#8a6842" strokeWidth="4" />
-              {/* Hall */}
-              <rect x="292" y="144" width="152" height="162" fill="#e8d9b8" stroke="#7a5c3a" />
-              <text x="368" y="228" textAnchor="middle" fontSize="13" fill="#7a1f1f">Chính điện</text>
+              {/* Hall + Twin Bell/Drum Wing Pavilions */}
+              <rect x="272" y="144" width="192" height="162" fill="#e8d9b8" stroke="#7a5c3a" />
+              <text x="368" y="226" textAnchor="middle" fontSize="12.5" fontWeight="bold" fill="#7a1f1f">Đại Hùng Bảo Điện (16)</text>
+              {/* Niệm Phật Đường Tây (-15.5, -16.5) -> x=244, y=220 */}
+              <rect x="210" y="192" width="68" height="56" rx="4" fill="#d9b37c" stroke="#7a1f1f" strokeWidth="2" />
+              <text x="244" y="223" textAnchor="middle" fontSize="8.5" fontWeight="bold" fill="#4a1c14">Niệm Phật Đường</text>
+              {/* Đài Bia Vàng Công Đức (8.8, -1.2) -> x=438, y=342 */}
+              <rect x="424" y="330" width="28" height="22" rx="3" fill="#d4af37" stroke="#7a1f1f" strokeWidth="1.5" />
+              <text x="438" y="364" textAnchor="middle" fontSize="8.5" fontWeight="bold" fill="#7a1f1f">Bia Công Đức</text>
               {/* Tam quan + courtyard */}
               <rect x="328" y="448" width="80" height="16" fill="#a8432a" />
               <text x="368" y="482" textAnchor="middle" fontSize="11">Cổng tam quan</text>
@@ -3058,6 +3643,9 @@ export default function Home() {
               {/* Bảo Tháp Báo Ân 7 tầng (35, -2.5) */}
               <circle cx="648" cy="332" r="20" fill="#a83b24" stroke="#d4af37" strokeWidth="2.5" />
               <text x="648" y="335" textAnchor="middle" fontSize="9" fill="#fff">Bảo Tháp 7T</text>
+              {/* Đài Niệm Kinh Bảo Tháp (35, 6.8) -> x=648, y=406 */}
+              <rect x="618" y="388" width="60" height="36" rx="4" fill="#d9b37c" stroke="#7a1f1f" strokeWidth="1.5" />
+              <text x="648" y="409" textAnchor="middle" fontSize="8" fill="#4a1c14">Đài Niệm Kinh (6)</text>
               {/* Vườn Lộc Uyển (23.4..31, -25..-11.8) */}
               <rect x="555" y="152" width="62" height="106" fill="#7a9a5a" />
               <text x="586" y="206" textAnchor="middle" fontSize="10" fill="#fff">Vườn Lộc Uyển</text>
@@ -3082,19 +3670,22 @@ export default function Home() {
             </svg>
             <div className="mt-3 grid gap-2">
               {([
+                ['merit', '🏆 Đài Bia Vàng Công Đức', 'Xem bảng xếp hạng Công Đức · 8 phẩm vị tu tập trong chùa'],
+                ['hall', '🏯 Đại Hùng Bảo Điện 3 tầng & Tả/Hữu Lâu', '16 bồ đoàn & bàn kinh · Quỳ lễ · Ngồi tĩnh tâm · Xin quẻ Từ Bi'],
+                ['westChant', '🧘 Niệm Phật Đường Tây (Lầu Tụng Kinh 2 tầng)', '8 bồ đoàn hoa sen & bàn kinh · Tôn tượng A Di Đà · Mõ đại'],
+                ['stupaChant', '📿 Đài Niệm Kinh Bảo Tháp', '6 bồ đoàn tọa thiền & tụng kinh hướng Bảo Tháp Báo Ân'],
                 ['hsk', '⛵ Đi thuyền qua Sông Bát Nhã → Đảo HSK', 'Lên thuyền gỗ · Sang Đảo HSK · Mở hoc-hsk.vercel.app'],
-                ['hall', '🏯 Đại Hùng Bảo Điện (Chính điện 3 tầng)', 'Quỳ lễ · Ngồi tĩnh tâm · Xin quẻ Từ Bi đầu năm · Ban Thích Ca & Địa Tạng'],
                 ['stupa', '🏯 Bảo Tháp Báo Ân 7 tầng', 'Chiêm bái tháp bát giác 7 tầng · Kinh hành nhiễu tháp · Tứ Trọng Ân'],
                 ['wishing', '🎋 Giá treo thẻ ước nguyện Bồ Đề', 'Viết & treo thẻ gỗ cầu an, cầu thi đỗ HSK dưới tán đa'],
                 ['burner', '🪔 Đỉnh đồng Lư hương', 'Dâng hương cầu nguyện'],
-                ['chant', '📿 Khu niệm Phật', 'Niệm Phật · Hồi hướng'],
-                ['pond', '🪷 Tâm Liên Hồ (Hồ sen)', 'Phóng sinh cá chép · Thả đèn Hoa Đăng · Ngồi ngắm hồ'],
-                ['banyan', '🌳 Cây đa Bách Linh', 'Ngồi dưới tán đa · Quét lá đa'],
+                ['chant', '📿 Đình Niệm Phật sân Tây', 'Niệm Phật · Hồi hướng'],
+                ['pond', '🪷 Tâm Liên Hồ (Hồ sen)', 'Phóng sinh cá chép từ tay · Thả đèn Hoa Đăng · 3 chỗ ngồi ngắm hồ'],
+                ['banyan', '🌳 Cây đa Bách Linh', '3 chỗ ngồi dưới tán đa · Quét lá đa'],
                 ['garden', '🥬 Vườn Lộc Uyển', 'Múc nước vào gáo · Cầm gáo tưới rau'],
                 ['tea', '🍵 Nhà trà', 'Ngồi nhà trà · Hiên đọc'],
                 ['bell', '🔔 Gác chuông', 'Thỉnh đại hồng chung'],
                 ['lumbini', '🪷 Vườn Lâm Tỳ Ni – Tắm Phật', 'Tắm Phật Thái tử đản sinh · Tìm hiểu lễ Phật đản'],
-                ['gate', '⛩ Cổng Tam Quan Gác 2 tầng', 'Biển tên Chùa Hải An'],
+                ['gate', '⛩ Cổng Tam Quan Gác 2 tầng & Quảng Trường', 'Quảng trường đá hoa sen · Cờ phướn ngũ sắc · Biển Chùa Hải An'],
               ] as const).map(([id, label, acts]) => (
                 <div key={id} className={`rounded-2xl border p-3 ${mapZone === id ? 'border-amber-700 bg-amber-50' : 'border-stone-200 bg-white'}`}>
                   <button type="button" onClick={() => setMapZone(id)} className="w-full text-left">

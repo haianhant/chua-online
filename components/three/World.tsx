@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, memo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Sky } from '@react-three/drei';
 import { MainHall, TamQuan, Garden } from './Temple';
@@ -19,6 +19,8 @@ import RiverAndHSKIsland from './RiverAndHSKIsland';
 type Props = {
   name: string;
   gender: PlayerGender;
+  rankBadge?: string;
+  rankTitle?: string;
   entered: boolean;
   canMove: boolean;
   burnerStage: 'idle' | 'inserting' | 'lit';
@@ -49,6 +51,8 @@ type Props = {
   onClickPierOrBoat: () => void;
   /** Open the Đảo HSK portal modal (https://hoc-hsk.vercel.app/). */
   onOpenHSKModal: () => void;
+  /** Open the Merit Leaderboard & Temple Rank modal. */
+  onOpenMeritModal?: () => void;
 };
 
 /**
@@ -56,9 +60,11 @@ type Props = {
  * misty hills and a light sky — no dark empty background.
  * Clicking the ground (not a drag) sets a walk-to target.
  */
-export default function World({
+const World = memo(function World({
   name,
   gender,
+  rankBadge,
+  rankTitle,
   entered,
   canMove,
   burnerStage,
@@ -81,13 +87,14 @@ export default function World({
   onSelectMonk,
   onClickPierOrBoat,
   onOpenHSKModal,
+  onOpenMeritModal,
 }: Props) {
   return (
     <Canvas
       shadows={!lowQuality}
-      dpr={lowQuality ? [1, 1.5] : [1, 2]}
+      dpr={lowQuality ? [1, 1] : [1, 1.35]}
       camera={{ position: [0, 5, 20], fov: 50 }}
-      gl={{ antialias: true }}
+      gl={{ antialias: !lowQuality, powerPreference: 'high-performance' }}
       onCreated={() => {
         controls.mode = 'menu';
       }}
@@ -112,7 +119,7 @@ export default function World({
       />
 
       <Suspense fallback={null}>
-        <Garden />
+        <Garden onOpenMeritModal={onOpenMeritModal} />
         <MainHall entered={entered} />
         <TamQuan />
       </Suspense>
@@ -164,13 +171,14 @@ export default function World({
       {/* 2 Chú Tiểu đi kinh hành quanh khuôn viên chùa */}
       <NoviceMonks entered={entered} onSelectMonk={onSelectMonk} />
 
-      {/* Invisible ground click-plane for click-to-move */}
+      {/* Invisible ground click-plane for click-to-move (stops at north river bank z = 22.4) */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, 0.06, -5]}
+        position={[0, 0.06, -7.0]}
         onClick={(e) => {
           if (e.delta < 8 && canMove && entered) {
-            if (isInHall(e.point.x, e.point.z) && controls.playerPos.z > LAYOUT.burner.z) {
+            const targetZ = Math.min(e.point.z, 22.3);
+            if (isInHall(e.point.x, targetZ) && controls.playerPos.z > LAYOUT.burner.z) {
               controls.waypoints = [
                 { x: -2.5, z: 0.5 },
                 { x: -2.5, z: -4.2 },
@@ -180,18 +188,20 @@ export default function World({
             } else {
               controls.waypoints = [];
             }
-            controls.moveTarget = { x: e.point.x, z: e.point.z };
+            controls.moveTarget = { x: e.point.x, z: targetZ };
             onGroundClick();
           }
         }}
       >
-        <planeGeometry args={[88, 60]} />
+        <planeGeometry args={[88, 59]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
 
       <Player
         name={name}
         gender={gender}
+        rankBadge={rankBadge}
+        rankTitle={rankTitle}
         visible={entered}
         canMove={canMove}
         carryingWater={carryingWater}
@@ -202,4 +212,6 @@ export default function World({
       <CameraRig />
     </Canvas>
   );
-}
+});
+
+export default World;

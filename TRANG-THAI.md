@@ -1,6 +1,38 @@
-# TRẠNG THÁI BẢN SNAPSHOT NÀY (2026-11-04, bản v2.3 — Đại Hùng Bảo Điện 3 tầng, Bảo Tháp Báo Ân 7 tầng, Nghi lễ Phật giáo truyền thống & Đi thuyền qua Sông Bát Nhã sang Đảo HSK)
+# TRẠNG THÁI BẢN SNAPSHOT NÀY (2026-11-04, bản v2.4 — Tối ưu hiệu năng PC mượt mà, Mở rộng 38 Chỗ Ngồi Tọa Thiền & Niệm Kinh, Bảng Xếp Hạng Công Đức 8 Phẩm Vị, Sửa lỗi đi trên sông & Thả cá từ tay)
 
-## Các hạng mục cập nhật trong bản v2.3
+## Các hạng mục cập nhật trong bản v2.4
+
+1. **Tối ưu hiệu năng 3D trên máy tính PC (`app/page.tsx`, `World.tsx`, `Temple.tsx`, `Grounds.tsx`, `Pond.tsx`, `textures.ts`)**:
+   - **Triệt tiêu bão re-render React 5 lần/giây (`app/page.tsx`)**: Trước đây `setInterval(..., 200)` luôn gọi `setPlayerPos({ x: px, z: pz })`, `setSweepProgress`, `setBathProgress` ngay cả khi người chơi đứng yên, khiến toàn bộ cây component React + R3F `<World>` re-render 5 lần/giây. Nay chỉ cập nhật `playerPos` khi đang mở Sơ đồ 2D (`mapOpen`) và di chuyển `> 0.35m`, và chỉ cập nhật tiến trình khi nghi lễ tương ứng đang diễn ra.
+   - **Bọc `React.memo` cho toàn bộ các cụm kiến trúc 3D nặng**: `World`, `MainHall`, `TamQuan`, `ChantPavilion`, `WestChantingHall`, `EastChantingPavilion`, `MeritBoardMonument`, `Garden`, `SevenStoryStupa`, `Grounds`, `LotusPond`.
+   - **Dùng chung Singleton Procedural Textures (`textures.ts`)**: Cache bộ texture `wood`, `roofTile`, `stone`, `brick`, `grass`, `door` ở cấp module thay vì tạo mới `HTMLCanvasElement` + upload GPU nhiều lần.
+   - **Tối ưu ánh sáng, bóng đổ & Distance Culling tượng GLB 276.834 đa giác (`Temple.tsx`, `World.tsx`)**:
+     - Giảm từ 5 `pointLight` trong Chính điện xuống 1 `pointLight` trung tâm ấm áp.
+     - Tự động ẩn 2 pho tượng quét 3D chi tiết cao (`ShakyamuniPreview` & `KsitigarbhaPreview` — tổng 276k triangles) khi người chơi đang ở ngoài sân xa (`z >= 3.5 || |x| >= 16`).
+     - Giới hạn `dpr` trên màn hình PC độ phân giải cao ở mức `[1, 1.35]` kết hợp `powerPreference: 'high-performance'` để tránh quá tải fill-rate trên màn hình 2K/4K và GPU tích hợp.
+
+2. **Mở rộng chùa to, rộng, đồ sộ hơn & Tăng lên 38 Chỗ Ngồi Niệm Kinh (`Temple.tsx`, `Grounds.tsx`, `controls.ts`, `Player.tsx`, `app/page.tsx`)**:
+   - **Tả Chung Lâu & Hữu Cổ Lâu 2 tầng (`MainHall`)**: Mở rộng hai bên mặt tiền Đại Hùng Bảo Điện (`x = ±10.6`) với hai lầu chuông – lầu trống 2 tầng mái đao cong vút kết nối bằng hành lang gỗ lim.
+   - **Quảng Trường Tiền Đường Đại Bái (`36m × 9.4m`)**: Mở rộng quảng trường đá xanh trước Cổng Tam Quan với phù điêu hoa sen đá chạm nổi đường kính `5.6m` và 6 trụ **Cờ Phướn Phật Giáo Ngũ Sắc**.
+   - **38 chỗ ngồi Tọa Thiền & Niệm Kinh (`SEATS`) trải khắp 7 khu vực**:
+     - **Đại Hùng Bảo Điện (16 bồ đoàn, `4 hàng × 4 tọa cụ`)**: Kèm 8 bàn **Kinh Án** gỗ lim thấp, sách kinh mở trang vàng và mõ gỗ tụng kinh.
+     - **Niệm Phật Đường Tây — Lầu Tụng Kinh Liên Hoa 2 tầng (`WestChantingHall` tại `(-15.5, 0, -16.5)`, 8 bồ đoàn `west-chant-1..8`)**: Lầu gỗ 2 tầng 8 mái đao thờ tượng Phật A Di Đà, đại mộc ngư và 8 tọa cụ hoa sen kèm bàn kinh.
+     - **Đài Niệm Kinh Bảo Tháp (`EastChantingPavilion` tại `(35.0, 0, 6.8)`, 6 bồ đoàn `stupa-chant-1..6`)**: Đình gỗ tứ giác mái đao hướng về Bảo Tháp Báo Ân 7 tầng với 6 bồ đoàn và bàn kinh.
+     - **8 chỗ ngồi ngoài trời**: Thêm đệm bồ đoàn dưới gốc **Cây đa Bách Linh** (`banyan-mat-1..2`), bên bờ **Tâm Liên Hồ** (`lake-mat-1..2`), ghế gỗ **Hành lang Đông** (`corridor-chair-2..3`) và **Nhà Trà**.
+   - Khi ngồi tại bất kỳ vị trí nào trong 38 chỗ ngồi, nhân vật đều ngồi xếp bằng kiết già trên bồ đoàn (hoặc ngồi ghế chuẩn xác) và có ngay nút **📿 Mở Kinh Niệm Phật** kèm hộp thoại **🧘 Chọn chỗ ngồi Niệm Kinh (38)** giúp tự động tìm chỗ trống và bước tới ngồi.
+
+3. **Bảng Xếp Hạng Công Đức & Hệ Thống 8 Phẩm Vị Trong Chùa (`lib/merit.ts`, `Temple.tsx`, `Player.tsx`, `app/page.tsx`)**:
+   - **Đài Bia Vàng Công Đức 3D (`MeritBoardMonument` tại `(8.8, 0, -1.2)`)**: Bia đá xanh chạm trán rồng đặt trên lưng rùa đá đội bia (*Quy趺*) dưới lầu tứ trụ mái đao sơn son thếp vàng ngay sân chính.
+   - **8 Phẩm Vị Tu Tập**: *Thiện Tín Sơ Tâm (🌱)* → *Phật Tử Tinh Tấn (🪷)* → *Cư Sĩ Tri Khách (📿)* → *Hộ Pháp Thiện Tâm (🎋)* → *Hiền Giả Từ Bi (🏮)* → *Bồ Đề Đạo Hữu (☸️)* → *Trưởng Lão Công Đức (🏯)* → *Liên Hoa Đại Đức (🌟)*. Huy hiệu phẩm vị hiển thị trực tiếp phía trên bảng tên 3D của nhân vật.
+   - **Tích lũy Công Đức từ 14 Phật sự**: Dâng hương (`+15`), Tụng kinh niệm Phật (`+30`), Quỳ lễ phát nguyện (`+15`), Phóng sinh cá chép (`+20`), Tắm Phật (`+30`), Quét lá đa (`+25`), Tưới rau (`+20`), Thỉnh đại hồng chung (`+10`), Xin xâm Từ Bi (`+10`), Treo thẻ ước nguyện (`+15`), Thả hoa đăng (`+15`), Kinh hành nhiễu Bảo Tháp (`+25`), Đi thuyền sang Đảo HSK (`+20`), Đàm đạo cùng Chú tiểu (`+10`).
+
+4. **Sửa triệt để lỗi đi bộ được trên sông & Cá phóng sinh bơi ra trực tiếp từ bát trên tay (`controls.ts`, `World.tsx`, `Player.tsx`, `Pond.tsx`)**:
+   - **Chặn đi bộ trên Sông Bát Nhã**: Bổ sung hệ thống collider dọc toàn bộ bờ kè đá Sông Bát Nhã (`z >= 22.6` ở hai bên cầu tàu) và mũi cầu tàu (`z >= 23.5`), đồng thời giới hạn mặt phẳng click-to-move ở bờ sông (`z <= 22.3`). Người chơi chỉ có thể bước ra cầu tàu gỗ và lên thuyền sang Đảo HSK.
+   - **Thả cá phóng sinh trực tiếp từ bát trên tay người chơi**: Tính tọa độ 3D thực tế (`getWorldPosition`) của chiếc bát sành trên hai bàn tay nhân vật mỗi frame (`releaseState.handPos`), hiển thị đàn cá chép Koi bơi trong bát trên tay người chơi cho tới đúng khoảnh khắc từng chú cá phóng ra từ vành bát theo quỹ đạo dòng nước đáp xuống mặt hồ trước mặt người chơi (`releaseState.waterTarget`).
+
+---
+
+## Các hạng mục cập nhật trước đó (bản v2.3)
 
 1. **Kiến trúc Chùa Việt cổ đồ sộ nhiều tầng (`Temple.tsx`, `controls.ts`)**:
    - **Đại Hùng Bảo Điện 3 tầng chồng diêm 12 mái đao**:

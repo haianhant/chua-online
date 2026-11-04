@@ -728,37 +728,26 @@ export default function Home() {
       hall: { target: LAYOUT.altarSpot, via: [{ x: -2.5, z: 0.5 }, { x: -2.5, z: -4 }, { x: 0, z: -4 }, { x: 0, z: -9 }] },
       burner: { target: LAYOUT.burnerApproach, via: [] },
       chant: { target: LAYOUT.chantApproach, via: [{ x: -2.5, z: 0.5 }, { x: -2.5, z: -4 }, { x: 0, z: -4 }] },
-      pond: { target: LAYOUT.pondApproach, via: [{ x: 0, z: 10 }] },
-      banyan: { target: LAYOUT.banyan, via: [{ x: 8, z: 10 }] },
-      // Garden/tea routes (Request D, 2026-11-04): the old routes
-      // went via the gate (13,-10) AND via corridor centre
-      // (13.5,-6) — both unreachable: corridor centre x 13.5 is
-      // only 0.5m from the garden wall (x 13), inside the wall's
-      // expanded collider (0.58m), so northward auto-walk stalled
-      // at z -4.62 and never reached the gate waypoint, and the
-      // gate waypoint itself forced a westward detour across the
-      // wall segment. New routes stay EAST of the wall, on the
-      // corridor walkway (x 14.0, clear of the wall by 0.42m) and
-      // on the new garden path stones, to the garden / tea porch.
-      // Tea target is the porch (18.5,-19.5), NOT the table centre
-      // (18.5,-21), which is inside the table collider and
-      // unreachable — the porch is walkable, on the platform.
-      // Architecture pass 2026-11-04: corridor waypoints moved to
-      // x 14.4 (clear of the new corridor-chair collider by 0.22m)
-      // and the garden leg follows the rerouted west-edge stones;
-      // the tea leg stages at (18.0,-16.6) then goes straight
-      // north up the steps to the porch.
-      garden: { target: LAYOUT.garden, via: [{ x: 14.4, z: 2 }, { x: 14.4, z: -6 }, { x: 14.2, z: -8 }, { x: 14.6, z: -10 }, { x: 15.0, z: -12 }, { x: 15.2, z: -14 }, { x: 15.6, z: -15.8 }, { x: 16.2, z: -17.4 }] },
-      tea: { target: { x: 18.5, z: -19.5 }, via: [{ x: 14.4, z: 2 }, { x: 14.4, z: -6 }, { x: 14.2, z: -8 }, { x: 14.6, z: -10 }, { x: 15.0, z: -12 }, { x: 15.2, z: -14 }, { x: 15.6, z: -15.8 }, { x: 16.2, z: -17.4 }, { x: 18.0, z: -16.6 }] },
+      pond: { target: LAYOUT.pondApproach, via: [{ x: 0, z: 10 }, { x: -3.6, z: 10 }] },
+      banyan: { target: LAYOUT.banyan, via: [{ x: 0, z: 10 }, { x: 8, z: 10 }] },
+      // Garden/tea routes (site plan v2, 2026-11-04): ALL
+      // axis-aligned, following the straight stone lines —
+      // corridor walkway x 14.5 (0.32m clear of the chair, 0.29m
+      // clear of the east pillars), south to the gate, through
+      // the gate at z -10, east along z -10 (1.0m south of the
+      // lawn edge) to the garden turn (20,-10) or the tea porch
+      // (27.5,-14.0), then the east gap (x 29.3) to the seat
+      // approach (29.3,-17.7), 0.8m from the tea seat. The old
+      // diagonal west-edge staircase is gone.
+      garden: { target: LAYOUT.garden, via: [{ x: 14.5, z: 2 }, { x: 14.5, z: -6 }, { x: 14.5, z: -10 }, { x: 13, z: -10 }, { x: 20, z: -10 }] },
+      tea: { target: { x: 29.3, z: -17.7 }, via: [{ x: 14.5, z: 2 }, { x: 14.5, z: -6 }, { x: 14.5, z: -10 }, { x: 13, z: -10 }, { x: 20, z: -10 }, { x: 27.5, z: -10 }, { x: 27.5, z: -14.0 }, { x: 29.3, z: -14.0 }] },
       bell: { target: { x: -12, z: -5.5 }, via: [{ x: -3.5, z: 1.5 }, { x: -3.5, z: -5 }, { x: -12, z: -5 }] }, // around the pond, never through it
-      // Lumbini (Request E): around the pond like the bell route,
-      // then west along z -5.2 (south of the bell steps' expanded
-      // edge -5.52 by 0.32m), north along x -15.5 (west of the bell
-      // platform's expanded edge -15.08 by 0.42m), then straight
-      // north on the yard path x -17 to the ritual spot. The
-      // direct diagonal from the spawn would run head-on into
-      // the pond, so it is never used.
-      lumbini: { target: { ...LAYOUT.lumbiniSpot }, via: [{ x: -3.5, z: 1.5 }, { x: -3.5, z: -5 }, { x: -15.5, z: -5.2 }, { x: -15.5, z: -10 }, { x: -17, z: -14 }, { x: -17, z: -16.8 }] },
+      // Lumbini (site plan v2): around the pond like the bell
+      // route, then straight west along z -5.2 (0.32m clear of
+      // the bell steps' expanded edge -5.52), straight north
+      // along x -17 on the new stone line to the steps, then
+      // the ritual spot. The old x -15.5 jog is gone.
+      lumbini: { target: { ...LAYOUT.lumbiniSpot }, via: [{ x: -3.5, z: 1.5 }, { x: -3.5, z: -5.2 }, { x: -17, z: -5.2 }, { x: -17, z: -16.8 }] },
       gate: { target: { x: 0, z: 15 }, via: [] },
     };
     const r = routes[zoneId];
@@ -1880,37 +1869,39 @@ export default function Home() {
               <h2 className="font-serif text-xl font-semibold text-amber-900">Sơ đồ Chùa Hải An</h2>
               <button type="button" onClick={() => setMapOpen(false)} className="rounded-full bg-stone-200 px-3 py-1 text-sm">✕</button>
             </div>
-            <svg viewBox="0 0 480 600" className="mt-3 w-full rounded-2xl bg-[#e8e0cc]">
+            <svg viewBox="0 0 640 700" className="mt-3 w-full rounded-2xl bg-[#e8e0cc]">
+              {/* Map formula (site plan v2, 2026-11-04): x=(wx+32)*10,
+                  y=(wz+40)*10 for the new bounds x -32..32,
+                  z -40..30. Every dot/rect was recomputed — the
+                  old (wx+24)*10 / (wz+34)*10 formula is gone. */}
               {/* Hall */}
-              <rect x="145" y="80" width="190" height="202" fill="#e8d9b8" stroke="#7a5c3a" />
-              <text x="240" y="180" textAnchor="middle" fontSize="13" fill="#7a1f1f">Chính điện</text>
+              <rect x="225" y="140" width="190" height="202" fill="#e8d9b8" stroke="#7a5c3a" />
+              <text x="320" y="240" textAnchor="middle" fontSize="13" fill="#7a1f1f">Chính điện</text>
               {/* Tam quan + courtyard */}
-              <rect x="190" y="470" width="100" height="20" fill="#a8432a" />
-              <text x="240" y="505" textAnchor="middle" fontSize="11">Cổng tam quan</text>
+              <rect x="270" y="520" width="100" height="20" fill="#a8432a" />
+              <text x="320" y="555" textAnchor="middle" fontSize="11">Cổng tam quan</text>
               {/* Pond */}
-              <circle cx="155" cy="355" r="36" fill="#7aa8c8" />
-              <text x="155" y="358" textAnchor="middle" fontSize="11" fill="#fff">Hồ sen</text>
+              <circle cx="235" cy="415" r="36" fill="#7aa8c8" />
+              <text x="235" y="418" textAnchor="middle" fontSize="11" fill="#fff">Hồ sen</text>
               {/* Banyan, garden, tea, bell */}
-              <circle cx="400" cy="440" r="26" fill="#3f7a2e" />
-              <text x="400" y="444" textAnchor="middle" fontSize="11" fill="#fff">Sân đa</text>
-              <rect x="380" y="140" width="70" height="70" fill="#7a9a5a" />
-              <text x="415" y="178" textAnchor="middle" fontSize="11">Vườn sau</text>
-              <rect x="390" y="90" width="50" height="35" fill="#e8d9b8" stroke="#7a5c3a" />
-              <text x="415" y="112" textAnchor="middle" fontSize="10">Nhà trà</text>
-              <circle cx="110" cy="260" r="14" fill="#c9a227" />
-              <text x="110" y="282" textAnchor="middle" fontSize="10">Gác chuông</text>
-              {/* Lumbini (Request E): exact formula (wx+24)*10,
-                  (wz+34)*10 for the altar (-17,-20) -> (70,140);
-                  clear of the bell (110,260), hall rect (x 145+)
-                  and pond (155,355). */}
-              <circle cx="70" cy="140" r="16" fill="#c98a9e" stroke="#7a5c3a" />
-              {/* Label EAST of the dot (2026-11-04): the old centred
-                  white label sat under the red 'Bạn đang ở đây'
-                  marker whenever the guest stood at Lumbini. */}
-              <text x="92" y="144" textAnchor="start" fontSize="10" fill="#7a5c3a">Lâm Tỳ Ni</text>
+              <circle cx="480" cy="500" r="26" fill="#3f7a2e" />
+              <text x="480" y="504" textAnchor="middle" fontSize="11" fill="#fff">Sân đa</text>
+              <rect x="490" y="140" width="140" height="170" fill="#7a9a5a" />
+              <text x="560" y="225" textAnchor="middle" fontSize="11">Vườn sau</text>
+              <rect x="560" y="182" width="70" height="65" fill="#e8d9b8" stroke="#7a5c3a" />
+              <text x="595" y="215" textAnchor="middle" fontSize="10">Nhà trà</text>
+              <circle cx="190" cy="320" r="14" fill="#c9a227" />
+              <text x="190" y="342" textAnchor="middle" fontSize="10">Gác chuông</text>
+              {/* Lumbini: (-17,-20) -> (150,200), inside the
+                  enlarged courtyard like everything else now. */}
+              <circle cx="150" cy="200" r="16" fill="#c98a9e" stroke="#7a5c3a" />
+              {/* Label EAST of the dot: the old centred white label
+                  sat under the red 'Bạn đang ở đây' marker whenever
+                  the guest stood at Lumbini. */}
+              <text x="172" y="204" textAnchor="start" fontSize="10" fill="#7a5c3a">Lâm Tỳ Ni</text>
               {/* Player marker */}
-              <circle cx={(playerPos.x + 24) * 10} cy={(playerPos.z + 34) * 10} r="10" fill="#dc2626" stroke="#fff" strokeWidth="2" />
-              <text x={(playerPos.x + 24) * 10} y={(playerPos.z + 34) * 10 - 16} textAnchor="middle" fontSize="11" fill="#dc2626">Bạn đang ở đây</text>
+              <circle cx={(playerPos.x + 32) * 10} cy={(playerPos.z + 40) * 10} r="10" fill="#dc2626" stroke="#fff" strokeWidth="2" />
+              <text x={(playerPos.x + 32) * 10} y={(playerPos.z + 40) * 10 - 16} textAnchor="middle" fontSize="11" fill="#dc2626">Bạn đang ở đây</text>
             </svg>
             <div className="mt-3 grid gap-2">
               {([

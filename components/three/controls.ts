@@ -330,7 +330,7 @@ export const COLLIDERS: Collider[] = [
   { kind: 'box', minX: 26.65, maxX: 28.35, minZ: -19, maxZ: -18 }, // tea table (site plan v2, 2026-11-04)
   // Tea house pillars (v2, corners of the widened platform):
   // gaps around the table are west 1.04m / east 1.04m /
-  // north 1.09m / south 1.59m — all passable for the 0.76m player.
+  // north 1.09m / south 1.09m — all passable for the 0.76m player.
   { kind: 'circle', x: 24.6, z: -21.1, r: 0.25 },
   { kind: 'circle', x: 30.4, z: -21.1, r: 0.25 },
   { kind: 'circle', x: 24.6, z: -15.9, r: 0.25 },

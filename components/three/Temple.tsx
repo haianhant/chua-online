@@ -304,13 +304,16 @@ export function MainHall({ entered }: { entered: boolean }) {
             <meshStandardMaterial color="#7a1f1f" roughness={0.7} />
           </mesh>
           {/* Preview statues on the new altars (deployed for review).
-              Plinth top r 0.60/0.45, bottom r 0.60/0.55 (clear of the
-              lamps at ±0.76: west gap 0.03m, east gap larger); statue
+              Plinth top r 0.60/0.55, bottom r 0.60/0.60 (clear of the
+              lamps at ±0.76: west gap 0.03m, east gap 0.08m); statue
               base at table top 1.51 + plinth 0.12 = 1.63, centred on
-              the plinth. Shakyamuni's origin offset is compensated
+              the plinth. East plinth enlarged 2026-11-04 for the
+              +20% Ksitigarbha (footprint 0.853x0.805 at scale 1.3662
+              vs the old 0.90 top diameter — margin was 0.047m).
+              Shakyamuni's origin offset is compensated
               in SideStatuesPreview.tsx (update it with any scale). */}
           <mesh castShadow position={[0, 1.57, 0]}>
-            <cylinderGeometry args={[s < 0 ? 0.6 : 0.45, s < 0 ? 0.6 : 0.55, 0.12, 20]} />
+            <cylinderGeometry args={[s < 0 ? 0.6 : 0.55, s < 0 ? 0.6 : 0.6, 0.12, 20]} />
             <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
           </mesh>
           <group position={[0, 1.63, 0]}>
@@ -689,13 +692,20 @@ export function Garden() {
 
   return (
     <group>
-      {/* Grass ground + brick courtyard + stone path */}
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-        <planeGeometry args={[70, 70]} />
+      {/* Grass ground + brick courtyard + stone path (site plan
+          v2, 2026-11-04): ONE courtyard [58,50] at (3,-5) ->
+          x -26..32, z -30..20, enclosing hall, bell, Lumbini,
+          garden, tea (platform to x 31), pond, banyan — so the
+          bell and the bathing place no longer read as outside
+          the temple. (First cut [52,50] at (0,-5) stopped at
+          x 26 and left the tea platform's east 5m on grass.)
+          Base grass enlarged to [90,90] to cover the new bounds. */}
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -6]}>
+        <planeGeometry args={[90, 90]} />
         <meshStandardMaterial map={grass} roughness={1} />
       </mesh>
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 1]}>
-        <planeGeometry args={[26, 30]} />
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[3, 0.02, -5]}>
+        <planeGeometry args={[58, 50]} />
         <meshStandardMaterial color="#9a6b52" roughness={0.95} />
       </mesh>
       {Array.from({ length: 15 }).map((_, i) => (

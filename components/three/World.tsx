@@ -149,7 +149,7 @@ export default function World({
       {/* Invisible ground click-plane for click-to-move */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, 0.06, -4]}
+        position={[0, 0.06, -5]}
         onClick={(e) => {
           if (e.delta < 8 && canMove && entered) {
             // Clicking inside the hall from the courtyard would walk
@@ -172,7 +172,7 @@ export default function World({
           }
         }}
       >
-        <planeGeometry args={[50, 62]} />
+        <planeGeometry args={[70, 78]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
 

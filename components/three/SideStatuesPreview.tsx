@@ -18,7 +18,11 @@ import { useGLTF } from '@react-three/drei';
 // - Ksitigarbha: Truong Kieu Van, CC BY 4.0, 126,450 tris after 16%
 //   decimate + rocks removed, geometry recentered 2026-11-03 so its
 //   glTF bbox is centred with base at Y=0 (no offset needed).
-//   Figure height 1.588m, scale 1.1385 (+15%, 2026-11-04) -> ~1.81m,
+//   Figure height 1.588m, scale 1.3662 (+20% on top of +15%,
+//   2026-11-04, user order on the live close-up) -> ~2.17m,
+//   staff top ~2.79m above base -> world ~4.42m < hall beams
+//   6.65m. Footprint 0.624x0.589 at scale 1 -> 0.853x0.805,
+//   so the east plinth was enlarged (top r 0.55, bottom 0.60).
 //   staff top ~2.32m above base (world ~3.95m, clear of the hall
 //   beams at 6.65m).
 // Both front faces +Z (south in the hall).
@@ -33,7 +37,7 @@ export function ShakyamuniPreview() {
 }
 export function KsitigarbhaPreview() {
   const { scene } = useGLTF('/models/ksitigarbha-preview.glb');
-  return <primitive object={scene} scale={1.1385} />;
+  return <primitive object={scene} scale={1.3662} />;
 }
 // NO preload here, on purpose: these two GLBs must NOT download on
 // the welcome screen (see the lazy-load note in Temple.tsx). They

@@ -632,34 +632,30 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         </group>
       )}
 
-      {/* --- Tea house (Request D, 2026-11-04): rebuilt as a
-          real small open tea pavilion, not a flat-roof shelter.
-          Stone platform 5.5x4.5 (top 0.45, with two south steps),
-          4 wood columns on stone bases, beams, and a REAL pitched
-          tile roof (eaves 3.95m, ridge ~5.15m) — lighter than the
-          main hall, open on all sides so the camera passes under
-          the roof through the openings. Interior: low tea table
-          with tray, teapot, 3 cups, a flower vase, a side table
-          with books, a stone lantern, low chair (the tea seat,
-          still facing the garden beds) + cushions around the
-          table + 2 porch cushions facing the garden. Platform
-          height is in floorYAt (controls.ts), so walking onto
-          it no longer sinks the player into the slab. */}
-      <mesh receiveShadow position={[18.5, 0.225, -21]}>
-        <boxGeometry args={[5.5, 0.45, 4.5]} />
+      {/* --- Tea house (site plan v2, 2026-11-04): MOVED east +
+          widened so the tea cluster no longer overlaps the beds.
+          Stone platform 7.0x6.5 (top 0.45, two south steps), 4 wood
+          columns on stone bases, beams, REAL pitched tile roof
+          (eaves 3.95m, ridge ~5.15m), open on all sides. Gaps
+          around the table: west 1.04m / east 1.04m / north 1.09m /
+          south 1.59m — all passable for the 0.76m player (the old
+          5.5-wide platform left 0.44m, which is why the far side
+          was unreachable). Platform height is in floorYAt. */}
+      <mesh receiveShadow position={[27.5, 0.225, -18.5]}>
+        <boxGeometry args={[7.0, 0.45, 6.5]} />
         <meshStandardMaterial color="#8d8a82" roughness={0.95} />
       </mesh>
       {/* South steps: 0.15 then 0.30, then platform 0.45 */}
-      <mesh receiveShadow position={[18.5, 0.225, -18.55]}>
-        <boxGeometry args={[2.0, 0.15, 0.5]} />
+      <mesh receiveShadow position={[27.5, 0.225, -15.0]}>
+        <boxGeometry args={[4.0, 0.15, 0.5]} />
         <meshStandardMaterial color="#8d8a82" roughness={0.95} />
       </mesh>
-      <mesh receiveShadow position={[18.5, 0.075, -18.2]}>
-        <boxGeometry args={[2.0, 0.15, 0.5]} />
+      <mesh receiveShadow position={[27.5, 0.075, -14.5]}>
+        <boxGeometry args={[4.0, 0.15, 0.5]} />
         <meshStandardMaterial color="#a39e92" roughness={0.95} />
       </mesh>
       {[
-        [16.2, -22.8], [20.8, -22.8], [16.2, -19.2], [20.8, -19.2],
+        [24.6, -21.1], [30.4, -21.1], [24.6, -15.9], [30.4, -15.9],
       ].map(([x, z], i) => (
         <group key={i} position={[x, 0, z]}>
           <mesh castShadow position={[0, 0.6, 0]}>
@@ -672,16 +668,18 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
           </mesh>
         </group>
       ))}
-      {/* Beams: x-beams at each pillar row, z-beams at each column */}
-      {[-22.8, -19.2].map((z, i) => (
-        <mesh key={i} castShadow position={[18.5, 3.85, z]}>
-          <boxGeometry args={[5.0, 0.2, 0.2]} />
+      {/* Beams: x-beams at each pillar row, z-beams at each column.
+          (The old code put BOTH z-beams at x 18.5, stacked on each
+          other — fixed here: each beam uses its own x.) */}
+      {[-21.1, -15.9].map((z, i) => (
+        <mesh key={i} castShadow position={[27.5, 3.85, z]}>
+          <boxGeometry args={[6.4, 0.2, 0.2]} />
           <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
         </mesh>
       ))}
-      {[16.2, 20.8].map((x, i) => (
-        <mesh key={i} castShadow position={[18.5, 3.85, -21]}>
-          <boxGeometry args={[0.2, 0.2, 4.0]} />
+      {[24.6, 30.4].map((x, i) => (
+        <mesh key={i} castShadow position={[x, 3.85, -18.5]}>
+          <boxGeometry args={[0.2, 0.2, 5.8]} />
           <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
         </mesh>
       ))}
@@ -689,46 +687,44 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
           be wrapped in an outer group at the tea house position —
           the unwrapped version rendered at x=0, inside the hall,
           leaving the tea house roofless (caught by the D test). */}
-      <group position={[18.5, 3.95, -21]}>
-        <Roof width={5.5} depth={4.5} rise={1.2} y={0} z={0} tile={roofTile} />
+      <group position={[27.5, 3.95, -18.5]}>
+        <Roof width={7.0} depth={6.5} rise={1.2} y={0} z={0} tile={roofTile} />
       </group>
       {/* Low tea table + legs (platform top 0.45, table top 1.02 —
-          enlarged 2026-11-04 to avatar scale: the old 0.89m top and
-          0.6m chairs read as doll furniture next to the ~2.4m
-          avatar; the cluster is also spread to fill the platform) */}
-      <mesh castShadow position={[18.5, 0.98, -21]}>
+          sized to avatar scale, as in the morning pass) */}
+      <mesh castShadow position={[27.5, 0.98, -18.5]}>
         <boxGeometry args={[1.7, 0.08, 1.0]} />
         <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
       </mesh>
       {[-0.72, 0.72].map((dx) => [-0.4, 0.4].map((dz) => (
-        <mesh key={`${dx}${dz}`} castShadow position={[18.5 + dx, 0.695, -21 + dz]}>
+        <mesh key={`${dx}${dz}`} castShadow position={[27.5 + dx, 0.695, -18.5 + dz]}>
           <boxGeometry args={[0.1, 0.49, 0.1]} />
           <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
         </mesh>
       )))}
       {/* Tea set: tray, teapot (body + lid + spout + handle), 3 cups */}
-      <mesh castShadow position={[18.3, 1.035, -21.1]}>
+      <mesh castShadow position={[27.3, 1.035, -18.6]}>
         <boxGeometry args={[0.8, 0.03, 0.45]} />
         <meshStandardMaterial color="#a8824a" roughness={0.8} />
       </mesh>
-      <mesh castShadow position={[18.15, 1.13, -21.1]} scale={[1, 0.8, 1]}>
+      <mesh castShadow position={[27.15, 1.13, -18.6]} scale={[1, 0.8, 1]}>
         <sphereGeometry args={[0.11, 14, 14]} />
         <meshStandardMaterial color="#d8e8f0" roughness={0.3} />
       </mesh>
-      <mesh castShadow position={[18.15, 1.22, -21.1]}>
+      <mesh castShadow position={[27.15, 1.22, -18.6]}>
         <cylinderGeometry args={[0.05, 0.05, 0.03, 10]} />
         <meshStandardMaterial color="#d8e8f0" roughness={0.3} />
       </mesh>
-      <mesh castShadow position={[18.28, 1.15, -21.1]} rotation={[0, 0, -0.7]}>
+      <mesh castShadow position={[27.28, 1.15, -18.6]} rotation={[0, 0, -0.7]}>
         <cylinderGeometry args={[0.015, 0.02, 0.16, 8]} />
         <meshStandardMaterial color="#d8e8f0" roughness={0.3} />
       </mesh>
-      <mesh castShadow position={[18.02, 1.13, -21.1]} rotation={[0, Math.PI / 2, 0]}>
+      <mesh castShadow position={[27.02, 1.13, -18.6]} rotation={[0, Math.PI / 2, 0]}>
         <torusGeometry args={[0.06, 0.015, 8, 16]} />
         <meshStandardMaterial color="#d8e8f0" roughness={0.3} />
       </mesh>
       {[
-        [18.55, -20.95, 1.08], [18.65, -21.15, 1.08], [18.95, -20.85, 1.05],
+        [27.55, -18.45, 1.08], [27.65, -18.65, 1.08], [27.95, -18.35, 1.05],
       ].map(([x, z, y], i) => (
         <group key={i} position={[x, y, z]}>
           <mesh castShadow>
@@ -742,12 +738,12 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         </group>
       ))}
       {/* Flower vase on the table corner */}
-      <mesh castShadow position={[19.0, 1.11, -21.25]}>
+      <mesh castShadow position={[28.0, 1.11, -18.75]}>
         <cylinderGeometry args={[0.05, 0.07, 0.18, 10]} />
         <meshStandardMaterial color="#a8432a" roughness={0.7} />
       </mesh>
       {[-0.2, 0, 0.2].map((a, i) => (
-        <group key={i} position={[19.0, 1.28, -21.25]} rotation={[a, 0, a]}>
+        <group key={i} position={[28.0, 1.28, -18.75]} rotation={[a, 0, a]}>
           <mesh position={[0, 0.06, 0]}>
             <cylinderGeometry args={[0.008, 0.008, 0.25, 6]} />
             <meshStandardMaterial color="#3a7a2a" roughness={0.9} />
@@ -758,11 +754,15 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
           </mesh>
         </group>
       ))}
-      {/* Low chair = the tea seat (faces the garden beds, as before;
-          group base now on the new platform top 0.45, legs added;
-          enlarged 2026-11-04: seat 0.6 -> 0.8 wide, seat top 0.80 ->
-          0.95, back to ~1.98 — in proportion to the ~2.4m avatar) */}
-      <group position={[18.5, 0.45, -20.2]}>
+      {/* Low chair = the tea seat, now EAST of the table facing
+          WEST (site plan v2): the sitter has the table in front
+          and the vegetable rows beyond it. The old south chair
+          overlapped the table (seated body reached z -20.58 vs
+          the table edge -20.5); the new seat clears the table's
+          east edge by 0.57m, and its back panel is on the EAST
+          side (behind a west-facing sitter). Group base on the
+          platform top 0.45, seat top 0.95, back to ~1.98. */}
+      <group position={[29.3, 0.45, -18.5]}>
         {[-0.33, 0.33].map((dx) => [-0.33, 0.33].map((dz) => (
           <mesh key={`${dx}${dz}`} castShadow position={[dx, 0.21, dz]}>
             <boxGeometry args={[0.11, 0.42, 0.11]} />
@@ -773,46 +773,47 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
           <boxGeometry args={[0.8, 0.08, 0.8]} />
           <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
         </mesh>
-        <mesh castShadow position={[0, 1.0, -0.4]}>
-          <boxGeometry args={[0.8, 1.05, 0.08]} />
+        <mesh castShadow position={[0.4, 1.0, 0]}>
+          <boxGeometry args={[0.08, 1.05, 0.8]} />
           <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
         </mesh>
       </group>
-      {/* Cushions: 2 by the table, 2 on the south porch facing the garden
-          (enlarged 0.55 -> 0.75; porch pair moved north so they sit
-          fully on the platform instead of overhanging the steps) */}
+      {/* Cushions: north + south of the table, 2 on the south
+          porch strip — all clear of the east-gap route (x 29.3)
+          and of the table collider. */}
       {[
-        [17.2, -21.2, '#a8824a'], [19.8, -21.2, '#7a1f1f'],
-        [17.5, -19.3, '#a8824a'], [19.5, -19.3, '#7a1f1f'],
+        [27.5, -20.0, '#a8824a'], [27.5, -17.0, '#7a1f1f'],
+        [25.8, -15.7, '#a8824a'], [28.0, -15.7, '#7a1f1f'],
       ].map(([x, z, c], i) => (
         <mesh key={i} castShadow position={[x as number, 0.53, z as number]}>
           <boxGeometry args={[0.75, 0.16, 0.75]} />
           <meshStandardMaterial color={c as string} roughness={0.9} />
         </mesh>
       ))}
-      {/* Side table with two books (north-east corner, inside;
-          moved west 2026-11-04: the old spot put a leg inside the
-          east pillar base; top raised to match the new tea table) */}
-      <mesh castShadow position={[20.0, 0.98, -22.5]}>
+      {/* Side table with two books (north-west interior, clear of
+          the north gap passage and of the NW pillar base) */}
+      <mesh castShadow position={[25.0, 0.98, -20.9]}>
         <boxGeometry args={[0.8, 0.06, 0.55]} />
         <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
       </mesh>
       {[-0.15, 0.15].map((dx) => [-0.1, 0.1].map((dz) => (
-        <mesh key={`${dx}${dz}`} castShadow position={[20.0 + dx, 0.7, -22.5 + dz]}>
+        <mesh key={`${dx}${dz}`} castShadow position={[25.0 + dx, 0.7, -20.9 + dz]}>
           <boxGeometry args={[0.07, 0.5, 0.07]} />
           <meshStandardMaterial color="#4a2e1a" roughness={0.8} />
         </mesh>
       )))}
-      <mesh castShadow position={[20.0, 1.03, -22.5]} rotation={[0, 0.1, 0]}>
+      <mesh castShadow position={[25.0, 1.03, -20.9]} rotation={[0, 0.1, 0]}>
         <boxGeometry args={[0.35, 0.04, 0.25]} />
         <meshStandardMaterial color="#7a1f1f" roughness={0.8} />
       </mesh>
-      <mesh castShadow position={[20.0, 1.07, -22.5]} rotation={[0, -0.15, 0]}>
+      <mesh castShadow position={[25.0, 1.07, -20.9]} rotation={[0, -0.15, 0]}>
         <boxGeometry args={[0.32, 0.035, 0.22]} />
         <meshStandardMaterial color="#2a4a6a" roughness={0.8} />
       </mesh>
-      {/* Small stone lantern (no light, just form) in the north-west corner */}
-      <group position={[16.6, 0.45, -22.2]}>
+      {/* Small stone lantern (no light, just form) on the lawn
+          north-east of the tea house — NOT on the platform (the
+          old NW-corner spot collided with the NW pillar base). */}
+      <group position={[24.0, 0, -23.5]}>
         <mesh castShadow position={[0, 0.075, 0]}>
           <boxGeometry args={[0.32, 0.15, 0.32]} />
           <meshStandardMaterial color="#8d8a82" roughness={0.95} />
@@ -830,10 +831,9 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
           <meshStandardMaterial color="#a8432a" roughness={0.85} />
         </mesh>
       </group>
-      {/* Pots flanking the south steps (outside the platform;
-          west pot moved 2026-11-04: the old spot now collides with
-          the rerouted path stone at (16.2,-17.4)) */}
-      {[[15.2, -18.6], [21.0, -18.3]].map(([x, z], i) => (
+      {/* Pots flanking the south steps (on the lawn, outside the
+          platform, clear of the step width x 25.5..29.5) */}
+      {[[24.8, -14.6], [30.2, -14.6]].map(([x, z], i) => (
         <group key={i} position={[x, 0, z]}>
           <mesh castShadow position={[0, 0.175, 0]}>
             <cylinderGeometry args={[0.28, 0.22, 0.35, 10]} />
@@ -846,39 +846,48 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
         </group>
       ))}
 
-      {/* --- Garden path, east of the wall: corridor -> garden -> tea
-          house, so the sân chùa -> hành lang -> vườn -> nhà trà
-          journey reads as one route. Stones rerouted 2026-11-04
-          (architecture pass) along the garden's west edge with
-          ≥1.6m centre spacing and every stone fully on ONE surface
-          (the old diagonal zigzag sat 0.1m from the beds and cut
-          across them); the last stone stages south of the tea steps
-          and the route goes straight north up the steps. */}
+      {/* --- Garden path (site plan v2, 2026-11-04): ALL STRAIGHT
+          axis-aligned lines — the diagonal staircase the user
+          rejected is gone. N-S at x 14.5 (corridor walkway east
+          side, 0.54m clear of the garden wall) from the corridor
+          to the gate; E-W at z -10 (1.0m south of the lawn edge)
+          through the gate to the garden and the tea porch; N-S
+          at x 27.5 on the lawn (y 0.06) to the tea porch. The
+          banyan->corridor stones (13.5, 8/6/4) are unchanged. */}
       {[
         [13.5, 8], [13.5, 6], [13.5, 4],
-        [14.2, -8.0], [14.6, -10.0], [15.0, -12.0],
-        [15.2, -14.0], [15.6, -15.8], [16.2, -17.4], [18.0, -16.6],
+        [14.5, 2], [14.5, 0], [14.5, -2], [14.5, -4], [14.5, -6], [14.5, -8], [14.5, -10],
+        [16, -10], [18, -10], [20, -10], [22, -10], [24, -10], [26, -10],
       ].map(([x, z], i) => (
         <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.04, z]}>
           <planeGeometry args={[1.6, 1.6]} />
           <meshStandardMaterial color="#b0a894" roughness={0.95} />
         </mesh>
       ))}
-      {/* Low shrubs along the new path (off the stones, no colliders;
-          two moved 2026-11-04 to clear the rerouted stones and jar) */}
-      {[[11.5, -7.5], [13.9, -13.3], [18.4, -13.4]].map(([x, z], i) => (
+      {[
+        [27.5, -12], [27.5, -14],
+      ].map(([x, z], i) => (
+        <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.06, z]}>
+          <planeGeometry args={[1.6, 1.6]} />
+          <meshStandardMaterial color="#b0a894" roughness={0.95} />
+        </mesh>
+      ))}
+      {/* Low shrubs (off the stones, no colliders; middle one
+          moved 2026-11-04 west of the wall so it no longer sits
+          on the x 14.5 stone line) */}
+      {[[11.5, -7.5], [12.0, -13.5], [18.4, -13.4]].map(([x, z], i) => (
         <mesh key={i} castShadow position={[x, 0.4, z]}>
           <icosahedronGeometry args={[0.4, 1]} />
           <meshStandardMaterial color="#3a7a2a" roughness={0.9} flatShading />
         </mesh>
       ))}
-      {/* Flower bed west of the tea steps (moved 2026-11-04 to clear
-          the rerouted path stone at (16.2,-17.4) and the west pot) */}
-      <mesh receiveShadow position={[14.4, 0.075, -19.0]}>
+      {/* Flower bed at the lawn's west edge (clear of the x 14.5
+          path by 0.55m and of the lawn edge by 0.25m) */}
+      <mesh receiveShadow position={[16.3, 0.075, -13.0]}>
         <boxGeometry args={[0.9, 0.15, 0.6]} />
         <meshStandardMaterial color="#6a4a2a" roughness={1} />
       </mesh>
-      {[[14.2, -19.0], [14.4, -18.8], [14.6, -19.1], [14.4, -19.2]].map(([x, z], i) => (
+      {[[16.1, -13.0], [16.3, -12.8], [16.5, -13.1], [16.3, -13.2]].map(([x, z], i) => (
         <group key={i} position={[x, 0.15, z]}>
           <mesh position={[0, 0.1, 0]}>
             <cylinderGeometry args={[0.01, 0.01, 0.2, 6]} />
@@ -890,10 +899,9 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
           </mesh>
         </group>
       ))}
-      {/* Stone lanterns flanking the garden path (form only, no light;
-          west one moved 2026-11-04 east of the path: the old spot
-          now sits under the rerouted stone at (15.6,-15.8)) */}
-      {[[17.6, -15.8], [19.8, -16.5]].map(([x, z], i) => (
+      {/* Stone lanterns flanking the garden entrance (the x 20
+          turn onto the lawn; 1.5m clear of the stone line) */}
+      {[[18.5, -10.8], [21.5, -10.8]].map(([x, z], i) => (
         <group key={i} position={[x, 0, z]}>
           <mesh castShadow position={[0, 0.1, 0]}>
             <boxGeometry args={[0.36, 0.2, 0.36]} />
@@ -928,15 +936,18 @@ export default function Grounds({ soilWet, waterStream, carryingWater, bellRingS
           east sides: east-west along z -5 (north of the pond,
           bank edge -2.9) then south along x -3.5 (east of the
           pond, bank edge -4.1), widened to 1.4m, to the lake
-          bank. The pond collider already blocks walking into
-          the water; these stones now match where you can walk. */}
-      {[-13, -10.8, -8.6, -6.4, -4.2].map((x, i) => (
+          bank. Site plan v2: the west stone now ABUTS the
+          bell<->Lumbini stone line at x -11.6 (shared edge, no
+          overlap — the old -13 stone sat on top of it), and the
+          corner stone at (-3.5,-5) is dropped (the E-W stone
+          already paves the corner). */}
+      {[-10.5, -8.3, -6.1, -3.9].map((x, i) => (
         <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.04, -5]}>
           <planeGeometry args={[2.2, 1.4]} />
           <meshStandardMaterial color="#b0a894" roughness={0.95} />
         </mesh>
       ))}
-      {[-5, -2.8, -0.6, 1.6].map((z, i) => (
+      {[-2.8, -0.6, 1.6].map((z, i) => (
         <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[-3.5, 0.04, z]}>
           <planeGeometry args={[1.4, 2.2]} />
           <meshStandardMaterial color="#b0a894" roughness={0.95} />

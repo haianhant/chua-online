@@ -1,23 +1,16 @@
-# TRẠNG THÁI BẢN SNAPSHOT NÀY (2026-11-04)
+# TRẠNG THÁI BẢN SNAPSHOT NÀY (2026-11-04, bản v2-final)
 
-## Đọc trước khi build/deploy: bản này đang DỞ DANG, chưa deploy được
+## Bản này ĐÃ XONG và ĐÃ DEPLOY lên live
 
-Đợt "tính lại mặt bằng v2" (nới sân, đặt lại kiến trúc, hết chồng chéo)
-đang dừng giữa chừng theo lệnh của Hải Anh. Source hiện LỆCH NHAU:
+Đợt tính lại mặt bằng v2 đã hoàn thành và deploy chiều 04/11
+(dpl_GdXBUnAe1xnxqqLMfFbcCzShYJfJ, live chuahaianonline.vercel.app):
+sân gạch MỘT tấm lớn bao hết chuông + tắm Phật + vườn + nhà trà,
+mọi đường đi đều thẳng (không còn đường chéo), vườn rau + nhà trà
+đẩy xa ra đông, ghế trà chuyển sang phía đông bàn hướng Tây nhìn ra
+luống rau, tượng Địa Tạng (ban đông) tăng thêm 20%, bản đồ tính lại
+theo bounds mới. Chi tiết xem `arch-audit.md` (mục "V2 REPL AN").
 
-- ĐÃ SỬA theo mặt bằng mới: `components/three/controls.ts` (bounds
-  -32..32 / -40..30, vườn (20,-13.5), chum (18.5,-12.8), luống (21,-20),
-  bàn trà (27.5,-18.5), ghế trà (29.3,-18.5) hướng Tây, sàn + collider
-  mới) và một phần `components/three/Grounds.tsx` (vòng đá cây đa, bỏ
-  sàn hành lang, tường vườn rút ngắn, bãi cỏ + luống + chum mới).
-- CHƯA SỬA (vẫn theo mặt bằng cũ): nhà trà, routes + bản đồ trong
-  `app/page.tsx`, đá đường, `Lumbini.tsx`, `Temple.tsx` (sân/bệ),
-  `SideStatuesPreview.tsx` (Địa Tạng +20%), unit test.
-
-Vì vậy: KHÔNG build/deploy bản này lên live. Bản live hiện tại vẫn là
-deploy sáng 04/11 (dpl_ARZU...). Muốn làm tiếp thì đọc
-`arch-audit.md` (mục "V2 REPL AN" và "TẠM DỪNG 15:04"), sửa nốt các phần
-CHƯA SỬA rồi mới build + test từng chặng.
+Bản này khớp với live — push lên GitHub main rồi nối Vercel là an toàn.
 
 ## Build & chạy
 
@@ -25,9 +18,9 @@ CHƯA SỬA rồi mới build + test từng chặng.
 - Dev: `npm run dev`
 - Build tĩnh (bắt buộc có biến môi trường, không là MẤT multiplayer):
   `NEXT_PUBLIC_MULTIPLAYER_WS_URL=wss://chua-online-temple.hunganhz179.workers.dev/ws npm run build`
-- Deploy: Vercel project `chuahaianonline`, domain
-  `chuahaianonline.vercel.app`; sau mỗi deploy thành công chỉ giữ
-  khoảng 3 bản deploy mới nhất.
-- Multiplayer: Cloudflare Worker trong `worker/src` (đã live, không
-  cần đụng tới trừ khi đổi logic phòng).
-- Test: các script `test-*.js` chạy bằng Playwright (xem `arch-audit.md`).
+- Deploy thủ công (trước khi nối Vercel): Vercel project
+  `chuahaianonline`, domain `chuahaianonline.vercel.app`; sau mỗi
+  deploy thành công chỉ giữ khoảng 3 bản deploy mới nhất.
+- Multiplayer: Cloudflare Worker trong `worker/src` (đã live).
+- Test nhanh: `node test-v2-unit.js` (99 kiểm tra) + tsc + build.
+  (Đợt này bỏ qua test Playwright từng chặng theo lệnh làm nhanh.)

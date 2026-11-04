@@ -199,19 +199,25 @@ export default function Lumbini({ festivalOn }: { festivalOn: boolean }) {
         <planeGeometry args={[12, 10]} />
         <meshStandardMaterial color="#b0a184" roughness={1} />
       </mesh>
-      {/* Stone path (1.8m stones): bell standing area -> west ->
-          north -> yard entrance -> pavilion steps. Local coords:
-          world = local + (-17, -20). All stones sit clear of the
-          bell platform's expanded collider (x -15.08) and of the
-          garden trees. */}
+      {/* Stone path (1.8m stones, straight L): bell standing area
+          -> west along z -5.2 -> north along x -17 -> yard
+          entrance landing at the pavilion steps. Local coords:
+          world = local + (-17, -20). The old diagonal jogs
+          (-14,-5.5)/(-16,-11) are gone; the landing stone
+          [1.8,1.0] abuts the steps' south edge (-16.5) exactly. */}
       {[
-        [3, 14.5], [1.5, 13], [1.5, 11], [1, 9], [0, 7], [0, 5], [0, 3.2],
+        [4.5, 14.8], [2.2, 14.8], [0, 14.8],
+        [0, 12.5], [0, 10.2], [0, 7.9], [0, 5.6],
       ].map(([x, z], i) => (
         <mesh key={i} receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.04, z]}>
           <planeGeometry args={[1.8, 1.8]} />
           <meshStandardMaterial color={stoneLight} roughness={0.95} />
         </mesh>
       ))}
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 4.0]}>
+        <planeGeometry args={[1.8, 1.0]} />
+        <meshStandardMaterial color={stoneLight} roughness={0.95} />
+      </mesh>
 
       {/* Pavilion platform + base slab + south steps */}
       <mesh receiveShadow position={[0, 0.2, 0]}>

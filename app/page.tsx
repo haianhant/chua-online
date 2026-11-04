@@ -3087,9 +3087,6 @@ export default function Home() {
                   <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
                     🏆 Đài Bia Vàng Công Đức · Chùa Hải An
                   </p>
-                  <h2 className="font-serif text-2xl font-bold text-amber-900">
-                    Bảng Xếp Hạng Công Đức & Phẩm Vị Tu Tập
-                  </h2>
                 </div>
                 <button
                   type="button"
@@ -3162,9 +3159,6 @@ export default function Home() {
               {/* Tab 1: Leaderboard */}
               {meritTab === 'leaderboard' && (
                 <div className="mt-3 space-y-2">
-                  <p className="text-xs text-stone-600">
-                    Bảng Vàng ghi danh các Phật tử và đạo hữu tinh tấn lễ Phật, niệm kinh, phóng sinh và chấp tác tại Chùa Hải An:
-                  </p>
                   <div className="max-h-[42dvh] space-y-1.5 overflow-y-auto pr-1">
                     {leaderboard.map((entry, idx) => {
                       const pos = idx + 1;

@@ -40,7 +40,6 @@ import {
 
 const World = dynamic(() => import('@/components/three/World'), { ssr: false });
 
-type Prayer = { type: string; text: string; date: string };
 
 /** Isolates a WebGL / Canvas failure to the 3D area: the HTML screen
  *  (map, articles, audio) keeps working instead of the whole page
@@ -74,7 +73,6 @@ class WorldErrorBoundary extends React.Component<
 }
 type Ritual = 'none' | 'choosing' | 'offering' | 'done';
 
-const PRAYERS_KEY = 'thien-vien-prayers';
 const NAME_KEY = 'thien-vien-name';
 const GENDER_KEY = 'thien-vien-gender';
 const HSK_URL = 'https://hoc-hsk.vercel.app/';
@@ -120,17 +118,9 @@ const FORTUNE_STICKS = [
     rank: 'Thượng Cát · Từ Bi Hỷ Xả',
     verse: 'Sen nở trong bùn chẳng nhiễm hương,\nLòng người rộng mở khắp muôn phương.\nBuông đi gánh nặng chuyện năm cũ,\nBước nhẹ thênh thang vạn dặm đường.',
     meaning: 'Biết tha thứ cho người khác và bao dung với chính mình sẽ giúp tâm hồn nhẹ nhõm, đón nhận năng lượng mới tươi sáng.',
-    practice: 'Buông bỏ một nỗi bận tâm cũ và viết một lời chúc lành vào Sổ cầu an.',
+    practice: 'Buông bỏ một nỗi bận tâm cũ và viết một lời chúc lành gửi người bạn thương.',
   },
 ] as const;
-
-function loadPrayers(): Prayer[] {
-  try {
-    return JSON.parse(localStorage.getItem(PRAYERS_KEY) || '[]') as Prayer[];
-  } catch {
-    return [];
-  }
-}
 
 export default function Home() {
   const [loaded, setLoaded] = useState(false);
@@ -173,8 +163,6 @@ export default function Home() {
   const [dedicationOption, setDedicationOption] = useState<'self' | 'family' | 'relative' | 'all'>('family');
   const [relativeName, setRelativeName] = useState('');
   const [dedicationText, setDedicationText] = useState('');
-  const [prayers, setPrayers] = useState<Prayer[]>([]);
-  const [bookOpen, setBookOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsName, setSettingsName] = useState('');
@@ -316,7 +304,6 @@ export default function Home() {
       setGender(savedGender);
       controls.gender = savedGender;
     }
-    setPrayers(loadPrayers());
     setMeritState(loadMeritState());
     setSoloMode(getSolo());
     setSoundMuted(localStorage.getItem('thien-vien-sound') === 'off');
@@ -433,12 +420,6 @@ export default function Home() {
     setMapOpen(true);
   };
 
-  const savePrayer = (type: string, text: string) => {
-    const entry = { type, text, date: new Date().toLocaleString('vi-VN') };
-    const next = [...loadPrayers(), entry];
-    localStorage.setItem(PRAYERS_KEY, JSON.stringify(next));
-    setPrayers(next);
-  };
 
   const openMonkModal = (id: MonkId) => {
     setActiveMonk(id);
@@ -528,7 +509,6 @@ export default function Home() {
     wishingRackState.customCount = Math.min(7, wishingRackState.customCount + 1);
     wishingRackState.lastHungAt = Date.now();
     touchFlame();
-    savePrayer('Thẻ gỗ ước nguyện Bồ Đề', text);
     setPlaqueOpen(false);
     setPlaqueWish('');
     earnMerit('wishing_plaque', '🎋 Đã treo thẻ gỗ ước nguyện dưới tán Cây đa Bách Linh');
@@ -540,7 +520,6 @@ export default function Home() {
     lanternState.riverCount = Math.min(8, lanternState.riverCount + 1);
     lanternState.lastSpawnAt = Date.now();
     touchFlame();
-    savePrayer('Thả đèn Hoa Đăng cầu nguyện', text);
     setLanternModalOpen(false);
     earnMerit('lotus_lantern', '🪷 Đã thắp và thả một ngọn đèn Hoa Đăng trên mặt nước');
   };
@@ -671,7 +650,7 @@ export default function Home() {
       if (k === 'escape') {
         if (sweepState.phase !== 'idle') { cancelSweep(); return; }
         setMapOpen(false); setReadingOpen(false);
-        setSettingsOpen(false); setHelpOpen(false); setBookOpen(false);
+        setSettingsOpen(false); setHelpOpen(false);
         setChantOpen(false); setReleaseOpen(false); setWishOpen(false);
         setMobileMenuOpen(false); setSweepWhyOpen(false); setWaterCardOpen(false);
         setHallWhyOpen(false); closeMonkModal();
@@ -735,14 +714,13 @@ export default function Home() {
     const url = getStoredWsUrl() || process.env.NEXT_PUBLIC_MULTIPLAYER_WS_URL || '';
     connectMultiplayer(url, clean);
     if (!getSolo() && !url) {
-      showToast('Bạn đang ở chế độ riêng — phòng chung chưa được cấu hình, xem Cài đặt để bật multiplayer.');
+      showToast('Bạn đang ở chế độ riêng — phòng chung chưa được cấu hình, bấm nút Phòng chung để bật multiplayer.');
     }
   };
 
   // Hall ritual: kneel or sit in front of the Guanyin statue, then
   // the wish panel opens on its own (after the pose settles).
-  // The wish itself is PRIVATE: it is saved only to this device's
-  // prayer book and is never sent to multiplayer or read aloud.
+  // The wish itself is PRIVATE: it is never sent to multiplayer or read aloud.
   const startHallRitual = (kind: 'sit' | 'kneel') => {
     setHallRitual(kind);
     setWishChoice('');
@@ -1149,9 +1127,8 @@ export default function Home() {
   };
   const confirmWish = () => {
     const text = (wishChoice || wishText.trim() || 'Cầu bình an').slice(0, 200);
-    savePrayer('Lời nguyện trong điện', text);
     setWishOpen(false);
-    earnMerit('hall_pray', '🙏 Đã lưu lời nguyện trong Chính điện');
+    earnMerit('hall_pray', '🙏 Đã phát nguyện trong Chính điện');
   };
 
   const startRitual = () => {
@@ -1179,7 +1156,6 @@ export default function Home() {
             : `Nguyện cầu ${prayer.toLowerCase()} đến ${name}.`;
         setPrayerMessage(msg);
         setRitual('done');
-        savePrayer('Dâng hương', prayer);
         earnMerit('incense');
         setTimeout(() => {
           setRitual('none');
@@ -1445,7 +1421,6 @@ export default function Home() {
               ⛵ Đi thuyền → Đảo HSK
             </button>
             <button type="button" onClick={() => setSettingsOpen(true)} className="rounded-full border border-white/50 bg-white/70 px-3 py-2 text-sm shadow backdrop-blur">👤 {name}</button>
-            <button type="button" onClick={() => setBookOpen(true)} className="rounded-full border border-white/50 bg-white/70 px-3 py-2 text-sm shadow backdrop-blur">📖 Sổ cầu an</button>
             <button type="button" onClick={() => setHelpOpen(true)} className="rounded-full border border-white/50 bg-white/70 px-3 py-2 text-sm shadow backdrop-blur">❓ Hướng dẫn</button>
             <button
               type="button"
@@ -1466,7 +1441,6 @@ export default function Home() {
             }} className="rounded-full border border-white/50 bg-white/70 px-3 py-2 text-sm shadow backdrop-blur">
               {hideOthers ? '👥 Hiện người khác' : '🙈 Ẩn người khác'}
             </button>
-            <button type="button" onClick={() => setSettingsOpen(true)} className="rounded-full border border-white/50 bg-white/70 px-3 py-2 text-sm shadow backdrop-blur">⚙ Cài đặt</button>
             <button type="button" onClick={() => showToast(flameNote(flame))} title={flameNote(flame)} className="rounded-full border border-white/50 bg-white/70 px-3 py-2 text-sm shadow backdrop-blur">{flameLabel(flame)}</button>
           </div>
         </div>
@@ -1574,7 +1548,6 @@ export default function Home() {
               </button>
               <button type="button" onClick={() => { setMobileMenuOpen(false); openMap(); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">🗺 Sơ đồ chùa</button>
               <button type="button" onClick={() => { setMobileMenuOpen(false); setSettingsOpen(true); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">👤 {name} — Đổi tên</button>
-              <button type="button" onClick={() => { setMobileMenuOpen(false); setBookOpen(true); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">📖 Sổ cầu an</button>
               <button type="button" onClick={() => { setMobileMenuOpen(false); setHelpOpen(true); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">❓ Hướng dẫn</button>
               <button type="button" onClick={() => { setMobileMenuOpen(false); goTo(LAYOUT.burnerApproach); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">🪔 Đến lư hương</button>
               <button type="button" onClick={() => { setMobileMenuOpen(false); goToZone('westChant'); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">📿 Đến khu niệm Phật</button>
@@ -1593,7 +1566,6 @@ export default function Home() {
                 setHideOthers(next);
                 localStorage.setItem('thien-vien-hide-others', next ? '1' : '0');
               }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">{hideOthers ? '👥 Hiện người khác' : '🙈 Ẩn người khác'}</button>
-              <button type="button" onClick={() => { setMobileMenuOpen(false); setSettingsOpen(true); }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">⚙ Cài đặt</button>
             </div>
           </div>
         </div>
@@ -2028,46 +2000,8 @@ export default function Home() {
               className="mt-3 w-full rounded-xl border border-stone-300 px-3 py-2.5 text-sm"
             />
             <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  savePrayer('Hồi hướng', dedicationText);
-                  setDedicationOpen(false);
-                  setFinishedChant(null);
-                  showToast('Đã lưu lời hồi hướng — chỉ trên thiết bị của bạn.');
-                }}
-                className="flex-1 rounded-full bg-amber-800 py-3 font-medium text-white"
-              >
-                Lưu lời hồi hướng
-              </button>
               <button type="button" onClick={() => { setDedicationOpen(false); setFinishedChant(null); }} className="rounded-full bg-stone-200 px-5 py-3">Đóng</button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Prayer book */}
-      {bookOpen && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/35 p-4">
-          <div className="max-h-[80vh] w-full max-w-md overflow-y-auto rounded-3xl bg-[#fdf8ec] p-5 shadow-2xl">
-            <div className="flex justify-between">
-              <h2 className="font-serif text-xl font-semibold text-amber-900">Sổ cầu an của bạn</h2>
-              <button type="button" onClick={() => setBookOpen(false)} className="rounded-full bg-stone-200 px-3 py-1 text-sm">✕</button>
-            </div>
-            <p className="mt-1 text-xs text-stone-500">Chỉ lưu trên thiết bị này, không đăng nhập, không công khai.</p>
-            {prayers.length === 0 ? (
-              <p className="mt-4 text-sm text-stone-600">Chưa có lời nguyện nào. Hãy dâng hương hoặc hồi hướng sau khi niệm Phật.</p>
-            ) : (
-              <ul className="mt-3 grid gap-2">
-                {[...prayers].reverse().map((p, i) => (
-                  <li key={i} className="rounded-xl border border-stone-200 bg-white p-3 text-sm">
-                    <span className="font-medium text-amber-800">{p.type}</span>
-                    <span className="text-stone-400"> · {p.date}</span>
-                    <p className="mt-1 text-stone-700">{p.text}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
           </div>
         </div>
       )}
@@ -2085,7 +2019,7 @@ export default function Home() {
               <li><strong>Điện thoại:</strong> joystick góc trái dưới để đi, vuốt phần còn lại của màn hình để xoay góc nhìn, các nút tương tác đủ lớn để chạm.</li>
               <li>Bạn bắt đầu trước cổng tam quan, đi qua cổng vào sân, đến lư hương trước chính điện, hoặc vào chính điện niệm Phật trước tượng Quan Âm. Chính điện mở cửa giữa: đi thẳng qua cửa vào trong, đến trước tượng Phật Bà Quan Âm nghìn mắt nghìn tay, rồi chọn Quỳ lễ hoặc Ngồi tĩnh tâm để nhập lời nguyện.</li>
               <li>Không thể đi xuyên qua cột, tường, lư hương hay hồ sen — nhân vật sẽ trượt dọc theo vật cản.</li>
-              <li><strong>Phòng chung:</strong> khi phòng chung được bật, bạn sẽ thấy người khác cùng đi chùa trong cùng một phòng (tối đa 15 người/phòng, phòng đầy sẽ tự chuyển sang phòng khác). Số người và tên phòng hiện ở góc trên. Bạn có thể ẩn người khác hoặc bật chế độ riêng trong Cài đặt. Nếu mất mạng, bạn vẫn đi chùa bình thường một mình.</li>
+              <li><strong>Phòng chung:</strong> khi phòng chung được bật, bạn sẽ thấy người khác cùng đi chùa trong cùng một phòng (tối đa 15 người/phòng, phòng đầy sẽ tự chuyển sang phòng khác). Số người và tên phòng hiện ở góc trên. Bạn có thể ẩn người khác hoặc bật chế độ riêng trong bảng Phòng chung. Nếu mất mạng, bạn vẫn đi chùa bình thường một mình.</li>
               <li>Lư hương luôn cố định — dâng hương của người khác chỉ hiện thêm một làn khói ngắn ở lư, không làm lư xoay hay thêm vô hạn que hương.</li>
               <li><strong>Nguồn âm thanh:</strong> nhạc nền đang phát là đoạn trích 5 phút (phút 10:00–15:00) từ bài “02 Nhac Thien Dan Tranh (Meditation Music) [60 min]” trong album Nhạc Thiền 1, trang <a className="underline" href="https://ph.tinhtong.vn/Home/MP3?p=MP3+Nhac*07+Nhac+Thien*Nhac+Thien+1&shem=aimgspe," target="_blank" rel="noreferrer">ph.tinhtong.vn — Nhạc Thiền 1</a>. Bài gốc dài 61 phút 20 giây, chỉ lấy 5 phút ở giữa để phát lặp, gắn fade-in 3 giây đầu và fade-out 3 giây cuối, mã hóa lại 128 kbps, không cắt nội dung khác. Trang nguồn không ghi rõ giấy phép; đây là nhạc Phật giáo chia sẻ trên trang Tịnh Tông, chùa dùng phi thương mại (không thu phí, không quảng cáo). Các bản trước (Tibetan Bowls, Kevin MacLeod) vẫn còn trong dự án nếu bạn muốn đổi lại.</li>
               <li><strong>Vườn Lâm Tỳ Ni – Tắm Phật:</strong> nằm trong khuôn viên chùa ở phía tây bắc, sau gác chuông — đi theo đường lát đá từ gác chuông về phía bắc. Giữa bồn nước hoa sen là tôn tượng Thái tử Tất Đạt Đa đản sinh đứng trên đài sen (tay trái chỉ trời, tay phải chỉ đất theo truyền thống Bắc tông Việt Nam). Tới gần bồn nước, bấm “Tắm Phật” để thực hiện nghi thức Mộc Dục mô phỏng (chắp tay, múc nước thơm, rưới ba gáo lên vai tôn tượng Thái tử, hồi hướng, khoảng 24 giây) hoặc “Tìm hiểu Phật đản” để đọc ý nghĩa và bật chế độ lễ hội.</li>
@@ -2198,7 +2132,7 @@ export default function Home() {
               Chế độ nhẹ cho máy yếu (giảm bóng đổ, giảm độ phân giải)
               <input type="checkbox" checked={lowQuality} onChange={(e) => setLowQuality(e.target.checked)} className="h-5 w-5 accent-amber-800" />
             </label>
-            <p className="mt-3 text-xs text-stone-500">Tên và lời nguyện chỉ lưu trên thiết bị này. Nhạc nền tự phát khi vào chùa; tắt bằng nút loa, lựa chọn được nhớ cho lần sau.</p>
+            <p className="mt-3 text-xs text-stone-500">Tên chỉ lưu trên thiết bị này. Nhạc nền tự phát khi vào chùa; tắt bằng nút loa, lựa chọn được nhớ cho lần sau.</p>
           </div>
         </div>
       )}
@@ -2549,22 +2483,6 @@ export default function Home() {
                     >
                       🔄 Nghe lời nhắn khác
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const msg = [
-                          'Bớt một chút nóng giận, nói lời dịu dàng với cha mẹ và người thương.',
-                          'Làm trọn vẹn từng việc nhỏ trước mắt với tâm an vui như quét lá sân chùa.',
-                          'Dừng lại thở sâu 3 nhịp mỗi khi lòng bất an để tâm lắng trong như mặt hồ sen.',
-                          'Hiếu kính và dành nụ cười ấm áp cho cha mẹ, gia đình ngay hôm nay.',
-                        ][monkBlessingIdx % 4];
-                        savePrayer(`Lời nhắn từ ${monksState[activeMonk].name}`, msg);
-                        showToast('📖 Đã lưu lời nhắn của chú tiểu vào Sổ cầu an!');
-                      }}
-                      className="rounded-full bg-amber-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-900"
-                    >
-                      📖 Lưu vào Sổ cầu an
-                    </button>
                   </div>
                 </>
               )}
@@ -2891,20 +2809,6 @@ export default function Home() {
               >
                 🔄 Gieo lại quẻ khác
               </button>
-              {fortuneStickIdx !== null && !fortuneShaking && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const st = FORTUNE_STICKS[fortuneStickIdx];
-                    savePrayer(`Quẻ Từ Bi số ${st.num} (${st.rank})`, `${st.verse.replace(/\n/g, ' / ')} — ${st.meaning}`);
-                    showToast('📖 Đã lưu Quẻ lành Từ Bi vào Sổ cầu an!');
-                    setFortuneOpen(false);
-                  }}
-                  className="flex-1 rounded-full bg-amber-800 py-2.5 text-xs font-medium text-white shadow hover:bg-amber-900"
-                >
-                  📖 Lưu quẻ vào Sổ cầu an
-                </button>
-              )}
               <button
                 type="button"
                 onClick={() => setFortuneOpen(false)}

@@ -3330,15 +3330,6 @@ export default function Home() {
                 </div>
               )}
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setMeritOpen(false)}
-                  className="rounded-full bg-stone-200 px-5 py-3 text-xs font-medium text-stone-700 sm:text-sm"
-                >
-                  Đóng
-                </button>
-              </div>
             </div>
           </div>
         );

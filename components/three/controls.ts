@@ -426,7 +426,7 @@ export const COLLIDERS: Collider[] = [
   { kind: 'circle', x: 0, z: -2.65, r: 0.88 },
   // Lotus pond (Tâm Liên Hồ, moved west to (-16.0, 3.0))
   { kind: 'circle', x: -16.0, z: 3.0, r: 3.6 },
-  { kind: 'circle', x: 8.5, z: 3.5, r: 0.7 }, // courtyard tree (front-east)
+  // (collider cây 8.5, 3.5 đã gỡ cùng cây 2026-11-05 — bỏ luôn để khỏi còn tường vô hình chỗ cây cũ.)
   { kind: 'circle', x: 6.5, z: 8.5, r: 1.1 }, // bamboo (front-east)
   { kind: 'circle', x: -7.5, z: 8.5, r: 1.1 }, // bamboo (front-west, clear of pond at -16)
   { kind: 'circle', x: -36.0, z: -8.0, r: 0.7 }, // courtyard tree (west of bell tower)

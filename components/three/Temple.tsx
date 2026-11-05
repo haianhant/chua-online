@@ -1580,7 +1580,7 @@ export const Garden = memo(function Garden({
         </mesh>
       ))}
       {/* Courtyard trees spread out across the enlarged 88x49m compound */}
-      <Tree position={[8.5, 0, 3.5]} scale={1.05} />
+      {/* Cây sân trước-đông (8.5, 3.5) đã gỡ 2026-11-05: đứng đúng trục nhìn mặt nam của bia Bảng Vàng (8.8, -1.2) nên che mất bia. */}
       <Tree position={[-36.0, 0, -8.0]} scale={1.05} />
       <Tree position={[-16.5, 0, -28.0]} scale={0.95} />
       <Tree position={[32.0, 0, 2.0]} scale={1.0} />

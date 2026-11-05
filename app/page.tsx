@@ -1475,13 +1475,6 @@ export default function Home() {
             <button type="button" onClick={() => setSettingsOpen(true)} className="rounded-full border border-white/50 bg-white/70 px-3 py-2 text-sm shadow backdrop-blur">
               {soloMode ? '🧘 Chế độ riêng' : mpStatus === 'online' ? `👥 Phòng chung - ${mpCount}` : mpStatus === 'connecting' ? '👥 Đang kết nối…' : wsUrl ? '👥 Ngoại tuyến (solo)' : '🧘 Chế độ riêng'}
             </button>
-            <button type="button" onClick={() => {
-              const next = !hideOthers;
-              setHideOthers(next);
-              localStorage.setItem('thien-vien-hide-others', next ? '1' : '0');
-            }} className="rounded-full border border-white/50 bg-white/70 px-3 py-2 text-sm shadow backdrop-blur">
-              {hideOthers ? '👥 Hiện người khác' : '🙈 Ẩn người khác'}
-            </button>
             <button type="button" onClick={() => showToast(flameNote(flame))} title={flameNote(flame)} className="rounded-full border border-white/50 bg-white/70 px-3 py-2 text-sm shadow backdrop-blur">{flameLabel(flame)}</button>
           </div>
         </div>
@@ -1587,11 +1580,6 @@ export default function Home() {
                 if (next) { multiplayer.disconnect(); setMpStatus('offline'); }
                 else connectMultiplayer(wsUrl, name);
               }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">{soloMode ? '👥 Bật phòng chung' : '🧘 Bật chế độ riêng'}</button>
-              <button type="button" onClick={() => {
-                const next = !hideOthers;
-                setHideOthers(next);
-                localStorage.setItem('thien-vien-hide-others', next ? '1' : '0');
-              }} className="rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm">{hideOthers ? '👥 Hiện người khác' : '🙈 Ẩn người khác'}</button>
             </div>
           </div>
         </div>

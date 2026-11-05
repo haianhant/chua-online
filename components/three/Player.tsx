@@ -525,8 +525,10 @@ export default function Player({
     const dc = Math.min(dc2, dc3);
     const dp = Math.hypot(pos.current.x - LAYOUT.pond.x, pos.current.z - LAYOUT.pond.z);
     const da = Math.hypot(pos.current.x - LAYOUT.altarSpot.x, pos.current.z - LAYOUT.altarSpot.z);
+    // Vùng bàn thờ nới gấp đôi 2.4 -> 4.8m (2026-11-05, user: phải đi sát
+    // ơi là sát bàn thờ mới hiện nút Quỳ lễ / Ngồi tĩnh tâm).
     const zone: 'burner' | 'chant' | 'pond' | 'altar' | 'none' =
-      db < 2.9 ? 'burner' : dc < 4.2 ? 'chant' : dp < 5.0 ? 'pond' : da < 2.4 ? 'altar' : 'none';
+      db < 2.9 ? 'burner' : dc < 4.2 ? 'chant' : dp < 5.0 ? 'pond' : da < 4.8 ? 'altar' : 'none';
     if (zone !== zoneRef.current) {
       zoneRef.current = zone;
       onZone(zone);

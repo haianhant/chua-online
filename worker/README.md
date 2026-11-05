@@ -68,3 +68,36 @@ so testers can confirm they are in the same room.
 protocol (not the Durable Object itself — that needs `workerd`).
 It exists so the client, room assignment, reconnect and rate-limit
 logic can be tested without a Cloudflare account. See its README.
+
+## Shared merit board (Bảng Vàng đồng bộ, added 2026-11-05)
+
+The merit board used to be local-only: your points lived in your
+browser, the 8 devotees were fixed, and friends in the room showed
+hash-derived placeholder points. A rank earned on one device never
+appeared on another. The shared board fixes that.
+
+- Routes (same Worker, no new binding): `GET /leaderboard` returns
+  the top 50; `POST /leaderboard { name, points }` reports a total.
+- Storage: the same `TempleRoom` class with a fixed instance id
+  (`bang-vang`), so its storage is isolated from every room and no
+  new class or migration is needed. One key holds at most 100
+  entries, sorted by points, best score per display name (no login:
+  one display name = one slot).
+- What is stored: ONLY the display name the player chose (or the
+  `Khách NNNN` guest name) + merit points. No prayer text, no
+  location, no device data. This is the one deliberate exception to
+  the room rule above ("nothing is stored") — the room itself still
+  stores nothing after leave.
+- Trust model: the server trusts the reported total but caps points
+  at 1,000,000 and rate-limits reports to 1 per 10s per IP. There is
+  no login, so a shared typed name shares one slot (best wins), and
+  a forged total cannot be cryptographically ruled out — acceptable
+  for a devotion board, not for a competition.
+- Solo mode never reports, so private players never appear on the
+  shared board. Offline clients fall back to the local board
+  (yourself + the 8 devotee placeholders).
+- Frontend (`lib/merit.ts`, `app/page.tsx`): reports your total when
+  it changes (throttled 1/30s) and when the board opens, then
+  fetches the shared board. Devotee placeholders step aside once
+  their name plays for real. The board shows top 8 + your own row
+  with its true rank.

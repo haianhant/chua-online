@@ -30,6 +30,10 @@ import {
   loadMeritState,
   awardMerit,
   buildMeritLeaderboard,
+  fetchGlobalBoard,
+  reportMeritPoints,
+  getLeaderboardOrigin,
+  type GlobalBoardEntry,
   getMeritRank,
   getNextMeritRank,
   MERIT_RANKS,
@@ -191,6 +195,53 @@ export default function Home() {
   // Merit Leaderboard & Temple Rank System (lib/merit.ts)
   const [meritState, setMeritState] = useState<MeritState>(() => loadMeritState());
   const [meritOpen, setMeritOpen] = useState(false);
+  // Shared merit board (Cloudflare Worker): null = local-only board.
+  const [globalBoard, setGlobalBoard] = useState<GlobalBoardEntry[] | null>(null);
+  const [boardSync, setBoardSync] = useState<'idle' | 'loading' | 'ok' | 'fail' | 'off'>('idle');
+  const [boardSyncedAt, setBoardSyncedAt] = useState('');
+
+  // Sync your merit total to the shared board (never in solo mode).
+  useEffect(() => {
+    if (!entered || soloMode || !name.trim()) return;
+    const origin = getLeaderboardOrigin();
+    if (!origin) return;
+    reportMeritPoints(origin, name, meritState.points);
+  }, [meritState.points, entered, soloMode, name, wsUrl]);
+
+  // When the merit board opens: report your latest total, then fetch
+  // the shared board so every device shows the same top 8.
+  useEffect(() => {
+    if (!meritOpen) return;
+    if (soloMode) {
+      setGlobalBoard(null);
+      setBoardSync('off');
+      return;
+    }
+    const origin = getLeaderboardOrigin();
+    if (!origin) {
+      setGlobalBoard(null);
+      setBoardSync('off');
+      return;
+    }
+    if (name.trim()) reportMeritPoints(origin, name, meritState.points);
+    setBoardSync('loading');
+    let cancelled = false;
+    fetchGlobalBoard(origin).then((entries) => {
+      if (cancelled) return;
+      if (entries) {
+        setGlobalBoard(entries);
+        setBoardSync('ok');
+        setBoardSyncedAt(new Date().toLocaleTimeString('vi-VN'));
+      } else {
+        setBoardSync('fail');
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+    // Only on open: the open render already carries fresh name/points.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meritOpen]);
   const [meritTab, setMeritTab] = useState<'leaderboard' | 'ranks' | 'history'>('leaderboard');
   // Context action (nearest object, hysteresis in the poll below).
   type Ctx = {
@@ -3029,16 +3080,8 @@ export default function Home() {
           5. BẢNG VÀNG CÔNG ĐỨC & HỆ THỐNG 8 PHẨM VỊ CHÙA HẢI AN
          ===================================================================== */}
       {meritOpen && (() => {
-        const leaderboard = buildMeritLeaderboard(
-          name || 'Khách',
-          meritState,
-          Array.from(multiplayer.players.values()).map((rp) => ({
-            id: rp.id,
-            name: rp.name,
-            state: rp.target.state,
-          }))
-        );
-        const myIndex = leaderboard.findIndex((r) => r.isSelf);
+        const leaderboard = buildMeritLeaderboard(name || 'Khách', meritState, globalBoard);
+        const selfEntry = leaderboard.find((r) => r.isSelf);
         const progressPct = nextRank
           ? Math.min(
               100,
@@ -3076,7 +3119,7 @@ export default function Home() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="text-xs text-amber-200">
-                      Phật tử: <b>{name || 'Khách'}</b> {myIndex >= 0 ? `· Hạng #${myIndex + 1} trên Bảng Vàng` : ''}
+                      Phật tử: <b>{name || 'Khách'}</b> {selfEntry?.position ? `· Hạng #${selfEntry.position} trên Bảng Vàng` : ''}
                     </p>
                     <p className="mt-0.5 font-serif text-xl font-bold text-amber-300">
                       {currentRank.badge} Phẩm vị Cấp {currentRank.level}/8: {currentRank.title}
@@ -3135,7 +3178,7 @@ export default function Home() {
                 <div className="mt-3 space-y-2">
                   <div className="max-h-[42dvh] space-y-1.5 overflow-y-auto pr-1">
                     {leaderboard.map((entry, idx) => {
-                      const pos = idx + 1;
+                      const pos = entry.position ?? idx + 1;
                       return (
                         <div
                           key={entry.id}
@@ -3192,6 +3235,19 @@ export default function Home() {
                       );
                     })}
                   </div>
+                  {boardSync !== 'idle' && (
+                    <p className="text-[11px] text-stone-500">
+                      {boardSync === 'loading'
+                        ? 'Đang đồng bộ bảng chung…'
+                        : boardSync === 'ok'
+                          ? `Đã đồng bộ bảng chung lúc ${boardSyncedAt}.`
+                          : boardSync === 'fail'
+                            ? 'Chưa đồng bộ được bảng chung — đang hiện bảng trên máy này.'
+                            : soloMode
+                              ? 'Bạn đang ở chế độ riêng nên điểm không đồng bộ lên bảng chung.'
+                              : 'Chưa có kết nối bảng chung — đang hiện bảng trên máy này.'}
+                    </p>
+                  )}
                 </div>
               )}
 

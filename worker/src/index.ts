@@ -9,6 +9,9 @@
  *   GET /ws?room=<id>      -> WebSocket upgrade to that room, or the
  *                             first room with space if it is full
  *                             (or no room was requested).
+ *   GET /leaderboard       -> top merit board (shared by all devices)
+ *   POST /leaderboard      -> report { name, points }; the server keeps
+ *                             the BEST score per display name.
  */
 import { TempleRoom, ROOM_CAPACITY } from './room';
 
@@ -27,7 +30,7 @@ const ROOMS = ['chua-chung', 'chua-chung-2', 'chua-chung-3', 'chua-chung-4', 'ch
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': '*',
 };
 
@@ -57,6 +60,41 @@ export default {
         ROOMS.map((roomId, i) => ({ roomId, count: counts[i], capacity: ROOM_CAPACITY })),
         { headers: cors },
       );
+    }
+    if (url.pathname === '/leaderboard') {
+      // The shared merit board lives in a dedicated TempleRoom
+      // instance ('bang-vang'). Same class, separate storage: no new
+      // Durable Object class, no new migration.
+      const stub = env.TEMPLE_ROOM.getByName('bang-vang');
+      if (request.method === 'GET') {
+        const res = await stub.fetch('http://lb/__board');
+        return new Response(await res.text(), {
+          status: res.status,
+          headers: { ...cors, 'Content-Type': 'application/json' },
+        });
+      }
+      if (request.method === 'POST') {
+        let payload: unknown;
+        try {
+          payload = await request.json();
+        } catch {
+          return Response.json({ error: 'Bad JSON' }, { status: 400, headers: cors });
+        }
+        const forwarded = new Request('http://lb/__report', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-client-ip': request.headers.get('CF-Connecting-IP') || '',
+          },
+          body: JSON.stringify(payload),
+        });
+        const res = await stub.fetch(forwarded);
+        return new Response(await res.text(), {
+          status: res.status,
+          headers: { ...cors, 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response('Method not allowed', { status: 405, headers: cors });
     }
     if (url.pathname === '/ws') {
       const requested = url.searchParams.get('room');

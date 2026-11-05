@@ -14,6 +14,14 @@
  *   and transient incense / fish-release events leave a client.
  * - WebSocket hibernation is used (acceptWebSocket + webSocket*
  *   handlers) so an idle room costs no duration on the free tier.
+ *
+ * Shared merit board (added 2026-11-05): the same class is reused
+ * with a fixed instance id ('bang-vang'), so its storage is isolated
+ * from every room and no new class or migration is needed. That
+ * instance persistently stores ONLY a display name + merit points per
+ * player (best score wins, no login). No prayer text, no location,
+ * no device data. Solo-mode players never report, so they never
+ * appear on the shared board.
  */
 
 export type PlayerState = 'idle' | 'walking' | 'sitting' | 'praying' | 'offering_incense';
@@ -69,11 +77,23 @@ interface Session {
   lastRelease: number;
 }
 
+interface BoardEntry {
+  name: string;
+  points: number;
+  updatedAt: number;
+}
+
+const BOARD_KEY = 'bang-vang-board';
+const BOARD_MAX_ENTRIES = 100;
+const BOARD_MAX_POINTS = 1000000;
+const REPORT_MIN_INTERVAL_MS = 10000;
+
 export class TempleRoom {
   private ctx: DurableObjectState;
   private roomId = 'chua-chung';
   private sessions = new Map<string, Session>();
   private bySocket = new Map<WebSocket, string>();
+  private lastReportByIp = new Map<string, number>();
 
   constructor(ctx: DurableObjectState) {
     this.ctx = ctx;
@@ -83,6 +103,13 @@ export class TempleRoom {
     const url = new URL(request.url);
     if (url.pathname === '/__count') {
       return Response.json({ count: this.sessions.size });
+    }
+    if (url.pathname === '/__board') {
+      const entries = await this.loadBoard();
+      return Response.json({ entries: entries.slice(0, 50) });
+    }
+    if (url.pathname === '/__report') {
+      return this.handleReport(request);
     }
     this.roomId = request.headers.get('x-room-id') || this.roomId;
     const upgrade = request.headers.get('Upgrade');
@@ -94,6 +121,64 @@ export class TempleRoom {
     // Hibernation: the object sleeps while idle; handlers below wake it.
     this.ctx.acceptWebSocket(server);
     return new Response(null, { status: 101, webSocket: client });
+  }
+
+  private async loadBoard(): Promise<BoardEntry[]> {
+    try {
+      const stored = await this.ctx.storage.get<BoardEntry[]>(BOARD_KEY);
+      return Array.isArray(stored) ? stored : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private async handleReport(request: Request): Promise<Response> {
+    // Best-effort rate limit: 1 report / 10s per client IP. The board
+    // is a devotion record, not a competition: the server trusts the
+    // reported total but caps it, keeps only the best per name, and
+    // never stores anything but name + points.
+    const ip = request.headers.get('x-client-ip') || 'unknown';
+    const now = Date.now();
+    const last = this.lastReportByIp.get(ip) || 0;
+    if (now - last < REPORT_MIN_INTERVAL_MS) {
+      return Response.json({ error: 'Too many reports' }, { status: 429 });
+    }
+    this.lastReportByIp.set(ip, now);
+    if (this.lastReportByIp.size > 1000) this.lastReportByIp.clear();
+    let body: Record<string, unknown>;
+    try {
+      body = (await request.json()) as Record<string, unknown>;
+    } catch {
+      return Response.json({ error: 'Bad JSON' }, { status: 400 });
+    }
+    if (typeof body.name !== 'string' || !body.name.trim()) {
+      return Response.json({ error: 'Invalid name' }, { status: 400 });
+    }
+    const name = sanitizeName(body.name);
+    const points = Number(body.points);
+    if (!name || !Number.isInteger(points) || points < 0 || points > BOARD_MAX_POINTS) {
+      return Response.json({ error: 'Invalid name or points' }, { status: 400 });
+    }
+    const board = await this.loadBoard();
+    const existing = board.find((e) => e.name === name);
+    if (existing) {
+      if (points > existing.points) {
+        existing.points = points;
+        existing.updatedAt = now;
+      }
+    } else {
+      board.push({ name, points, updatedAt: now });
+    }
+    board.sort((a, b) => b.points - a.points);
+    const trimmed = board.slice(0, BOARD_MAX_ENTRIES);
+    await this.ctx.storage.put(BOARD_KEY, trimmed);
+    const rank = trimmed.findIndex((e) => e.name === name) + 1;
+    return Response.json({
+      ok: true,
+      name,
+      points: existing ? existing.points : points,
+      rank: rank || null,
+    });
   }
 
   private broadcast(msg: object, exceptId?: string) {

@@ -342,6 +342,82 @@ export interface LeaderboardEntry {
   specialty: string;
   isSelf?: boolean;
   isOnline?: boolean;
+  /** True rank in the full sorted list (the board shows top 8 + your own row). */
+  position?: number;
+}
+
+/** One row of the SHARED merit board, served by the Cloudflare Worker.
+ *  `points` is the player's best reported total (no login: one display
+ *  name = one slot, best score wins). */
+export interface GlobalBoardEntry {
+  name: string;
+  points: number;
+}
+
+/** HTTP origin of the Worker, derived from the configured WebSocket URL
+ *  (stored URL wins, else the build-time env var). Empty = no sync. */
+export function getLeaderboardOrigin(): string {
+  try {
+    const raw =
+      (typeof localStorage !== 'undefined' ? localStorage.getItem('thien-vien-ws-url') : '') ||
+      process.env.NEXT_PUBLIC_MULTIPLAYER_WS_URL ||
+      '';
+    let u = raw.trim().replace(/\/+$/, '');
+    if (u.endsWith('/ws')) u = u.slice(0, -3);
+    if (u.startsWith('wss://')) u = 'https://' + u.slice(6);
+    else if (u.startsWith('ws://')) u = 'http://' + u.slice(5);
+    if (!/^https?:\/\//.test(u)) return '';
+    return u;
+  } catch {
+    return '';
+  }
+}
+
+export async function fetchGlobalBoard(origin: string): Promise<GlobalBoardEntry[] | null> {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    const res = await fetch(`${origin}/leaderboard`, { signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const data = (await res.json()) as { entries?: unknown };
+    if (!Array.isArray(data.entries)) return null;
+    return data.entries
+      .filter(
+        (e): e is GlobalBoardEntry =>
+          !!e &&
+          typeof (e as GlobalBoardEntry).name === 'string' &&
+          Number.isInteger((e as GlobalBoardEntry).points),
+      )
+      .slice(0, 50);
+  } catch {
+    return null;
+  }
+}
+
+let lastReportMs = 0;
+
+/** Report your current total to the shared board (throttled to 1/30s;
+ *  a failed send does not consume the throttle, so the next change
+ *  retries immediately). Fire-and-forget: the board stays local when
+ *  offline. Solo mode never calls this. */
+export function reportMeritPoints(origin: string, name: string, points: number): void {
+  const clean = (name || '').trim();
+  if (!origin || !clean || !Number.isInteger(points) || points < 0) return;
+  const now = Date.now();
+  if (now - lastReportMs < 30000) return;
+  lastReportMs = now;
+  fetch(`${origin}/leaderboard`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: clean.slice(0, 30), points }),
+  })
+    .then((res) => {
+      if (!res.ok) lastReportMs = 0;
+    })
+    .catch(() => {
+      lastReportMs = 0;
+    });
 }
 
 /** Danh sách Phật tử tiêu biểu được ghi danh trên Bảng Vàng Công Đức Chùa Hải An */
@@ -413,45 +489,55 @@ const TEMPLE_DEVOTEES: Array<{
 export function buildMeritLeaderboard(
   selfName: string,
   selfState: MeritState,
-  onlinePlayers: Array<{ id: string; name: string; state: string }>,
+  globalEntries: GlobalBoardEntry[] | null,
 ): LeaderboardEntry[] {
-  const totalSelfDeeds = Object.values(selfState.counts).reduce((acc, v) => acc + (v || 0), 0) || selfState.history.length;
-  const entries: LeaderboardEntry[] = [
-    {
+  const cleanSelf = (selfName || '').trim() || 'Khách';
+  const totalSelfDeeds =
+    Object.values(selfState.counts).reduce((acc, v) => acc + (v || 0), 0) || selfState.history.length;
+  const globalByName = new Map<string, number>();
+  if (globalEntries) {
+    for (const g of globalEntries) {
+      if (typeof g.name !== 'string' || !Number.isInteger(g.points)) continue;
+      const prev = globalByName.get(g.name);
+      if (prev === undefined || g.points > prev) globalByName.set(g.name, g.points);
+    }
+  }
+
+  const entries: LeaderboardEntry[] = [];
+  // Real players from the shared board. Your own row uses the best of
+  // your local total and your synced total, so a rank you earned on
+  // another device still shows when you open the board here.
+  globalByName.forEach((gPoints, gName) => {
+    const isSelf = gName === cleanSelf;
+    const points = isSelf ? Math.max(gPoints, selfState.points) : gPoints;
+    entries.push({
+      id: `global-${gName}`,
+      name: gName,
+      points,
+      rank: getMeritRank(points),
+      deedsCount: isSelf ? totalSelfDeeds : 0,
+      specialty: isSelf ? 'Đang tu tập trực tiếp tại Chùa Hải An' : 'Phật tử tu tập tại Chùa Hải An',
+      ...(isSelf ? { isSelf: true, isOnline: true } : {}),
+    });
+  });
+  if (!globalByName.has(cleanSelf)) {
+    entries.push({
       id: 'self',
-      name: selfName || 'Phật tử Hải An',
+      name: cleanSelf,
       points: selfState.points,
       rank: getMeritRank(selfState.points),
       deedsCount: totalSelfDeeds,
       specialty: 'Đang tu tập trực tiếp tại Chùa Hải An',
       isSelf: true,
       isOnline: true,
-    },
-  ];
-
-  // Add real online players currently in the multiplayer room
-  for (const op of onlinePlayers) {
-    let hash = 0;
-    for (let i = 0; i < op.id.length; i++) hash = (hash * 31 + op.id.charCodeAt(i)) >>> 0;
-    const pts = 75 + (hash % 340);
-    entries.push({
-      id: `mp-${op.id}`,
-      name: op.name,
-      points: pts,
-      rank: getMeritRank(pts),
-      deedsCount: Math.max(3, Math.floor(pts / 20)),
-      specialty:
-        op.state === 'sitting'
-          ? 'Đang ngồi niệm kinh trong khuôn viên chùa'
-          : op.state === 'praying'
-            ? 'Đang lễ Phật cầu an tại Chính điện'
-            : 'Đang vãn cảnh & chiêm bái trong phòng chung',
-      isOnline: true,
     });
   }
 
-  // Add temple devotees from the Golden Merit Board
+  // Temple devotees are STARTING NUMBERS only: once a devotee's name
+  // plays for real (synced, or yourself right now), the placeholder
+  // steps aside for the real score — even if the real score is lower.
   for (const d of TEMPLE_DEVOTEES) {
+    if (globalByName.has(d.name) || d.name === cleanSelf) continue;
     entries.push({
       id: d.id,
       name: d.name,
@@ -462,6 +548,11 @@ export function buildMeritLeaderboard(
     });
   }
 
-  entries.sort((a, b) => b.points - a.points || (a.isSelf ? -1 : 1));
-  return entries;
+  // Ties: yourself first, then real players before placeholders (insertion order).
+  entries.sort((a, b) => b.points - a.points || (a.isSelf ? -1 : b.isSelf ? 1 : 0));
+  const positioned = entries.map((e, i) => ({ ...e, position: i + 1 }));
+  const top = positioned.slice(0, 8);
+  const self = positioned.find((e) => e.isSelf);
+  if (self && !top.includes(self)) return [...top, self];
+  return top;
 }

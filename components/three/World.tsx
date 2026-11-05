@@ -3,7 +3,7 @@
 import { Suspense, memo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Sky } from '@react-three/drei';
-import { MainHall, TamQuan, Garden } from './Temple';
+import { MainHall, TamQuan, Garden, type MeritSteleEntry } from './Temple';
 import GuanyinGLB from './GuanyinGLB';
 import IncenseBurner from './IncenseBurner';
 import LotusPond from './Pond';
@@ -53,6 +53,8 @@ type Props = {
   onOpenHSKModal: () => void;
   /** Open the Merit Leaderboard & Temple Rank modal. */
   onOpenMeritModal?: () => void;
+  /** Top 8 devotees displayed directly on the 3D Golden Merit Stele in the courtyard. */
+  meritTop8?: MeritSteleEntry[];
 };
 
 /**
@@ -88,6 +90,7 @@ const World = memo(function World({
   onClickPierOrBoat,
   onOpenHSKModal,
   onOpenMeritModal,
+  meritTop8,
 }: Props) {
   return (
     <Canvas
@@ -119,7 +122,7 @@ const World = memo(function World({
       />
 
       <Suspense fallback={null}>
-        <Garden onOpenMeritModal={onOpenMeritModal} />
+        <Garden onOpenMeritModal={onOpenMeritModal} meritTop8={meritTop8} />
         <MainHall entered={entered} />
         <TamQuan />
       </Suspense>

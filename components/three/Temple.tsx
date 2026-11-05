@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, memo, useMemo, useRef } from 'react';
+import { Suspense, memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useTextures } from './textures';
@@ -638,8 +638,8 @@ export const MainHall = memo(function MainHall({ entered }: { entered: boolean }
       {/* =====================================================================
           KIẾN TRÚC ĐẠI HÙNG BẢO ĐIỆN 3 TẦNG CHỒNG DIÊM 12 MÁI ĐAO ĐỒ SỘ
          ===================================================================== */}
-      {/* TẦNG 1: Mái hạ điện rộng uy nghi (Lower roof tier 1) */}
-      <Roof width={21.4} depth={26.6} rise={2.35} y={6.75} z={-3} tile={roofTile} />
+      {/* TẦNG 1: Mái hạ điện rộng uy nghi (Lower roof tier 1, x -10.6..10.6 so it never overlaps adjacent roofs) */}
+      <Roof width={19.6} depth={25.2} rise={2.35} y={6.75} z={-3} tile={roofTile} />
 
       {/* TẦNG 2: Lầu Tàng Kinh / Cổ diêm tầng 2 (y = 7.6 .. 10.5, z = -3) */}
       <group position={[0, 7.6, -3]}>
@@ -792,61 +792,6 @@ export const MainHall = memo(function MainHall({ entered }: { entered: boolean }
           </group>
         ))}
       </group>
-
-      {/* =====================================================================
-          TẢ CHUNG LÂU & HỮU CỔ LÂU (Twin 2-Story Ceremonial Wing Pavilions
-          flanking the Main Hall facade at local x = ±10.6, z = 3.2, widening
-          the monumental Main Hall complex to 25m across)
-         ===================================================================== */}
-      {[-1, 1].map((side) => (
-        <group key={`wing-pavilion-${side}`} position={[side * 10.6, 0, 3.2]}>
-          {/* Đế đá xanh 2 cấp */}
-          <mesh receiveShadow castShadow position={[0, 0.42, 0]}>
-            <boxGeometry args={[2.5, 0.84, 2.5]} />
-            <meshStandardMaterial map={stone} roughness={0.92} />
-          </mesh>
-          {/* 4 Cột tầng 1 */}
-          {[
-            [-0.95, -0.95], [0.95, -0.95], [-0.95, 0.95], [0.95, 0.95],
-          ].map(([cx, cz], ci) => (
-            <mesh key={ci} castShadow position={[cx, 2.15, cz]}>
-              <cylinderGeometry args={[0.14, 0.16, 2.6, 10]} />
-              <meshStandardMaterial map={wood} roughness={0.7} />
-            </mesh>
-          ))}
-          {/* Mái tầng 1 */}
-          <Roof width={2.9} depth={2.9} rise={0.85} y={3.45} tile={roofTile} />
-          {/* Lầu tầng 2: Chuông đồng (Tả) & Trống Bát Nhã (Hữu) */}
-          <group position={[0, 4.15, 0]}>
-            <mesh castShadow position={[0, 0.12, 0]}>
-              <boxGeometry args={[2.1, 0.22, 2.1]} />
-              <meshStandardMaterial map={wood} roughness={0.75} />
-            </mesh>
-            {[
-              [-0.78, -0.78], [0.78, -0.78], [-0.78, 0.78], [0.78, 0.78],
-            ].map(([cx, cz], ci) => (
-              <mesh key={ci} castShadow position={[cx, 1.05, cz]}>
-                <cylinderGeometry args={[0.11, 0.13, 1.7, 10]} />
-                <meshStandardMaterial map={wood} roughness={0.7} />
-              </mesh>
-            ))}
-            {side < 0 ? (
-              /* Trống Bát Nhã sơn đỏ bịt da bên lầu Tây */
-              <mesh position={[0, 1.05, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                <cylinderGeometry args={[0.42, 0.42, 0.65, 14]} />
-                <meshStandardMaterial color="#8f241e" roughness={0.6} />
-              </mesh>
-            ) : (
-              /* Khánh đồng / Chuông gia trì bên lầu Đông */
-              <mesh position={[0, 1.02, 0]}>
-                <cylinderGeometry args={[0.24, 0.36, 0.68, 14]} />
-                <meshStandardMaterial color="#d4af37" metalness={0.75} roughness={0.28} />
-              </mesh>
-            )}
-          </group>
-          <Roof width={2.5} depth={2.5} rise={0.95} y={5.95} tile={roofTile} />
-        </group>
-      ))}
     </group>
   );
 });
@@ -1006,77 +951,77 @@ export const ChantPavilion = memo(function ChantPavilion() {
 });
 
 /**
- * Niệm Phật Đường Tây — Lầu Tụng Kinh Liên Hoa 2 Tầng tại (-15.5, 0, -16.5):
+ * Niệm Phật Đường Tây — Lầu Tụng Kinh Liên Hoa 2 Tầng tại (-17.8, 0, -17.0):
  * Điện niệm kinh mở thoáng 4 mặt phía Tây Chính Điện (bắc Tâm Liên Hồ),
- * gồm 8 bồ đoàn hoa sen & bàn kinh án gỗ lim (west-chant-1..8), đại mộc ngư,
- * chuông gia trì và bảo tọa Phật A Di Đà, cho phép nhiều Phật tử cùng ngồi tụng kinh.
+ * tách biệt hoàn toàn khỏi mái Chính Điện, gồm 8 bồ đoàn hoa sen & bàn kinh án gỗ lim
+ * (west-chant-1..8), đại mộc ngư, chuông gia trì và bảo tọa Phật A Di Đà.
  */
 export const WestChantingHall = memo(function WestChantingHall() {
   const { wood, roofTile, stone } = useTextures();
-  // Local coords relative to (-15.5, 0, -16.5):
-  // 8 seats in controls.ts at world x = -18.2, -16.4, -14.6, -12.8 (local x = -2.7, -0.9, 0.9, 2.7)
-  // Row 1 world z = -17.0 (local z = -0.5), Row 2 world z = -14.8 (local z = 1.7)
-  const localXs = [-2.7, -0.9, 0.9, 2.7];
-  const localZs = [-0.5, 1.7];
+  // Local coords relative to (-17.8, 0, -17.0):
+  // 8 seats in controls.ts at world x = -20.2, -18.6, -17.0, -15.4 (local x = -2.4, -0.8, 0.8, 2.4)
+  // Row 1 world z = -17.4 (local z = -0.4), Row 2 world z = -15.4 (local z = 1.6)
+  const localXs = [-2.4, -0.8, 0.8, 2.4];
+  const localZs = [-0.4, 1.6];
 
   return (
-    <group position={[-15.5, 0, -16.5]}>
+    <group position={[-17.8, 0, -17.0]}>
       {/* Nền đá xanh 2 cấp (top y = 0.25 khớp với floorYAt) */}
       <mesh receiveShadow castShadow position={[0, 0.125, 0]}>
-        <boxGeometry args={[8.8, 0.25, 7.8]} />
+        <boxGeometry args={[8.2, 0.25, 7.4]} />
         <meshStandardMaterial map={stone} roughness={0.92} />
       </mesh>
       {/* Viền gạch gốm đỏ trên mặt sàn Niệm Phật Đường */}
       <mesh receiveShadow position={[0, 0.255, 0.2]}>
-        <boxGeometry args={[7.8, 0.01, 6.6]} />
+        <boxGeometry args={[7.2, 0.01, 6.2]} />
         <meshStandardMaterial color="#8a4b38" roughness={0.88} />
       </mesh>
       {/* Bậc tam cấp phía Nam & phía Đông */}
-      <mesh receiveShadow position={[0, 0.08, 4.1]}>
-        <boxGeometry args={[3.2, 0.16, 0.5]} />
+      <mesh receiveShadow position={[0, 0.08, 3.9]}>
+        <boxGeometry args={[3.0, 0.16, 0.5]} />
         <meshStandardMaterial map={stone} roughness={0.92} />
       </mesh>
-      <mesh receiveShadow position={[4.6, 0.08, 0.5]}>
-        <boxGeometry args={[0.5, 0.16, 2.8]} />
+      <mesh receiveShadow position={[4.3, 0.08, 0.5]}>
+        <boxGeometry args={[0.5, 0.16, 2.6]} />
         <meshStandardMaterial map={stone} roughness={0.92} />
       </mesh>
 
-      {/* 8 Cột gỗ lim sơn son thếp vàng nâng mái tầng 1 (khớp collider góc ±3.8, ±3.2) */}
+      {/* 8 Cột gỗ lim sơn son thếp vàng nâng mái tầng 1 (khớp collider góc ±3.5, ±3.0) */}
       <Columns
         wood={wood}
         height={3.6}
         positions={[
-          [-3.8, -3.2],
-          [3.8, -3.2],
-          [-3.8, 3.2],
-          [3.8, 3.2],
-          [-1.5, -3.2],
-          [1.5, -3.2],
-          [-3.8, 0],
-          [3.8, 0],
+          [-3.5, -3.0],
+          [3.5, -3.0],
+          [-3.5, 3.0],
+          [3.5, 3.0],
+          [-1.4, -3.0],
+          [1.4, -3.0],
+          [-3.5, 0],
+          [3.5, 0],
         ]}
       />
       {/* Xà ngang & Hoành phi NIỆM PHẬT ĐƯỜNG */}
       <mesh castShadow position={[0, 3.7, 0]}>
-        <boxGeometry args={[8.2, 0.28, 7.0]} />
+        <boxGeometry args={[7.6, 0.28, 6.6]} />
         <meshStandardMaterial map={wood} roughness={0.7} />
       </mesh>
-      <TextSign text="NIỆM PHẬT ĐƯỜNG" width={3.2} height={0.52} position={[0, 3.68, 3.56]} />
+      <TextSign text="NIỆM PHẬT ĐƯỜNG" width={3.1} height={0.5} position={[0, 3.68, 3.36]} />
 
-      {/* Hương án & Bảo tọa Phật A Di Đà ở phía Bắc (local z = -2.6, world z = -19.1) */}
-      <group position={[0, 0.25, -2.6]}>
+      {/* Hương án & Bảo tọa Phật A Di Đà ở phía Bắc (local z = -2.4, world z = -19.4) */}
+      <group position={[0, 0.25, -2.4]}>
         {/* Bệ thờ gỗ chạm sen vàng */}
         <mesh castShadow position={[0, 0.48, 0]}>
-          <boxGeometry args={[2.8, 0.96, 1.0]} />
+          <boxGeometry args={[2.6, 0.96, 0.96]} />
           <meshStandardMaterial map={wood} roughness={0.7} />
         </mesh>
         <mesh position={[0, 0.97, 0]}>
-          <boxGeometry args={[2.6, 0.03, 0.86]} />
+          <boxGeometry args={[2.4, 0.03, 0.82]} />
           <meshStandardMaterial color="#d4af37" metalness={0.6} roughness={0.35} />
         </mesh>
         {/* Vách hậu sơn son thếp vàng */}
         <mesh castShadow position={[0, 1.55, -0.45]}>
-          <boxGeometry args={[2.6, 1.9, 0.10]} />
+          <boxGeometry args={[2.4, 1.9, 0.10]} />
           <meshStandardMaterial color="#7a1b18" roughness={0.7} />
         </mesh>
         <mesh position={[0, 1.65, -0.38]}>
@@ -1097,11 +1042,11 @@ export const WestChantingHall = memo(function WestChantingHall() {
           <meshStandardMaterial color="#ffe680" metalness={0.85} roughness={0.2} />
         </mesh>
         {/* Đại Mộc Ngư (Mõ lớn) & Đại Gia Trì Chung trên đôn hai bên bàn thờ */}
-        <mesh position={[-0.95, 1.12, 0.15]} scale={[1.2, 0.9, 1.0]}>
+        <mesh position={[-0.9, 1.12, 0.15]} scale={[1.2, 0.9, 1.0]}>
           <sphereGeometry args={[0.18, 12, 12]} />
           <meshStandardMaterial color="#9e241a" roughness={0.5} />
         </mesh>
-        <mesh position={[0.95, 1.12, 0.15]}>
+        <mesh position={[0.9, 1.12, 0.15]}>
           <cylinderGeometry args={[0.14, 0.18, 0.22, 12]} />
           <meshStandardMaterial color="#d4af37" metalness={0.78} roughness={0.25} />
         </mesh>
@@ -1113,12 +1058,12 @@ export const WestChantingHall = memo(function WestChantingHall() {
           <group key={`wchant-seat-${rIdx}-${cIdx}`} position={[lx, 0.25, lz]}>
             {/* Thảm tọa cụ đỏ viền kim tuyến */}
             <mesh receiveShadow position={[0, 0.02, 0]}>
-              <boxGeometry args={[0.92, 0.04, 0.74]} />
+              <boxGeometry args={[0.88, 0.04, 0.72]} />
               <meshStandardMaterial color="#8a2420" roughness={0.88} />
             </mesh>
             {/* Đệm bồ đoàn tròn */}
             <mesh position={[0, 0.08, 0.08]}>
-              <cylinderGeometry args={[0.30, 0.34, 0.10, 14]} />
+              <cylinderGeometry args={[0.29, 0.33, 0.10, 14]} />
               <meshStandardMaterial color="#681818" roughness={0.85} />
             </mesh>
             <mesh position={[0, 0.135, 0.08]}>
@@ -1126,22 +1071,22 @@ export const WestChantingHall = memo(function WestChantingHall() {
               <meshStandardMaterial color="#d4af37" metalness={0.5} roughness={0.4} />
             </mesh>
             {/* Bàn Kinh Án cá nhân + Sách Kinh Phật mở + Mõ gỗ */}
-            <group position={[0, 0, -0.52]}>
+            <group position={[0, 0, -0.50]}>
               <mesh castShadow position={[0, 0.28, 0]}>
-                <boxGeometry args={[0.88, 0.05, 0.36]} />
+                <boxGeometry args={[0.84, 0.05, 0.34]} />
                 <meshStandardMaterial map={wood} roughness={0.7} />
               </mesh>
-              {[-0.36, 0.36].map((dx, di) => (
+              {[-0.34, 0.34].map((dx, di) => (
                 <mesh key={di} position={[dx, 0.14, 0]}>
-                  <boxGeometry args={[0.07, 0.26, 0.30]} />
+                  <boxGeometry args={[0.07, 0.26, 0.28]} />
                   <meshStandardMaterial map={wood} roughness={0.75} />
                 </mesh>
               ))}
               <mesh position={[-0.08, 0.32, 0]} rotation={[-0.08, 0, 0]}>
-                <boxGeometry args={[0.38, 0.02, 0.24]} />
+                <boxGeometry args={[0.36, 0.02, 0.22]} />
                 <meshStandardMaterial color="#f6e7c1" roughness={0.8} />
               </mesh>
-              <mesh position={[0.24, 0.35, 0]} scale={[1.1, 0.85, 0.95]}>
+              <mesh position={[0.22, 0.35, 0]} scale={[1.1, 0.85, 0.95]}>
                 <sphereGeometry args={[0.065, 8, 8]} />
                 <meshStandardMaterial color="#9e2a1e" roughness={0.55} />
               </mesh>
@@ -1150,21 +1095,21 @@ export const WestChantingHall = memo(function WestChantingHall() {
         )),
       )}
 
-      {/* Mái đao tầng 1 & Cổ diêm lầu tầng 2 (2-Story 8-Eave Chanting Pavilion) */}
-      <Roof width={9.2} depth={8.2} rise={1.65} y={3.85} tile={roofTile} />
-      <group position={[0, 5.2, 0]}>
-        <mesh castShadow position={[0, 0.75, 0]}>
-          <boxGeometry args={[5.4, 1.5, 4.6]} />
+      {/* Mái đao tầng 1 & Cổ diêm lầu tầng 2 (tách thoáng hoàn toàn khỏi mái Chính Điện) */}
+      <Roof width={8.0} depth={7.2} rise={1.55} y={3.85} tile={roofTile} />
+      <group position={[0, 5.1, 0]}>
+        <mesh castShadow position={[0, 0.72, 0]}>
+          <boxGeometry args={[4.6, 1.44, 4.0]} />
           <meshStandardMaterial color="#8a241b" roughness={0.75} />
         </mesh>
-        {[-1.6, 0, 1.6].map((wx, wi) => (
-          <mesh key={wi} position={[wx, 0.78, 2.33]}>
-            <ringGeometry args={[0.20, 0.32, 14]} />
+        {[-1.35, 0, 1.35].map((wx, wi) => (
+          <mesh key={wi} position={[wx, 0.75, 2.02]}>
+            <ringGeometry args={[0.18, 0.30, 14]} />
             <meshStandardMaterial color="#d4af37" metalness={0.68} roughness={0.3} />
           </mesh>
         ))}
       </group>
-      <Roof width={6.4} depth={5.6} rise={1.45} y={6.65} tile={roofTile} />
+      <Roof width={5.4} depth={4.8} rise={1.35} y={6.55} tile={roofTile} />
     </group>
   );
 });
@@ -1237,20 +1182,214 @@ export const EastChantingPavilion = memo(function EastChantingPavilion() {
   );
 });
 
+export interface MeritSteleEntry {
+  name: string;
+  points: number;
+  rankBadge: string;
+  rankTitle: string;
+  isSelf?: boolean;
+}
+
+const DEFAULT_MERIT_TOP8: MeritSteleEntry[] = [
+  { name: 'Nguyễn Hữu Hoàng Hải Anh', points: 920, rankBadge: '👑', rankTitle: 'Hộ Pháp Đạo Tràng' },
+  { name: 'Hoàng Bá Bảo', points: 680, rankBadge: '🌟', rankTitle: 'Đại Công Đức Bồ Đề' },
+  { name: 'Hoàng Thanh Thảo', points: 585, rankBadge: '🌟', rankTitle: 'Đại Công Đức Bồ Đề' },
+  { name: 'Trần Tú Linh', points: 420, rankBadge: '📿', rankTitle: 'Hiền Giả Tinh Tấn' },
+  { name: 'Đinh Ngọc Cầm', points: 295, rankBadge: '🔔', rankTitle: 'Cư Sĩ Hộ Pháp' },
+  { name: 'Nguyễn Đình An', points: 185, rankBadge: '🕯️', rankTitle: 'Phật Tử Tinh Tấn' },
+  { name: 'Trần Việt Anh', points: 110, rankBadge: '🌿', rankTitle: 'Phật Tử Thuận Thành' },
+  { name: 'Tín nữ An Nhiên', points: 65, rankBadge: '🪷', rankTitle: 'Thiện Nam Tín Nữ' },
+];
+
 /**
- * Đài Bia Vàng Công Đức Chùa Hải An (Golden Merit Leaderboard Stele Pavilion) tại (8.8, 0, -1.2):
- * Nhà bia 2 tầng mái đao truyền thống Việt Nam với Rùa đá đội bia (Quy趺),
- * Bia Vàng Công Đức chạm khắc 8 phẩm vị tu tập và danh sách Phật tử phát tâm công đức.
+ * Đài Bia Vàng Công Đức Chùa Hải An (Golden Merit Leaderboard Stele Pavilion) tại (5.6, 0, 2.2):
+ * Đặt ngay sân chính phía Đông Lư Hương Đại Hùng Bảo Điện để mọi Phật tử dễ nhìn,
+ * gồm Rùa đá đội bia (Quy Đế), Bia Vàng Công Đức khắc rõ danh sách TOP 8 Phật tử
+ * (Hạng, Pháp danh, Phẩm vị và Điểm Công Đức CĐ) trên cả 2 mặt bia trước & sau.
  */
 export const MeritBoardMonument = memo(function MeritBoardMonument({
   onOpenMeritModal,
+  meritTop8,
 }: {
   onOpenMeritModal?: () => void;
+  meritTop8?: MeritSteleEntry[];
 }) {
   const { wood, roofTile, stone } = useTextures();
+  const [fontReadyTick, setFontReadyTick] = useState(0);
+
+  useEffect(() => {
+    if (typeof document === 'undefined' || !('fonts' in document)) return;
+    let alive = true;
+    document.fonts.ready.then(() => {
+      if (alive) setFontReadyTick((v) => v + 1);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const steleTex = useMemo(() => {
+    if (typeof document === 'undefined') return null;
+    const rows = (meritTop8 && meritTop8.length > 0 ? meritTop8 : DEFAULT_MERIT_TOP8).slice(0, 8);
+    const W = 1024;
+    const H = 1280;
+    const c = document.createElement('canvas');
+    c.width = W;
+    c.height = H;
+    const ctx = c.getContext('2d')!;
+
+    // Nền sơn son thếp vàng truyền thống
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#5a1410');
+    bg.addColorStop(0.5, '#3e0c0a');
+    bg.addColorStop(1, '#2a0706');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Khung viền kim tuyến kép
+    ctx.strokeStyle = '#f5cf64';
+    ctx.lineWidth = 14;
+    ctx.strokeRect(18, 18, W - 36, H - 36);
+    ctx.strokeStyle = '#c8962e';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(36, 36, W - 72, H - 72);
+
+    // Hoa văn góc bia
+    const corners: Array<[number, number]> = [
+      [48, 48],
+      [W - 48, 48],
+      [48, H - 48],
+      [W - 48, H - 48],
+    ];
+    ctx.fillStyle = '#ffd96a';
+    for (const [cx, cy] of corners) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const fontStack = '"ChuaSignSerif", "Noto Serif", "Times New Roman", Georgia, serif';
+
+    // Tiêu đề Bia Công Đức
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffd972';
+    ctx.font = `700 27px ${fontStack}`;
+    ctx.fillText('✦ CHÙA HẢI AN — ĐÀI BIA CÔNG ĐỨC ✦', W / 2, 82);
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetY = 3;
+    ctx.fillStyle = '#fff2ad';
+    ctx.font = `700 54px ${fontStack}`;
+    ctx.fillText('BẢNG VÀNG TOP 8', W / 2, 142);
+    ctx.restore();
+
+    // Đường kẻ hoa sen ngăn cách tiêu đề
+    ctx.strokeStyle = 'rgba(245, 207, 100, 0.65)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(86, 188);
+    ctx.lineTo(W - 86, 188);
+    ctx.stroke();
+
+    // Header cột
+    ctx.font = `700 22px ${fontStack}`;
+    ctx.fillStyle = '#e7c16a';
+    ctx.textAlign = 'left';
+    ctx.fillText('HẠNG & PHÁP DANH PHẬT TỬ', 64, 224);
+    ctx.textAlign = 'right';
+    ctx.fillText('PHẨM VỊ • CÔNG ĐỨC', W - 64, 224);
+
+    // 8 Dòng Top 1 -> Top 8
+    const startY = 252;
+    const rowH = 104;
+    const rowGap = 114;
+
+    rows.forEach((entry, idx) => {
+      const ry = startY + idx * rowGap;
+      const isTop3 = idx < 3;
+      const isSelf = Boolean(entry.isSelf);
+
+      // Nền từng dòng
+      ctx.fillStyle = isSelf
+        ? 'rgba(248, 198, 68, 0.28)'
+        : isTop3
+          ? 'rgba(218, 168, 52, 0.16)'
+          : 'rgba(0, 0, 0, 0.26)';
+      ctx.fillRect(54, ry, W - 108, rowH);
+
+      ctx.strokeStyle = isSelf
+        ? '#ffe885'
+        : isTop3
+          ? 'rgba(245, 205, 96, 0.65)'
+          : 'rgba(212, 175, 55, 0.28)';
+      ctx.lineWidth = isSelf ? 4 : 2;
+      ctx.strokeRect(54, ry, W - 108, rowH);
+
+      // Huy hiệu thứ hạng #1..#8
+      const badgeX = 104;
+      const badgeY = ry + rowH / 2;
+      ctx.beginPath();
+      ctx.arc(badgeX, badgeY, 30, 0, Math.PI * 2);
+      ctx.fillStyle =
+        idx === 0
+          ? '#ffd54f'
+          : idx === 1
+            ? '#e6e8ee'
+            : idx === 2
+              ? '#e4a359'
+              : '#7c241b';
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#fff0a8';
+      ctx.stroke();
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = idx < 3 ? '#3b1008' : '#ffe89c';
+      ctx.font = `700 30px ${fontStack}`;
+      ctx.fillText(`${idx + 1}`, badgeX, badgeY + 1);
+
+      // Tên Phật tử
+      const displayName =
+        (entry.name.length > 22 ? entry.name.slice(0, 21) + '…' : entry.name) +
+        (isSelf ? ' (Bạn)' : '');
+      ctx.textAlign = 'left';
+      ctx.fillStyle = isSelf ? '#ffffff' : isTop3 ? '#fff3b0' : '#f7e1a0';
+      ctx.font = `700 34px ${fontStack}`;
+      ctx.fillText(displayName, 152, ry + 36);
+
+      // Phẩm vị tu tập
+      const rankLabel = `${entry.rankBadge || '🪷'} ${entry.rankTitle}`;
+      ctx.fillStyle = isSelf ? '#ffe380' : '#dfb963';
+      ctx.font = `700 23px ${fontStack}`;
+      ctx.fillText(rankLabel, 152, ry + 76);
+
+      // Điểm Công Đức bên phải
+      ctx.textAlign = 'right';
+      ctx.fillStyle = isTop3 || isSelf ? '#ffe169' : '#f0c862';
+      ctx.font = `700 35px ${fontStack}`;
+      ctx.fillText(`${entry.points.toLocaleString('vi-VN')} CĐ`, W - 74, ry + 54);
+    });
+
+    // Dòng hướng dẫn cuối bia
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#f5cf64';
+    ctx.font = `700 24px ${fontStack}`;
+    ctx.fillText('✨ Nhấn vào Bia Công Đức để xem chi tiết & 8 phẩm vị ✨', W / 2, H - 66);
+
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 4;
+    t.needsUpdate = true;
+    return t;
+  }, [meritTop8, fontReadyTick]);
+
   return (
     <group
-      position={[8.8, 0, -1.2]}
+      position={[5.6, 0, 2.2]}
       onClick={(e) => {
         if (onOpenMeritModal) {
           e.stopPropagation();
@@ -1291,31 +1430,27 @@ export const MeritBoardMonument = memo(function MeritBoardMonument({
         <boxGeometry args={[1.85, 2.25, 0.22]} />
         <meshStandardMaterial color="#5e615d" roughness={0.85} />
       </mesh>
-      <mesh position={[0, 1.68, 0.12]}>
-        <boxGeometry args={[1.65, 2.02, 0.03]} />
+      <mesh position={[0, 1.68, 0]}>
+        <boxGeometry args={[1.65, 2.02, 0.25]} />
         <meshStandardMaterial color="#7a1b18" roughness={0.62} />
       </mesh>
-      <mesh position={[0, 1.68, 0.14]}>
-        <boxGeometry args={[1.52, 1.88, 0.015]} />
+      <mesh position={[0, 1.68, 0]}>
+        <boxGeometry args={[1.52, 1.88, 0.27]} />
         <meshStandardMaterial color="#d4af37" metalness={0.68} roughness={0.32} />
       </mesh>
-      <mesh position={[0, 1.68, 0.15]}>
-        <boxGeometry args={[1.42, 1.78, 0.01]} />
-        <meshStandardMaterial color="#5a1512" roughness={0.68} />
-      </mesh>
-      {/* Các dòng chữ vàng khắc tên Phật tử trên Bảng Vàng Công Đức */}
-      {[0.58, 0.36, 0.14, -0.08, -0.30, -0.52].map((ry, ri) => (
-        <mesh key={ri} position={[0, 1.68 + ry, 0.16]}>
-          <planeGeometry args={[1.22, 0.11]} />
-          <meshStandardMaterial
-            color={ri === 0 ? '#ffe875' : '#e0b848'}
-            metalness={0.75}
-            roughness={0.28}
-            emissive={ri === 0 ? '#c98a18' : '#7a5210'}
-            emissiveIntensity={ri === 0 ? 0.35 : 0.15}
-          />
-        </mesh>
-      ))}
+      {/* Mặt Bia Vàng khắc rõ danh sách TOP 8 Phật tử (cả mặt trước hướng Nam & mặt sau hướng Bắc) */}
+      {steleTex && (
+        <>
+          <mesh position={[0, 1.68, 0.142]}>
+            <planeGeometry args={[1.44, 1.80]} />
+            <meshBasicMaterial map={steleTex} toneMapped={false} />
+          </mesh>
+          <mesh position={[0, 1.68, -0.142]} rotation={[0, Math.PI, 0]}>
+            <planeGeometry args={[1.44, 1.80]} />
+            <meshBasicMaterial map={steleTex} toneMapped={false} />
+          </mesh>
+        </>
+      )}
       {/* Bảng tên BẢNG VÀNG CÔNG ĐỨC */}
       <TextSign text="BẢNG VÀNG CÔNG ĐỨC" width={2.7} height={0.46} position={[0, 3.15, 0.82]} />
       {/* Mái đao chồng diêm Nhà Bia Công Đức */}
@@ -1431,8 +1566,10 @@ function Bonsai({ position }: { position: [number, number, number] }) {
 
 export const Garden = memo(function Garden({
   onOpenMeritModal,
+  meritTop8,
 }: {
   onOpenMeritModal?: () => void;
+  meritTop8?: MeritSteleEntry[];
 }) {
   const { grass } = useTextures();
   const clouds = useRef<THREE.Group>(null);
@@ -1580,7 +1717,7 @@ export const Garden = memo(function Garden({
         </mesh>
       ))}
       {/* Courtyard trees spread out across the enlarged 88x49m compound */}
-      {/* Cây sân trước-đông (8.5, 3.5) đã gỡ 2026-11-05: đứng đúng trục nhìn mặt nam của bia Bảng Vàng (8.8, -1.2) nên che mất bia. */}
+      {/* Cây sân trước-đông (8.5, 3.5) đã gỡ 2026-11-05: đứng đúng trục nhìn mặt nam của bia Bảng Vàng nên che mất bia. */}
       <Tree position={[-36.0, 0, -8.0]} scale={1.05} />
       <Tree position={[-16.5, 0, -28.0]} scale={0.95} />
       <Tree position={[32.0, 0, 2.0]} scale={1.0} />
@@ -1602,8 +1739,8 @@ export const Garden = memo(function Garden({
       {/* Đài Niệm Kinh Bảo Tháp (6 chỗ ngồi tụng kinh: stupa-chant-1..6) */}
       <EastChantingPavilion />
 
-      {/* Đài Bia Vàng Công Đức Chùa Hải An tại (8.8, 0, -1.2) */}
-      <MeritBoardMonument onOpenMeritModal={onOpenMeritModal} />
+      {/* Đài Bia Vàng Công Đức Chùa Hải An tại (5.6, 0, 2.2) */}
+      <MeritBoardMonument onOpenMeritModal={onOpenMeritModal} meritTop8={meritTop8} />
 
       {/* Bảo Tháp Báo Ân 7 Tầng (Seven-Story Octagonal Lotus Stupa at (35.0, 0, -2.5)) */}
       <SevenStoryStupa />

@@ -229,12 +229,12 @@ export const LAYOUT = {
   /** Ống xâm Từ Bi (Compassionate Fortune Cylinder) beside the Main Hall altar. */
   fortuneCylinder: { x: 2.2, z: -19.8 },
   /** Niệm Phật Đường Tây — Lầu Tụng Kinh Liên Hoa 2 tầng (West Chanting Hall). */
-  westChantHall: { x: -15.5, z: -16.5 },
+  westChantHall: { x: -17.8, z: -17.0 },
   /** Đài Niệm Kinh Bảo Tháp — Đông Đường (East Chanting Pavilion facing the 7-Story Stupa). */
   eastChantPavilion: { x: 35.0, z: 6.8 },
-  /** Đài Bia Vàng Công Đức Chùa Hải An (Golden Merit Leaderboard Monument). */
-  meritBoard: { x: 8.8, z: -1.2 },
-  meritSpot: { x: 8.8, z: 0.2 },
+  /** Đài Bia Vàng Công Đức Chùa Hải An (Golden Merit Leaderboard Monument, placed forward in the main courtyard for clear visibility). */
+  meritBoard: { x: 5.6, z: 2.2 },
+  meritSpot: { x: 5.6, z: 3.8 },
   /** Bến Thuyền Độ Sinh & Sông Bát Nhã -> Hòn Đảo HSK (https://hoc-hsk.vercel.app/). */
   pier: { x: 0, z: 22.8 },
   boatDock: { x: 0, z: 25.0 },
@@ -283,15 +283,15 @@ export const SEATS: Seat[] = [
   { id: 'hall-r7', x: 3.4, z: -15.8, facing: Math.PI, kind: 'mat', area: 'hall', label: 'Chính điện · Đệm phải hàng 4' },
   { id: 'hall-r8', x: 5.6, z: -15.8, facing: Math.PI, kind: 'mat', area: 'hall', label: 'Chính điện · Đệm phải hàng 4' },
 
-  // 2. Niệm Phật Đường Tây — Lầu Tụng Kinh Liên Hoa (8 đệm tọa cụ có bàn kinh & mõ gỗ)
-  { id: 'west-chant-1', x: -17.8, z: -15.2, facing: Math.PI, kind: 'mat', area: 'westChant', label: 'Niệm Phật Đường · Tọa cụ 1 (Hàng trước)' },
-  { id: 'west-chant-2', x: -16.3, z: -15.2, facing: Math.PI, kind: 'mat', area: 'westChant', label: 'Niệm Phật Đường · Tọa cụ 2 (Hàng trước)' },
-  { id: 'west-chant-3', x: -14.7, z: -15.2, facing: Math.PI, kind: 'mat', area: 'westChant', label: 'Niệm Phật Đường · Tọa cụ 3 (Hàng trước)' },
-  { id: 'west-chant-4', x: -13.2, z: -15.2, facing: Math.PI, kind: 'mat', area: 'westChant', label: 'Niệm Phật Đường · Tọa cụ 4 (Hàng trước)' },
-  { id: 'west-chant-5', x: -17.8, z: -17.2, facing: Math.PI, kind: 'mat', area: 'westChant', label: 'Niệm Phật Đường · Tọa cụ 5 (Hàng trên)' },
-  { id: 'west-chant-6', x: -16.3, z: -17.2, facing: Math.PI, kind: 'mat', area: 'westChant', label: 'Niệm Phật Đường · Tọa cụ 6 (Hàng trên)' },
-  { id: 'west-chant-7', x: -14.7, z: -17.2, facing: Math.PI, kind: 'mat', area: 'westChant', label: 'Niệm Phật Đường · Tọa cụ 7 (Hàng trên)' },
-  { id: 'west-chant-8', x: -13.2, z: -17.2, facing: Math.PI, kind: 'mat', area: 'westChant', label: 'Niệm Phật Đường · Tọa cụ 8 (Hàng trên)' },
+  // 2. Niệm Phật Đường Tây — Lầu Tụng Kinh Liên Hoa (8 đệm tọa cụ có bàn kinh & mõ gỗ tại (-17.8, -17.0))
+  { id: 'west-chant-1', x: -20.2, z: -15.4, facing: Math.PI, kind: 'mat', area: 'westChant', label: 'Niệm Phật Đường · Tọa cụ 1 (Hàng trước)' },
+  { id: 'west-chant-2', x: -18.6, z: -15.4, facing: Math.PI, kind: 'mat', area: 'westChant', label: 'Niệm Phật Đường · Tọa cụ 2 (Hàng trước)' },
+  { id: 'west-chant-3', x: -17.0, z: -15.4, facing: Math.PI, kind: 'mat', area: 'westChant', label: 'Niệm Phật Đường · Tọa cụ 3 (Hàng trước)' },
+  { id: 'west-chant-4', x: -15.4, z: -15.4, facing: Math.PI, kind: 'mat', area: 'westChant', label: 'Niệm Phật Đường · Tọa cụ 4 (Hàng trước)' },
+  { id: 'west-chant-5', x: -20.2, z: -17.4, facing: Math.PI, kind: 'mat', area: 'westChant', label: 'Niệm Phật Đường · Tọa cụ 5 (Hàng trên)' },
+  { id: 'west-chant-6', x: -18.6, z: -17.4, facing: Math.PI, kind: 'mat', area: 'westChant', label: 'Niệm Phật Đường · Tọa cụ 6 (Hàng trên)' },
+  { id: 'west-chant-7', x: -17.0, z: -17.4, facing: Math.PI, kind: 'mat', area: 'westChant', label: 'Niệm Phật Đường · Tọa cụ 7 (Hàng trên)' },
+  { id: 'west-chant-8', x: -15.4, z: -17.4, facing: Math.PI, kind: 'mat', area: 'westChant', label: 'Niệm Phật Đường · Tọa cụ 8 (Hàng trên)' },
 
   // 3. Đài Niệm Kinh Bảo Tháp — Đông Đường (6 đệm tọa cụ hướng về Bảo Tháp Báo Ân 7 tầng)
   { id: 'stupa-chant-1', x: 33.4, z: 5.8, facing: Math.PI, kind: 'mat', area: 'stupaChant', label: 'Đài Niệm Kinh Bảo Tháp · Tọa cụ 1' },
@@ -369,6 +369,10 @@ export function floorYAt(x: number, z: number): number {
   if (stepY > 0) return stepY;
   // Wooden pier deck at Bến Thuyền Độ Sinh (x -1.5..1.5, z 21.5..23.5 -> top y 0.33)
   if (x > -1.5 && x < 1.5 && z > 21.5 && z <= 23.5) return 0.33;
+  // Niệm Phật Đường Tây stone platform at (-17.8, -17.0): 8.2x7.4, top y 0.25
+  if (x > -21.9 && x < -13.7 && z > -20.7 && z < -13.3) return 0.25;
+  // Đài Niệm Kinh Bảo Tháp stone platform at (35.0, 6.8): 6.8x5.2, top y 0.25
+  if (x > 31.6 && x < 38.4 && z > 4.2 && z < 9.4) return 0.25;
   return 0;
 }
 
@@ -486,19 +490,27 @@ export const COLLIDERS: Collider[] = [
   { kind: 'circle', x: -11.7, z: 1.7, r: 0.4 }, // lake bank stone at Tâm Liên Hồ
   { kind: 'circle', x: 35.0, z: -2.5, r: 2.6 }, // Bảo Tháp Báo Ân 7 tầng at (35, -2.5)
   { kind: 'circle', x: 18.5, z: 5.2, r: 0.45 }, // Giá treo thẻ ước nguyện Bồ Đề
-  // Đài Bia Vàng Công Đức Chùa Hải An at (8.8, -1.2)
-  { kind: 'circle', x: 8.8, z: -1.2, r: 0.55 },
-  // Niệm Phật Đường Tây (West Chanting Hall at (-15.5, -16.5)): north altar & 4 corner columns
-  { kind: 'box', minX: -17.1, maxX: -13.9, minZ: -20.5, maxZ: -19.1 },
-  { kind: 'circle', x: -19.2, z: -20.2, r: 0.25 },
-  { kind: 'circle', x: -11.8, z: -20.2, r: 0.25 },
-  { kind: 'circle', x: -19.2, z: -13.2, r: 0.25 },
-  { kind: 'circle', x: -11.8, z: -13.2, r: 0.25 },
+  // Đài Bia Vàng Công Đức Chùa Hải An at (5.6, 2.2): stele & 4 pavilion pillars
+  { kind: 'box', minX: 4.5, maxX: 6.7, minZ: 1.7, maxZ: 2.7 },
+  { kind: 'circle', x: 4.25, z: 1.45, r: 0.22 },
+  { kind: 'circle', x: 6.95, z: 1.45, r: 0.22 },
+  { kind: 'circle', x: 4.25, z: 2.95, r: 0.22 },
+  { kind: 'circle', x: 6.95, z: 2.95, r: 0.22 },
+  // Niệm Phật Đường Tây (West Chanting Hall at (-17.8, -17.0)): north altar & all 8 columns
+  { kind: 'box', minX: -19.2, maxX: -16.4, minZ: -19.95, maxZ: -18.85 },
+  { kind: 'circle', x: -21.3, z: -20.0, r: 0.24 },
+  { kind: 'circle', x: -14.3, z: -20.0, r: 0.24 },
+  { kind: 'circle', x: -21.3, z: -14.0, r: 0.24 },
+  { kind: 'circle', x: -14.3, z: -14.0, r: 0.24 },
+  { kind: 'circle', x: -19.2, z: -20.0, r: 0.24 },
+  { kind: 'circle', x: -16.4, z: -20.0, r: 0.24 },
+  { kind: 'circle', x: -21.3, z: -17.0, r: 0.24 },
+  { kind: 'circle', x: -14.3, z: -17.0, r: 0.24 },
   // Đài Niệm Kinh Bảo Tháp (East Stupa Chanting Pavilion at (35.0, 6.8)): 4 corner columns
-  { kind: 'circle', x: 31.8, z: 4.5, r: 0.24 },
-  { kind: 'circle', x: 38.2, z: 4.5, r: 0.24 },
-  { kind: 'circle', x: 31.8, z: 9.1, r: 0.24 },
-  { kind: 'circle', x: 38.2, z: 9.1, r: 0.24 },
+  { kind: 'circle', x: 32.1, z: 4.7, r: 0.24 },
+  { kind: 'circle', x: 37.9, z: 4.7, r: 0.24 },
+  { kind: 'circle', x: 32.1, z: 8.9, r: 0.24 },
+  { kind: 'circle', x: 37.9, z: 8.9, r: 0.24 },
   // Sông Bát Nhã & Bến Thuyền Độ Sinh (River embankment & pier railings):
   // Completely prevent the player from walking onto the river water (z >= 22.6);
   // only the wooden pier walkway (x -1.1..1.1, z <= 23.1) is walkable on foot!

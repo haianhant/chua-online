@@ -558,9 +558,10 @@ const Grounds = memo(function Grounds({ soilWet, waterStream, carryingWater, bel
           </mesh>
         </group>
       ))}
-      {/* Pitched tile roof, ridge along the corridor (z) */}
-      <group position={[13.5, 4.55, -2]} rotation={[0, Math.PI / 2, 0]}>
-        <Roof width={10} depth={6} rise={1.2} y={0} tile={roofTile} />
+      {/* Pitched tile roof, ridge along the corridor (z) — sized so its west eave
+          stays clear of the Main Hall's lower roof eaves */}
+      <group position={[13.6, 4.55, -2]} rotation={[0, Math.PI / 2, 0]}>
+        <Roof width={9.2} depth={4.4} rise={1.15} y={0} tile={roofTile} />
       </group>
       {/* 3 Chairs along the roofed corridor (seats: corridor-chair at 13.5,-2,
           corridor-chair-2 at 13.5,0.5, corridor-chair-3 at 13.5,-4.5) */}

@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   controls,
   LAYOUT,
@@ -208,10 +208,11 @@ export default function Home() {
     reportMeritPoints(origin, name, meritState.points);
   }, [meritState.points, entered, soloMode, name, wsUrl]);
 
-  // When the merit board opens: report your latest total, then fetch
-  // the shared board so every device shows the same top 8.
+  // When entering the temple or when the merit board opens: report your
+  // latest total, then fetch the shared board so both the 3D courtyard
+  // stele and the 2D modal show the same live top 8 on every device.
   useEffect(() => {
-    if (!meritOpen) return;
+    if (!entered && !meritOpen) return;
     if (soloMode) {
       setGlobalBoard(null);
       setBoardSync('off');
@@ -239,9 +240,8 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-    // Only on open: the open render already carries fresh name/points.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [meritOpen]);
+  }, [entered, meritOpen]);
   const [meritTab, setMeritTab] = useState<'leaderboard' | 'ranks' | 'history'>('leaderboard');
   // Context action (nearest object, hysteresis in the poll below).
   type Ctx = {
@@ -463,6 +463,19 @@ export default function Home() {
 
   const currentRank = getMeritRank(meritState.points);
   const nextRank = getNextMeritRank(meritState.points);
+  const meritTop8 = useMemo(
+    () =>
+      buildMeritLeaderboard(name || 'Khách', meritState, globalBoard)
+        .slice(0, 8)
+        .map((r) => ({
+          name: r.name,
+          points: r.points,
+          rankBadge: r.rank.badge,
+          rankTitle: r.rank.title,
+          isSelf: r.isSelf,
+        })),
+    [name, meritState, globalBoard]
+  );
 
   const openMap = () => {
     setPlayerPos({ x: controls.playerPos.x, z: controls.playerPos.z });
@@ -1413,6 +1426,7 @@ export default function Home() {
           onClickPierOrBoat={startBoatToHSK}
           onOpenHSKModal={() => setHskModalOpen(true)}
           onOpenMeritModal={() => setMeritOpen(true)}
+          meritTop8={meritTop8}
         />
         </WorldErrorBoundary>
         ) : (
@@ -3362,15 +3376,15 @@ export default function Home() {
               {/* Map formula: x=(wx+46)*8, y=(wz+44)*8 for bounds x -46..46, z -44..32 */}
               {/* Tường bao khuôn viên chùa (Compound enclosure wall: x -44..44, z -36..13) */}
               <rect x="16" y="64" width="704" height="392" rx="8" fill="#dfd5be" stroke="#8a6842" strokeWidth="4" />
-              {/* Hall + Twin Bell/Drum Wing Pavilions */}
-              <rect x="272" y="144" width="192" height="162" fill="#e8d9b8" stroke="#7a5c3a" />
+              {/* Hall (Đại Hùng Bảo Điện 3 tầng) */}
+              <rect x="288" y="144" width="160" height="162" fill="#e8d9b8" stroke="#7a5c3a" />
               <text x="368" y="226" textAnchor="middle" fontSize="12.5" fontWeight="bold" fill="#7a1f1f">Đại Hùng Bảo Điện (16)</text>
-              {/* Niệm Phật Đường Tây (-15.5, -16.5) -> x=244, y=220 */}
-              <rect x="210" y="192" width="68" height="56" rx="4" fill="#d9b37c" stroke="#7a1f1f" strokeWidth="2" />
-              <text x="244" y="223" textAnchor="middle" fontSize="8.5" fontWeight="bold" fill="#4a1c14">Niệm Phật Đường</text>
-              {/* Đài Bia Vàng Công Đức (8.8, -1.2) -> x=438, y=342 */}
-              <rect x="424" y="330" width="28" height="22" rx="3" fill="#d4af37" stroke="#7a1f1f" strokeWidth="1.5" />
-              <text x="438" y="364" textAnchor="middle" fontSize="8.5" fontWeight="bold" fill="#7a1f1f">Bia Công Đức</text>
+              {/* Niệm Phật Đường Tây (-17.8, -17.0) -> x=226, y=216 */}
+              <rect x="192" y="188" width="68" height="56" rx="4" fill="#d9b37c" stroke="#7a1f1f" strokeWidth="2" />
+              <text x="226" y="219" textAnchor="middle" fontSize="8.5" fontWeight="bold" fill="#4a1c14">Niệm Phật Đường</text>
+              {/* Đài Bia Vàng Công Đức (5.6, 2.2) -> x=413, y=370 */}
+              <rect x="399" y="358" width="28" height="22" rx="3" fill="#d4af37" stroke="#7a1f1f" strokeWidth="1.5" />
+              <text x="413" y="392" textAnchor="middle" fontSize="8.5" fontWeight="bold" fill="#7a1f1f">Bia Công Đức</text>
               {/* Tam quan + courtyard */}
               <rect x="328" y="448" width="80" height="16" fill="#a8432a" />
               <text x="368" y="482" textAnchor="middle" fontSize="11">Cổng tam quan</text>
@@ -3410,8 +3424,8 @@ export default function Home() {
             </svg>
             <div className="mt-3 grid gap-2">
               {([
-                ['merit', '🏆 Đài Bia Vàng Công Đức', 'Xem bảng xếp hạng Công Đức · 8 phẩm vị tu tập trong chùa'],
-                ['hall', '🏯 Đại Hùng Bảo Điện 3 tầng & Tả/Hữu Lâu', '16 bồ đoàn & bàn kinh · Quỳ lễ · Ngồi tĩnh tâm · Xin quẻ Từ Bi'],
+                ['merit', '🏆 Đài Bia Vàng Công Đức', 'Khắc tên Top 8 Phật tử trên Bia Vàng · Xem 8 phẩm vị tu tập trong chùa'],
+                ['hall', '🏯 Đại Hùng Bảo Điện 3 tầng', '16 bồ đoàn & bàn kinh · Quỳ lễ · Ngồi tĩnh tâm · Xin quẻ Từ Bi'],
                 ['westChant', '🧘 Niệm Phật Đường Tây (Lầu Tụng Kinh 2 tầng)', '8 bồ đoàn hoa sen & bàn kinh · Tôn tượng A Di Đà · Mõ đại'],
                 ['stupaChant', '📿 Đài Niệm Kinh Bảo Tháp', '6 bồ đoàn tọa thiền & tụng kinh hướng Bảo Tháp Báo Ân'],
                 ['hsk', '⛵ Đi thuyền qua Sông Bát Nhã → Đảo HSK', 'Lên thuyền gỗ · Sang Đảo HSK · Mở hoc-hsk.vercel.app'],

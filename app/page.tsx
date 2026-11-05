@@ -1471,7 +1471,6 @@ export default function Home() {
             >
               {soundPlaying ? '🔊 Tắt âm thanh' : soundBlocked ? '🔇 Bật nhạc' : '🔇 Bật âm thanh'}
             </button>
-            <button type="button" onClick={openMap} className="rounded-full border border-white/50 bg-white/70 px-3 py-2 text-sm shadow backdrop-blur">🗺 Sơ đồ chùa</button>
             <button type="button" onClick={() => setSettingsOpen(true)} className="rounded-full border border-white/50 bg-white/70 px-3 py-2 text-sm shadow backdrop-blur">
               {soloMode ? '🧘 Chế độ riêng' : mpStatus === 'online' ? `👥 Phòng chung - ${mpCount}` : mpStatus === 'connecting' ? '👥 Đang kết nối…' : wsUrl ? '👥 Ngoại tuyến (solo)' : '🧘 Chế độ riêng'}
             </button>
